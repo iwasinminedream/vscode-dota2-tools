@@ -111,8 +111,14 @@ export async function generateJS(context: vscode.ExtensionContext, kvJsConfig: T
 	let js = obj2Str(kv);
 	let fileData = sObjectName + "." + sKVName + " = " + js + ";";
 	let jsPath = (contentDir + "/" + sOutputPath + "/" + sKVName + ".js").replace(/\\/g, "/");
-	fs.writeFileSync(jsPath, fileData);
-	showStatusBarMessage("[生成js]：" + sKVName);
+	// fs.writeFileSync(jsPath, fileData);
+	fs.writeFile(jsPath, fileData, (err) => {
+		if (err) {
+			showStatusBarMessage(`[写入失败]：${sKVName}，原因：${err.message}`);
+		} else {
+			showStatusBarMessage(`[生成js]：${sKVName}`);
+		}
+	});
 	// 生成定义文件
 	if (configs.DeclarePath && kvJsConfig.DeclareConfig) {
 		let DeclarePathAbs: string = configs.DeclarePath;

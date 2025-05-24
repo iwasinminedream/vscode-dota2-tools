@@ -312,49 +312,42 @@ async function processFileData(fileData: DocumentFile, kvDir: string, method: ty
 	const spreadsheetToken = fileData.token;
 	// 是否合并表
 	const isMerge = getSheetMergeConfig()[spreadsheetToken];
-	let sheetID = getSheetID(spreadsheetToken);
-	// 第一次获取就存下来，减少接口请求次数
-	if (sheetID == undefined) {
+	if (isMerge != undefined) {
 		const sheetInfoList = await sheetCloud.getSheetMetaInfo(spreadsheetToken);
 		if (sheetInfoList) {
-			if (isMerge != undefined) {
-				const result: any = {};
-				for (const sheetInfo of sheetInfoList) {
-					sheetID = sheetInfo.sheetId;
-					sheetIDMap[spreadsheetToken] = sheetID;
-					if (sheetID) {
-						const sheetData = await sheetCloud.getSheetData(spreadsheetToken, sheetID);
-						if (sheetData) {
-							sheetData.data.valueRange.values.forEach((row) => {
-								row.forEach((cell, i) => {
-									if (cell === undefined || cell === null) {
-										row[i] = "";
-									} else if (typeof cell == "number") {
-										row[i] = String(cell);
-									}
-								});
-							});
-							if (isMerge) {
-								result[sheetInfo.title] = method(sheetData.data.valueRange.values);
-							} else {
-								const kv = method(sheetData.data.valueRange.values);
-								for (const key in kv) {
-									const value = kv[key];
-									result[key] = value;
-								}
+			const result: any = {};
+			for (const sheetInfo of sheetInfoList) {
+				const sheetID = sheetInfo.sheetId;
+				const sheetData = await sheetCloud.getSheetData(spreadsheetToken, sheetID);
+				if (sheetData) {
+					sheetData.data.valueRange.values.forEach((row) => {
+						row.forEach((cell, i) => {
+							if (cell === undefined || cell === null) {
+								row[i] = "";
+							} else if (typeof cell == "number") {
+								row[i] = String(cell);
 							}
+						});
+					});
+					if (isMerge) {
+						result[sheetInfo.title] = method(sheetData.data.valueRange.values);
+					} else {
+						const kv = method(sheetData.data.valueRange.values);
+						for (const key in kv) {
+							const value = kv[key];
+							result[key] = value;
 						}
 					}
 				}
-				const realKvDir = getRealKvDir(kvDir);
-				if (realKvDir) {
-					await dirExists(realKvDir);
-					const data = writeKeyValue({ KeyValue: result });
-					const filePath = path.join(realKvDir, getExtname(fileData.name));
-					fs.writeFileSync(filePath, data);
-					fs.utimesSync(filePath, fileData.created_time, fileData.modified_time);
-				}
-			} else {
+			}
+			await saveMergeKvToKVDir(result, kvDir, fileData);
+		}
+	} else {
+		let sheetID = getSheetID(spreadsheetToken);
+		// 第一次获取就存下来，减少接口请求次数
+		if (sheetID == undefined) {
+			const sheetInfoList = await sheetCloud.getSheetMetaInfo(spreadsheetToken);
+			if (sheetInfoList != undefined) {
 				sheetID = sheetInfoList[0].sheetId;
 				sheetIDMap[spreadsheetToken] = sheetID;
 				if (sheetID) {
@@ -378,8 +371,6 @@ async function processFileData(fileData: DocumentFile, kvDir: string, method: ty
 }
 /** 把文件直接导出为csv */
 async function exportSheetToCsv(fileData: DocumentFile, kvDir: string): Promise<void> {
-	console.log("exportSheetToCsv");
-
 	const spreadsheetToken = fileData.token;
 	let sheetID = getSheetID(spreadsheetToken);
 	// 第一次获取就存下来，减少接口请求次数
@@ -415,6 +406,16 @@ async function exportSheetToCsv(fileData: DocumentFile, kvDir: string): Promise<
 	}
 }
 
+async function saveMergeKvToKVDir(result: any, kvDir: string, fileData: DocumentFile): Promise<void> {
+	const realKvDir = getRealKvDir(kvDir);
+	if (realKvDir) {
+		await dirExists(realKvDir);
+		const data = writeKeyValue({ KeyValue: result });
+		const filePath = path.join(realKvDir, getExtname(fileData.name));
+		fs.writeFileSync(filePath, data);
+		fs.utimesSync(filePath, fileData.created_time, fileData.modified_time);
+	}
+}
 async function saveCSVToKVDir(csv: string[][], kvDir: string, fileData: DocumentFile, method: typeof abilityCSV2KV | typeof unitCSV2KV): Promise<void> {
 	const realKvDir = getRealKvDir(kvDir);
 	if (realKvDir) {
