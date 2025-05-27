@@ -347,24 +347,24 @@ async function processFileData(fileData: DocumentFile, kvDir: string, method: ty
 		// 第一次获取就存下来，减少接口请求次数
 		if (sheetID == undefined) {
 			const sheetInfoList = await sheetCloud.getSheetMetaInfo(spreadsheetToken);
-			if (sheetInfoList != undefined) {
+			if (sheetInfoList && sheetInfoList[0]) {
 				sheetID = sheetInfoList[0].sheetId;
 				sheetIDMap[spreadsheetToken] = sheetID;
-				if (sheetID) {
-					const sheetData = await sheetCloud.getSheetData(spreadsheetToken, sheetID);
-					if (sheetData) {
-						sheetData.data.valueRange.values.forEach((row) => {
-							row.forEach((cell, i) => {
-								if (cell === undefined || cell === null) {
-									row[i] = "";
-								} else if (typeof cell == "number") {
-									row[i] = String(cell);
-								}
-							});
-						});
-						await saveCSVToKVDir(sheetData.data.valueRange.values, kvDir, fileData, method);
-					}
-				}
+			}
+		}
+		if (sheetID) {
+			const sheetData = await sheetCloud.getSheetData(spreadsheetToken, sheetID);
+			if (sheetData) {
+				sheetData.data.valueRange.values.forEach((row) => {
+					row.forEach((cell, i) => {
+						if (cell === undefined || cell === null) {
+							row[i] = "";
+						} else if (typeof cell == "number") {
+							row[i] = String(cell);
+						}
+					});
+				});
+				await saveCSVToKVDir(sheetData.data.valueRange.values, kvDir, fileData, method);
 			}
 		}
 	}
@@ -376,7 +376,7 @@ async function exportSheetToCsv(fileData: DocumentFile, kvDir: string): Promise<
 	// 第一次获取就存下来，减少接口请求次数
 	if (sheetID == undefined) {
 		const sheetInfo = await sheetCloud.getSheetMetaInfo(spreadsheetToken);
-		if (sheetInfo) {
+		if (sheetInfo && sheetInfo[0]) {
 			sheetID = sheetInfo[0].sheetId;
 			sheetIDMap[spreadsheetToken] = sheetID;
 		}
