@@ -43,9 +43,9 @@
 | Yes
 | Hide the econ item tooltip.
 |-
-| <code>DOTAHideProfileCardBattleCupTooltip()</code>
+| <code>DOTAHideFacetTooltip()</code>
 | Yes
-| Hide the profile card / battle cup tooltip.
+| Hides the variant tooltip
 |-
 | <code>DOTAHideProfileCardTooltip()</code>
 | Yes
@@ -91,7 +91,7 @@
 | Yes
 | Show tooltip for an item in the entityIndex NPC's inventory.
 |-
-| <code>DOTAShowAbilityShopItemTooltip(string abilityName, string guideName, int32 entityIndex)</code>
+| <code>DOTAShowAbilityShopItemTooltip(string abilityName, string guideName, int32 entityIndex, class AbilityID_t nParentId)</code>
 | Yes
 | Show tooltip for an item in the entityIndex NPC's shop.
 |-
@@ -103,11 +103,15 @@
 | Yes
 | Show an ability tooltip. Level information comes from the entity specified by the entityIndex.
 |-
-| <code>DOTAShowAbilityTooltipForGuide(string abilityName, string guideName)</code>
+| <code>DOTAShowAbilityTooltipForFacet(string abilityName, class CUtlStringToken facetName, bool showVideo)</code>
+| Yes
+| Show an ability tooltip for a specific facet.
+|-
+| <code>DOTAShowAbilityTooltipForGuide(string abilityName, string guideName, class HeroID_t, bool)</code>
 | Yes
 | Show an ability tooltip annotated with a particular guide's info.
 |-
-| <code>DOTAShowAbilityTooltipForHero(string abilityName, int32 heroid, bool)</code>
+| <code>DOTAShowAbilityTooltipForHero(string abilityName, class HeroID_t heroid, class HeroFacetID_t heroVariant, bool, bool)</code>
 | Yes
 | Show an ability tooltip for the specified hero.
 |-
@@ -119,17 +123,21 @@
 | Yes
 | Show a buff tooltip for the specified entityIndex + buff serial.
 |-
-| <code>DOTAShowEconItemTooltip(class item_definition_index_t itemDef, class style_index_t styleIndex, int32 heroID)</code>
+| <code>DOTAShowEconItemTooltip(class item_definition_index_t itemDef, class style_index_t styleIndex, class HeroID_t heroID)</code>
 | Yes
-| Show the econ item tooltip for a given item, style, and hero. Use 0 for the default style, and -1 for the default hero.
+| Show the econ item tooltip for a given item, style, and hero. Use 0 for the default style, and 0 for the default hero.
 |-
-| <code>DOTAShowProfileCardBattleCupTooltip(uint64 steamID)</code>
+| <code>DOTAShowFacetTooltip(class HeroFacetKey_t facetKey)</code>
 | Yes
-| Show the battle cup portion of the user's profile card, if it exists
+| Shows a variant tooltip for the given hero facet key
 |-
 | <code>DOTAShowProfileCardTooltip(uint64 steamID, bool useProName)</code>
 | Yes
 | Show a user's profile card. Use pro name determines whether to use their professional team name if applicable.
+|-
+| <code>DOTAShowProfileCardTooltipForPartyMember(uint64 steamID, bool useProName)</code>
+| Yes
+| Show a user's profile card including their hero ban choices. Use pro name determines whether to use their professional team name if applicable.
 |-
 | <code>DOTAShowRankTierTooltip(uint64 steamID)</code>
 | Yes
