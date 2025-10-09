@@ -12,6 +12,7 @@ import { listenerUnitExcelInit } from './listener/listenerUnitExcel';
 import { addonInfoInit } from './module/addonInfo';
 import { apiNoteInit } from './module/apiNote';
 import { cssCompletionInit, jsCompletionInit, luaCompletionInit } from './module/completion';
+import { errorLogsInit } from './module/errorLogs';
 import { sheetCloudInit } from './module/sheet_cloud';
 import { getStatusBarItem, refreshStatusBarMessage, showStatusBarMessage } from './module/statusBar';
 import { translateInit } from './module/translate';
@@ -41,6 +42,7 @@ const moduleList = {
 	"listenerUnitExcelInit": listenerUnitExcelInit,
 	"translateInit": translateInit,
 	"sheetCloudInit": sheetCloudInit,
+	"errorLogsInit": errorLogsInit,
 	// "kvEditorInit": kvEditorInit,
 	// "localizationViewrInit": localizationViewrInit,
 };
@@ -66,6 +68,7 @@ const skipModuleList: { [key: string]: keyof ModuleListConfig; } = {
 	"kv2luaInit": "kv_lua_associated",
 	"translateInit": "translate",
 	"sheetCloudInit": "sheet_cloud",
+	"errorLogsInit": "error_logs",
 	"kvEditorInit": "dota2kv",
 };
 

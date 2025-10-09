@@ -62,6 +62,7 @@ declare interface ModuleListConfig {
 	translate: boolean;
 	sheet_cloud: boolean;
 	dota2kv: boolean;
+	error_logs: boolean;
 }
 
 

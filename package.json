@@ -59,6 +59,11 @@
 					"id": "dota2kv",
 					"title": "Dota2 Kv Editor",
 					"icon": "./images/kv.svg"
+				},
+				{
+					"id": "dota2logs",
+					"title": "%dota2Logs.title%",
+					"icon": "$(warning)"
 				}
 			]
 		},
@@ -95,6 +100,14 @@
 					"when": "config.dota2-tools.A1.module_list.dota2kv",
 					"name": "Kv Explorer",
 					"icon": "$(notebook)"
+				}
+			],
+			"dota2logs": [
+				{
+					"id": "errorLogExplorer",
+					"when": "config.dota2-tools.A1.module_list.error_logs",
+					"name": "%errorLogExplorer%",
+					"icon": "$(warning)"
 				}
 			]
 		},
@@ -359,6 +372,10 @@
 			{
 				"command": "dota2tools.export_record",
 				"title": "下载多维表格文本"
+			},
+			{
+				"command": "dota2tools.logs.open",
+				"title": "%dota2tools.logs.open%"
 			}
 		],
 		"menus": {
@@ -542,7 +559,8 @@
 							"kv_lua_associated": true,
 							"translate": true,
 							"sheet_cloud": true,
-							"dota2kv": false
+							"dota2kv": false,
+							"error_logs": true
 						},
 						"properties": {
 							"ability_icon": {
@@ -619,6 +637,11 @@
 								"type": "boolean",
 								"default": false,
 								"description": "kv文件视图（开发中）"
+							},
+							"error_logs": {
+								"type": "boolean",
+								"default": true,
+								"description": "%errorLogModule%"
 							}
 						},
 						"additionalProperties": false,
@@ -799,6 +822,35 @@
 							"type": "string"
 						},
 						"markdownDescription": "云配置表导出csv到本地\n- 左侧为云文件夹的token，右侧为本地文件夹路径\n- 可使用${game}或者${content}可以指代当前game或者content目录用于拼接文件路径"
+					}
+				}
+			},
+			{
+				"title": "%dota2-tools.logs_setting%",
+				"properties": {
+					"dota2-tools.A9.LogServer": {
+						"type": "object",
+						"default": {
+							"server": "",
+							"client": "",
+							"ui": ""
+						},
+						"properties": {
+							"server": {
+								"type": "string",
+								"description": "%dota2-tools.A9.server%"
+							},
+							"client": {
+								"type": "string",
+								"description": "%dota2-tools.A9.client%"
+							},
+							"ui": {
+								"type": "string",
+								"description": "%dota2-tools.A9.ui%"
+							}
+						},
+						"additionalProperties": false,
+						"markdownDescription": "%dota2-tools.A9.LogServer.description%"
 					}
 				}
 			},
