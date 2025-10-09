@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
-import { parseLuaAPI, parseLuaAPIChangelog, vsndGenerator } from '../module/preProcessing';
+import { parseCssDocument, parseLuaAPI, parseLuaAPIChangelog } from '../module/preProcessing';
 
 export async function preProcessing(context: vscode.ExtensionContext) {
 	// itemsGameParse(context);
 	// console.log("itemsGameParse");
 	// parsePanoramaAPI(context);
 	// console.log("parsePanoramaAPI");
-	// parseCssDocument(context);
-	// console.log("parseCssDocument");
+	parseCssDocument(context);
+	console.log("parseCssDocument");
 	// parseEventDocument(context);
 	// console.log("parseEventDocument");
 	// parsePanelList(context);

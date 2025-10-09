@@ -23,6 +23,8 @@ export async function combineLocalization(languageType: string = "") {
 			}
 		} else {
 			let langFolders: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(vscode.Uri.file(localizationPath));
+			// langFolders按folderName排序
+			langFolders.sort((a, b) => a[0].localeCompare(b[0]));
 			for (let i: number = 0; i < langFolders.length; i++) {
 				const [folderName, isDirectory] = langFolders[i];
 				if (Number(isDirectory) === vscode.FileType.Directory) {
