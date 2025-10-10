@@ -376,6 +376,11 @@
 			{
 				"command": "dota2tools.logs.open",
 				"title": "%dota2tools.logs.open%"
+			},
+			{
+				"command": "dota2tools.logs.refreshCategory",
+				"title": "%dota2tools.logs.refreshCategory%",
+				"icon": "$(refresh)"
 			}
 		],
 		"menus": {
@@ -534,6 +539,11 @@
 					"command": "dota2tools.css_property.edit",
 					"when": "view == dota2CssApiExplorer && viewItem == Class",
 					"group": "inline"
+				},
+				{
+					"command": "dota2tools.logs.refreshCategory",
+					"when": "view == errorLogExplorer && viewItem == errorLog.category",
+					"group": "inline"
 				}
 			]
 		},
@@ -560,7 +570,7 @@
 							"translate": true,
 							"sheet_cloud": true,
 							"dota2kv": false,
-							"error_logs": true
+							"error_logs": false
 						},
 						"properties": {
 							"ability_icon": {
@@ -858,6 +868,13 @@
 						},
 						"additionalProperties": false,
 						"markdownDescription": "%dota2-tools.A9.LogServer.description%"
+					},
+					"dota2-tools.A9.recentDays": {
+						"type": "number",
+						"default": 15,
+						"minimum": 1,
+						"maximum": 90,
+						"description": "%dota2-tools.A9.recentDays%"
 					}
 				}
 			},

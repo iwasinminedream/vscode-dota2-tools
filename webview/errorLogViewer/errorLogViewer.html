@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>{{TITLE}}</title>
+	<style>
+		body {
+			font-family: var(--vscode-font-family, sans-serif);
+			margin: 0;
+			padding: 16px;
+			background: var(--vscode-editor-background, #1e1e1e);
+			color: var(--vscode-foreground, #ccc);
+		}
+		h1 {
+			margin-top: 0;
+			font-size: 18px;
+		}
+		table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		th,
+		td {
+			border-bottom: 1px solid var(--vscode-editorGroup-border, #333);
+			padding: 8px;
+			vertical-align: top;
+		}
+		th {
+			text-align: left;
+			font-weight: 600;
+		}
+		.error-message {
+			white-space: pre-wrap;
+		}
+		.badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			background: var(--vscode-badge-background, #007acc);
+			color: var(--vscode-badge-foreground, #fff);
+			border-radius: 999px;
+			padding: 0 8px;
+		}
+		button.link {
+			background: none;
+			border: none;
+			color: var(--vscode-textLink-foreground, #3794ff);
+			cursor: pointer;
+			padding: 0;
+			font: inherit;
+			text-decoration: underline;
+		}
+		button.link:hover {
+			text-decoration: none;
+		}
+		.empty {
+			margin-top: 16px;
+			opacity: 0.7;
+		}
+	</style>
+</head>
+<body>
+	<h1>{{TITLE}}</h1>
+	<div id="table-container"></div>
+
+	<script>
+		const vscode = acquireVsCodeApi();
+
+		const state = {
+			entries: []
+		};
+
+		function renderTable() {
+			const container = document.getElementById('table-container');
+			container.innerHTML = '';
+
+			if (!state.entries.length) {
+				const empty = document.createElement('div');
+				empty.className = 'empty';
+				empty.textContent = 'No log entries for this date.';
+				container.appendChild(empty);
+				return;
+			}
+
+			const table = document.createElement('table');
+			const thead = document.createElement('thead');
+			thead.innerHTML = `
+				<tr>
+					<th>Message</th>
+					<th style="width: 80px;">Count</th>
+					<th style="width: 100px;">Resolved</th>
+				</tr>
+			`;
+			table.appendChild(thead);
+
+			const tbody = document.createElement('tbody');
+			for (const entry of state.entries) {
+				const tr = document.createElement('tr');
+
+				const messageCell = document.createElement('td');
+				messageCell.className = 'error-message';
+				injectLinks(messageCell, entry.message);
+				tr.appendChild(messageCell);
+
+				const countCell = document.createElement('td');
+				countCell.innerHTML = `<span class="badge">${entry.count}</span>`;
+				tr.appendChild(countCell);
+
+				const resolvedCell = document.createElement('td');
+				const checkbox = document.createElement('input');
+				checkbox.type = 'checkbox';
+				checkbox.checked = !!entry.resolved;
+				checkbox.addEventListener('change', () => {
+					vscode.postMessage({
+						type: 'toggleResolved',
+						key: entry.key,
+						resolved: checkbox.checked
+					});
+				});
+				resolvedCell.appendChild(checkbox);
+				tr.appendChild(resolvedCell);
+
+				tbody.appendChild(tr);
+			}
+
+			table.appendChild(tbody);
+			container.appendChild(table);
+		}
+
+		window.addEventListener('message', event => {
+			const message = event.data;
+			if (!message) {
+				return;
+			}
+
+			switch (message.type) {
+				case 'logData':
+					state.entries = message.payload.entries || [];
+					renderTable();
+					break;
+				default:
+			}
+		});
+
+		function injectLinks(container, message) {
+			if (!message) {
+				container.textContent = '';
+				return;
+			}
+			const pattern = /(script[^\s:]*\.ts(?::\d+)?)/gi;
+			let lastIndex = 0;
+			let match;
+			while ((match = pattern.exec(message)) !== null) {
+				const [fullMatch] = match;
+				if (match.index > lastIndex) {
+					const plainText = message.slice(lastIndex, match.index);
+					if (plainText) {
+						container.appendChild(document.createTextNode(plainText));
+					}
+				}
+				const button = document.createElement('button');
+				button.className = 'link';
+				button.type = 'button';
+				button.textContent = fullMatch;
+				button.addEventListener('click', () => {
+					vscode.postMessage({
+						type: 'openReference',
+						reference: fullMatch
+					});
+				});
+				container.appendChild(button);
+				lastIndex = match.index + fullMatch.length;
+			}
+			if (lastIndex < message.length) {
+				container.appendChild(document.createTextNode(message.slice(lastIndex)));
+			}
+		}
+	</script>
+</body>
+</html>

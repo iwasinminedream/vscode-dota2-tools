@@ -5,9 +5,10 @@ import { ErrorLogTreeProvider } from '../TreeDataProvider/errorLogTree';
 let provider: ErrorLogTreeProvider | undefined;
 let configListenerId: number | undefined;
 
+
 export async function errorLogsInit(context: vscode.ExtensionContext) {
 	if (!provider) {
-		provider = new ErrorLogTreeProvider();
+		provider = new ErrorLogTreeProvider(context);
 		vscode.window.registerTreeDataProvider('errorLogExplorer', provider);
 		context.subscriptions.push(provider);
 	}
@@ -16,7 +17,7 @@ export async function errorLogsInit(context: vscode.ExtensionContext) {
 
 	if (configListenerId === undefined) {
 		configListenerId = EventManager.listenToEvent<vscode.ConfigurationChangeEvent>(EventType.EVENT_ON_DID_CHANGE_CONFIGURATION, (event) => {
-			if (event.affectsConfiguration('dota2-tools.A9.LogServer')) {
+			if (event.affectsConfiguration('dota2-tools.A9.LogServer') || event.affectsConfiguration('dota2-tools.A9.recentDays')) {
 				provider?.refresh();
 			}
 		});
