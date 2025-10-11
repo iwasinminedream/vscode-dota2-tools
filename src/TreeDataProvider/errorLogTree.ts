@@ -28,11 +28,35 @@ interface AggregatedLocation {
 	line: number;
 }
 
+interface LogApiItem {
+	id: number;
+	project: string;
+	error_level: string;
+	brief: string;
+	count: number;
+	uids: string;
+	origin_message: string;
+	fix_status: number;
+	first_time: number;
+	last_time: number;
+}
+
+interface LogApiResponse {
+	code?: number;
+	data?: LogApiItem[];
+}
+
 interface AggregatedLogEntry {
+	id: number;
 	key: string;
 	message: string;
 	count: number;
 	resolved: boolean;
+	origin: string;
+	uids: string;
+	firstTime: number;
+	lastTime: number;
+	summary?: string;
 }
 
 export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, vscode.Disposable {
@@ -134,6 +158,22 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		return Math.min(parsed, 90);
 	}
 
+	private computeDateRange(label: string): { start: number; end: number; } {
+		const parsed = Date.parse(`${label}T00:00:00Z`);
+		if (!Number.isFinite(parsed)) {
+			const now = new Date();
+			const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			const start = Math.floor(startOfDay.getTime() / 1000);
+			return { start, end: start + 86400 - 1 };
+		}
+		const start = Math.floor(parsed / 1000);
+		return { start, end: start + 86400 - 1 };
+	}
+
+	private createResolvedKey(category: LogCategoryKey, id: number): string {
+		return `${category}:${id}`;
+	}
+
 	private async openLog(payload: LogCommandPayload) {
 		const config = this.getLogConfig();
 		const baseUrl = config?.[payload.category];
@@ -142,23 +182,26 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			return;
 		}
 
-		const dateParam = payload.label.replace(/-/g, '');
+		const { start, end } = this.computeDateRange(payload.label);
 		let url: string;
 		try {
 			const urlObj = new URL(baseUrl);
-			urlObj.searchParams.set('date', dateParam);
+			urlObj.searchParams.set('start_time', String(start));
+			urlObj.searchParams.set('end_time', String(end));
+			urlObj.searchParams.set('fix_status', '-1');
 			url = urlObj.toString();
 		} catch (error) {
 			const hasQuery = baseUrl.includes('?');
 			const needsAmpersand = hasQuery && !baseUrl.endsWith('?') && !baseUrl.endsWith('&');
 			const separator = hasQuery ? (needsAmpersand ? '&' : '') : '?';
-			url = `${baseUrl}${separator}date=${encodeURIComponent(dateParam)}`;
+			const params = new URLSearchParams({ start_time: String(start), end_time: String(end), fix_status: '-1' }).toString();
+			url = `${baseUrl}${separator}${params}`;
 		}
 
 		await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: localize('errorLog.opening') }, async () => {
 			try {
-				const response = await axios.get<string>(url, { responseType: 'text' });
-				const aggregated = this.aggregateLogContent(payload, response.data);
+				const response = await axios.get<LogApiResponse>(url, { responseType: 'json' });
+				const aggregated = this.transformLogResponse(payload, response.data);
 				await this.renderWebview(payload, aggregated);
 			} catch (error) {
 				console.error('[ErrorLogTreeProvider] openLog failed', error);
@@ -167,29 +210,49 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		});
 	}
 
-	private aggregateLogContent(payload: LogCommandPayload, raw: string): AggregatedLogEntry[] {
-		const normalized = raw.replace(/\r\n/g, '\n');
-		const blocks = normalized.split(/\n(?=\d+\|)/);
-		const counter = new Map<string, number>();
-		for (const block of blocks) {
-			const trimmed = block.trim();
-			if (!trimmed) {
-				continue;
-			}
-			const withoutPrefix = trimmed.replace(/^\d+\|[^|]*\|/, '').trim();
-			if (!withoutPrefix) {
-				continue;
-			}
-			const message = withoutPrefix;
-			const current = counter.get(message) ?? 0;
-			counter.set(message, current + 1);
+	private transformLogResponse(payload: LogCommandPayload, response: LogApiResponse | undefined): AggregatedLogEntry[] {
+		if (!response) {
+			return [];
 		}
-
-		return Array.from(counter.entries()).map(([message, count]) => {
-			const key = `${payload.category}|${message}`;
-			const resolved = this.resolvedState.get(key) ?? false;
-			return { key, message, count, resolved };
-		}).sort((a, b) => b.count - a.count || a.message.localeCompare(b.message));
+		if (typeof response.code === 'number' && response.code !== 0) {
+			console.warn('[ErrorLogTreeProvider] API returned non-zero code', response.code);
+		}
+		const items = Array.isArray(response.data) ? response.data : [];
+		const result: AggregatedLogEntry[] = [];
+		for (const item of items) {
+			const id = Number(item.id);
+			if (!Number.isFinite(id)) {
+				continue;
+			}
+			const key = this.createResolvedKey(payload.category, id);
+			const resolvedState = this.resolvedState.get(key);
+			const originMessage = ((item.origin_message ?? item.brief ?? '') as string).trim();
+			const summaryMessage = ((item.brief ?? '') as string).trim();
+			const countValue = Number(item.count ?? 0);
+			const firstTimeValue = Number(item.first_time ?? 0);
+			const lastTimeValue = Number(item.last_time ?? 0);
+			result.push({
+				id,
+				key,
+				message: originMessage,
+				count: Number.isFinite(countValue) ? countValue : 0,
+				resolved: resolvedState ?? item.fix_status === 1,
+				origin: originMessage,
+				uids: item.uids ?? '',
+				firstTime: Number.isFinite(firstTimeValue) ? firstTimeValue : 0,
+				lastTime: Number.isFinite(lastTimeValue) ? lastTimeValue : 0,
+				summary: summaryMessage
+			});
+		}
+		return result.sort((a, b) => {
+			if (b.count !== a.count) {
+				return b.count - a.count;
+			}
+			if (b.lastTime !== a.lastTime) {
+				return b.lastTime - a.lastTime;
+			}
+			return (a.summary ?? a.message).localeCompare(b.summary ?? b.message);
+		});
 	}
 
 	private async renderWebview(payload: LogCommandPayload, entries: AggregatedLogEntry[]) {
@@ -199,6 +262,7 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			vscode.ViewColumn.Active,
 			{
 				enableScripts: true,
+				enableFindWidget: true,
 				retainContextWhenHidden: true,
 				localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'webview')]
 			}
@@ -209,33 +273,29 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			html.replace(/{{TITLE}}/g, `${localize(metaLabelKey(payload.category))} ${payload.label}`)
 		);
 
-		panel.webview.onDidReceiveMessage((message) => {
-			if (message?.type === 'toggleResolved') {
-				const { key, resolved } = message;
-				if (typeof key === 'string' && typeof resolved === 'boolean') {
-					this.resolvedState.set(key, resolved);
+		panel.webview.onDidReceiveMessage(async (message) => {
+			try {
+				if (message?.type === 'toggleResolved') {
+					const { id, resolved } = message;
+					if (typeof id === 'number' && typeof resolved === 'boolean') {
+						await this.handleToggleResolved(panel, payload, id, resolved);
+					}
+				} else if (message?.type === 'openReference') {
+					const { reference } = message;
+					if (typeof reference === 'string' && reference.trim().length > 0) {
+						await this.handleReference(reference);
+					}
+				} else if (message?.type === 'openLocation') {
+					const { location, reference } = message;
+					if (location && typeof location.rawPath === 'string' && typeof location.line === 'number') {
+						await this.tryOpenLocation(location);
+					} else if (typeof reference === 'string' && reference.trim().length > 0) {
+						await this.handleReference(reference);
+					}
 				}
-			} else if (message?.type === 'openReference') {
-				const { reference } = message;
-				if (typeof reference === 'string' && reference.trim().length > 0) {
-					this.handleReference(reference).catch((error: unknown) => {
-						console.error('[ErrorLogTreeProvider] openReference failed', error);
-						vscode.window.showErrorMessage(localize('errorLog.openFailed'));
-					});
-				}
-			} else if (message?.type === 'openLocation') {
-				const { location, reference } = message;
-				if (location && typeof location.rawPath === 'string' && typeof location.line === 'number') {
-					this.tryOpenLocation(location).catch((error: unknown) => {
-						console.error('[ErrorLogTreeProvider] openLocation failed', error);
-						vscode.window.showErrorMessage(localize('errorLog.openFailed'));
-					});
-				} else if (typeof reference === 'string' && reference.trim().length > 0) {
-					this.handleReference(reference).catch((error: unknown) => {
-						console.error('[ErrorLogTreeProvider] openReference failed', error);
-						vscode.window.showErrorMessage(localize('errorLog.openFailed'));
-					});
-				}
+			} catch (error) {
+				console.error('[ErrorLogTreeProvider] message handling failed', error);
+				vscode.window.showErrorMessage(localize('errorLog.openFailed'));
 			}
 		});
 
@@ -262,6 +322,69 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			return;
 		}
 		await this.tryOpenLocation(location);
+	}
+
+	private async handleToggleResolved(panel: vscode.WebviewPanel, payload: LogCommandPayload, id: number, resolved: boolean): Promise<void> {
+		const key = this.createResolvedKey(payload.category, id);
+		if (!resolved) {
+			this.resolvedState.set(key, false);
+			await panel.webview.postMessage({ type: 'resolveStatusUpdate', id, resolved: false, success: true });
+			return;
+		}
+
+		try {
+			await this.markEntriesAsFixed(payload.category, [id]);
+			this.resolvedState.set(key, true);
+			await panel.webview.postMessage({ type: 'resolveStatusUpdate', id, resolved: true, success: true });
+		} catch (error) {
+			console.error('[ErrorLogTreeProvider] markEntriesAsFixed failed', error);
+			this.resolvedState.set(key, false);
+			await panel.webview.postMessage({ type: 'resolveStatusUpdate', id, resolved: false, success: false });
+			vscode.window.showErrorMessage(localize('errorLog.fixFailed'));
+		}
+	}
+
+	private async markEntriesAsFixed(category: LogCategoryKey, ids: number[]): Promise<void> {
+		if (!ids.length) {
+			return;
+		}
+		const config = this.getLogConfig();
+		const baseUrl = config?.[category];
+		if (!baseUrl) {
+			throw new Error('Missing log server configuration for category');
+		}
+		const fixUrl = this.buildFixUrl(baseUrl);
+		await axios.post(fixUrl, { ids }, { headers: { 'Content-Type': 'application/json' } });
+	}
+
+	private buildFixUrl(baseUrl: string): string {
+		try {
+			const url = new URL(baseUrl);
+			const segments = url.pathname.split('/').filter(Boolean);
+			if (segments.length >= 2) {
+				segments[segments.length - 1] = 'fix';
+			} else if (segments.length === 1) {
+				segments.push('fix');
+			} else {
+				segments.push('log', 'fix');
+			}
+			url.pathname = `/${segments.join('/')}`;
+			url.search = '';
+			url.hash = '';
+			return url.toString();
+		} catch {
+			const [prefix] = baseUrl.split('?');
+			if (prefix.endsWith('/log/get')) {
+				return `${prefix.slice(0, -3)}fix`;
+			}
+			if (/\/log\/[^/]+$/i.test(prefix)) {
+				return prefix.replace(/\/log\/[^/]+$/i, '/log/fix');
+			}
+			if (prefix.endsWith('/get')) {
+				return `${prefix.slice(0, -3)}fix`;
+			}
+			return `${prefix}/log/fix`;
+		}
 	}
 
 	private extractLocation(reference: string): AggregatedLocation | undefined {

@@ -117,6 +117,7 @@
 	"errorLog.opening": "日志加载中...",
 	"errorLog.openFailed": "加载日志失败",
 	"errorLog.locationNotFound": "无法定位文件:",
+	"errorLog.fixFailed": "标记修复失败。",
 	"dota2tools.logs.refreshCategory": "刷新日期",
 	"dota2-tools.A9.recentDays": "日志分类显示的最近天数",
 	"dota2-tools.dota2_install_path": "Dota2安装目录",

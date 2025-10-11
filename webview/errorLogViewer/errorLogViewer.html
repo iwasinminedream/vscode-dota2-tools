@@ -5,6 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>{{TITLE}}</title>
 	<style>
+		:root {
+			--error-log-border-color: rgba(192, 192, 192, 0.45);
+		}
 		body {
 			font-family: var(--vscode-font-family, sans-serif);
 			margin: 0;
@@ -22,7 +25,8 @@
 		}
 		th,
 		td {
-			border-bottom: 1px solid var(--vscode-editorGroup-border, #333);
+			border-bottom: 1px solid var(--error-log-border-color);
+			border-bottom-color: color-mix(in srgb, var(--vscode-editorGroup-border, rgba(192, 192, 192, 0.15)) 35%, #ffffff 35%);
 			padding: 8px;
 			vertical-align: top;
 		}
@@ -30,8 +34,37 @@
 			text-align: left;
 			font-weight: 600;
 		}
+		th.sortable {
+			cursor: pointer;
+			user-select: none;
+		}
+		th.sortable:hover {
+			color: var(--vscode-textLink-foreground, #3794ff);
+		}
+		th.sortable .sort-indicator {
+			margin-left: 4px;
+			font-size: 12px;
+			opacity: 0.6;
+		}
+		th.sortable.active {
+			color: var(--vscode-textLink-activeForeground, var(--vscode-textLink-foreground, #3794ff));
+		}
+		th.sortable.active .sort-indicator {
+			opacity: 1;
+		}
 		.error-message {
 			white-space: pre-wrap;
+		}
+		th.count-column,
+		th.resolve-column,
+		td.count-cell,
+		td.resolve-cell {
+			text-align: center;
+		}
+		td.time-cell {
+			white-space: nowrap;
+			font-size: 12px;
+			opacity: 0.85;
 		}
 		.badge {
 			display: inline-flex;
@@ -54,6 +87,14 @@
 		button.link:hover {
 			text-decoration: none;
 		}
+		.meta {
+			margin-top: 6px;
+			font-size: 12px;
+			opacity: 0.7;
+		}
+		.resolved-checkbox {
+			transform: scale(1.1);
+		}
 		.empty {
 			margin-top: 16px;
 			opacity: 0.7;
@@ -68,7 +109,10 @@
 		const vscode = acquireVsCodeApi();
 
 		const state = {
-			entries: []
+			entries: [],
+			pending: new Set(),
+			date: '',
+			sort: { key: 'count', direction: 'desc' }
 		};
 
 		function renderTable() {
@@ -88,34 +132,70 @@
 			thead.innerHTML = `
 				<tr>
 					<th>Message</th>
-					<th style="width: 80px;">Count</th>
-					<th style="width: 100px;">Resolved</th>
+					<th class="sortable count-column" data-sort-key="count" style="width: 80px;">Count<span class="sort-indicator"></span></th>
+					<th style="width: 160px;">First Time</th>
+					<th style="width: 160px;">Last Time</th>
+					<th class="sortable resolve-column" data-sort-key="resolved" style="width: 120px;">Resolved<span class="sort-indicator"></span></th>
 				</tr>
 			`;
 			table.appendChild(thead);
+			bindSortHandlers(thead);
+			updateSortIndicators(thead);
 
 			const tbody = document.createElement('tbody');
-			for (const entry of state.entries) {
+			const sortedEntries = sortEntries(state.entries);
+			for (const entry of sortedEntries) {
 				const tr = document.createElement('tr');
+				tr.dataset.entryId = String(entry.id);
 
 				const messageCell = document.createElement('td');
 				messageCell.className = 'error-message';
-				injectLinks(messageCell, entry.message);
+				if (entry.message) {
+					injectLinks(messageCell, entry.message);
+				} else {
+					messageCell.textContent = '(no trace)';
+				}
+				if (entry.uids) {
+					const meta = document.createElement('div');
+					meta.className = 'meta';
+					meta.textContent = `UIDs: ${entry.uids}`;
+					messageCell.appendChild(meta);
+				}
 				tr.appendChild(messageCell);
 
 				const countCell = document.createElement('td');
+				countCell.className = 'count-cell';
 				countCell.innerHTML = `<span class="badge">${entry.count}</span>`;
 				tr.appendChild(countCell);
 
+				const firstCell = document.createElement('td');
+				firstCell.className = 'time-cell';
+				firstCell.textContent = formatTimestamp(entry.firstTime);
+				tr.appendChild(firstCell);
+
+				const lastCell = document.createElement('td');
+				lastCell.className = 'time-cell';
+				lastCell.textContent = formatTimestamp(entry.lastTime);
+				tr.appendChild(lastCell);
+
 				const resolvedCell = document.createElement('td');
+				resolvedCell.className = 'resolve-cell';
 				const checkbox = document.createElement('input');
 				checkbox.type = 'checkbox';
+				checkbox.className = 'resolved-checkbox';
 				checkbox.checked = !!entry.resolved;
+				checkbox.disabled = !!entry.resolved || state.pending.has(entry.id);
 				checkbox.addEventListener('change', () => {
+					if (!checkbox.checked) {
+						checkbox.checked = false;
+						return;
+					}
+					checkbox.disabled = true;
+					state.pending.add(entry.id);
 					vscode.postMessage({
 						type: 'toggleResolved',
-						key: entry.key,
-						resolved: checkbox.checked
+						id: entry.id,
+						resolved: true
 					});
 				});
 				resolvedCell.appendChild(checkbox);
@@ -137,11 +217,100 @@
 			switch (message.type) {
 				case 'logData':
 					state.entries = message.payload.entries || [];
+					state.pending.clear();
+					state.date = message.payload.date || '';
 					renderTable();
+					break;
+				case 'resolveStatusUpdate':
+					handleResolveStatus(message);
 					break;
 				default:
 			}
 		});
+
+		function bindSortHandlers(thead) {
+			thead.querySelectorAll('th.sortable').forEach(th => {
+				th.addEventListener('click', () => {
+					const key = th.dataset.sortKey;
+					if (!key) {
+						return;
+					}
+					if (state.sort.key === key) {
+						state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
+					} else {
+						state.sort.key = key;
+						state.sort.direction = key === 'count' ? 'desc' : 'asc';
+					}
+					renderTable();
+				});
+			});
+		}
+
+		function updateSortIndicators(thead) {
+			thead.querySelectorAll('th.sortable').forEach(th => {
+				const key = th.dataset.sortKey;
+				const indicator = th.querySelector('.sort-indicator');
+				if (!key || !indicator) {
+					return;
+				}
+				if (state.sort.key === key) {
+					th.classList.add('active');
+					indicator.textContent = state.sort.direction === 'asc' ? '↑' : '↓';
+				} else {
+					th.classList.remove('active');
+					indicator.textContent = '';
+				}
+			});
+		}
+
+		function sortEntries(entries) {
+			const sorted = [...entries];
+			const { key, direction } = state.sort;
+			const factor = direction === 'asc' ? 1 : -1;
+			sorted.sort((a, b) => {
+				if (key === 'count') {
+					const diff = (a.count - b.count) * factor;
+					if (diff !== 0) {
+						return diff;
+					}
+					return (b.lastTime - a.lastTime) || (b.count - a.count);
+				}
+				if (key === 'resolved') {
+					const resolvedDiff = (Number(a.resolved) - Number(b.resolved)) * factor;
+					if (resolvedDiff !== 0) {
+						return resolvedDiff;
+					}
+					return (b.lastTime - a.lastTime) || (b.count - a.count);
+				}
+				return (b.lastTime - a.lastTime) || (b.count - a.count);
+			});
+			return sorted;
+		}
+
+		function handleResolveStatus(message) {
+			const { id, resolved, success } = message;
+			if (typeof id !== 'number') {
+				return;
+			}
+			state.pending.delete(id);
+			const entry = state.entries.find(item => item.id === id);
+			if (entry) {
+				entry.resolved = success ? !!resolved : false;
+			}
+			renderTable();
+		}
+
+		function formatTimestamp(epochSeconds) {
+			const numeric = Number(epochSeconds);
+			if (!numeric || !Number.isFinite(numeric)) {
+				return '-';
+			}
+			const date = new Date(numeric * 1000);
+			if (Number.isNaN(date.getTime())) {
+				return '-';
+			}
+			return date.toLocaleString();
+		}
 
 		function injectLinks(container, message) {
 			if (!message) {
