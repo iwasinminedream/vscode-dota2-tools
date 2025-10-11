@@ -64,6 +64,8 @@ interface DateProgress {
 	total: number;
 }
 
+type TreeViewWithBadge<T> = vscode.TreeView<T> & { badge?: { value: number; tooltip: string; }; };
+
 export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, vscode.Disposable {
 	private readonly _onDidChangeTreeData = new vscode.EventEmitter<LogNode | undefined>();
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -74,6 +76,7 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 	private readonly entriesCache = new Map<string, AggregatedLogEntry[]>();
 	private readonly progressRequests = new Map<string, Promise<void>>();
 	private readonly resolvedCompleteIcon: { light: vscode.Uri; dark: vscode.Uri; };
+	private treeView: TreeViewWithBadge<LogNode> | undefined;
 
 	constructor(private readonly context: vscode.ExtensionContext) {
 		this.disposables.push(
@@ -88,6 +91,36 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		};
 	}
 
+	attachTreeView(treeView: vscode.TreeView<LogNode>): void {
+		this.treeView = treeView as TreeViewWithBadge<LogNode>;
+		this.updateTreeBadge();
+	}
+
+	prefetchYesterdayCounts(): void {
+		const primaryDate = this.getPrimaryDate();
+		if (!primaryDate) {
+			this.updateTreeBadge();
+			return;
+		}
+		const config = this.getLogConfig();
+		if (!config) {
+			this.updateTreeBadge();
+			return;
+		}
+		let requested = false;
+		for (const category of Object.keys(CATEGORY_META) as LogCategoryKey[]) {
+			const baseUrl = config[category];
+			if (!baseUrl) {
+				continue;
+			}
+			this.ensureProgressPrefetch(category, primaryDate, baseUrl);
+			requested = true;
+		}
+		if (!requested) {
+			this.updateTreeBadge();
+		}
+	}
+
 	dispose(): void {
 		while (this.disposables.length > 0) {
 			this.disposables.pop()?.dispose();
@@ -95,7 +128,12 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 	}
 
 	refresh(): void {
+		this.progressCache.clear();
+		this.entriesCache.clear();
+		this.progressRequests.clear();
+		this.updateTreeBadge();
 		this._onDidChangeTreeData.fire(undefined);
+		this.prefetchYesterdayCounts();
 	}
 
 	getTreeItem(element: LogNode): vscode.TreeItem {
@@ -258,6 +296,7 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			})
 			.finally(() => {
 				this.progressRequests.delete(key);
+				this.updateTreeBadge();
 			});
 		this.progressRequests.set(key, request);
 	}
@@ -319,6 +358,42 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		}
 		target.resolved = resolved;
 		this.updateProgressFromEntries(payload.category, payload.label, cachedEntries);
+	}
+
+	private updateTreeBadge(): void {
+		if (!this.treeView) {
+			return;
+		}
+		const primaryDate = this.getPrimaryDate();
+		if (!primaryDate) {
+			this.treeView.badge = undefined;
+			return;
+		}
+		let hasProgress = false;
+		let unresolvedTotal = 0;
+		for (const [key, progress] of this.progressCache.entries()) {
+			const [, date] = key.split(':');
+			if (date !== primaryDate) {
+				continue;
+			}
+			hasProgress = true;
+			const unresolved = progress.total - progress.resolved;
+			unresolvedTotal += Math.max(unresolved, 0);
+		}
+		if (!hasProgress) {
+			this.treeView.badge = undefined;
+			return;
+		}
+		const tooltip = `${localize('errorLog.yesterdayBadgeTooltip')} ${unresolvedTotal}`.trim();
+		this.treeView.badge = {
+			value: unresolvedTotal,
+			tooltip
+		};
+	}
+
+	private getPrimaryDate(): string | undefined {
+		const dates = this.getRecentDates();
+		return dates.length > 0 ? dates[0] : undefined;
 	}
 
 	private transformLogResponse(payload: LogCommandPayload, response: LogApiResponse | undefined): AggregatedLogEntry[] {
@@ -641,7 +716,7 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 	}
 }
 
-class LogNode extends vscode.TreeItem {
+export class LogNode extends vscode.TreeItem {
 	constructor(
 		public readonly kind: 'category' | 'log' | 'message',
 		public readonly category: LogCategoryKey | undefined,
