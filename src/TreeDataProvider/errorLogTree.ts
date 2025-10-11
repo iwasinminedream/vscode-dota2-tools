@@ -59,12 +59,21 @@ interface AggregatedLogEntry {
 	summary?: string;
 }
 
+interface DateProgress {
+	resolved: number;
+	total: number;
+}
+
 export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, vscode.Disposable {
 	private readonly _onDidChangeTreeData = new vscode.EventEmitter<LogNode | undefined>();
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
 	private readonly disposables: vscode.Disposable[] = [];
 	private readonly resolvedState = new Map<string, boolean>();
+	private readonly progressCache = new Map<string, DateProgress>();
+	private readonly entriesCache = new Map<string, AggregatedLogEntry[]>();
+	private readonly progressRequests = new Map<string, Promise<void>>();
+	private readonly resolvedCompleteIcon: { light: vscode.Uri; dark: vscode.Uri; };
 
 	constructor(private readonly context: vscode.ExtensionContext) {
 		this.disposables.push(
@@ -73,6 +82,10 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		this.disposables.push(
 			vscode.commands.registerCommand('dota2tools.logs.refreshCategory', (node: LogNode | undefined) => this.refreshCategory(node))
 		);
+		this.resolvedCompleteIcon = {
+			light: vscode.Uri.joinPath(context.extensionUri, 'images', 'check_green.svg'),
+			dark: vscode.Uri.joinPath(context.extensionUri, 'images', 'check_green.svg')
+		};
 	}
 
 	dispose(): void {
@@ -112,11 +125,20 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 				return [messageNode];
 			}
 			const dates = this.getRecentDates();
+			if (dates.length > 0) {
+				this.ensureProgressPrefetch(element.category!, dates[0], baseUrl);
+			}
 			return dates.map((date) => {
 				const node = new LogNode('log', element.category!, date, date, vscode.TreeItemCollapsibleState.None);
-				node.description = localize(metaLabelKey(element.category!));
+				node.description = this.buildDateDescription(element.category!, date);
 				node.tooltip = `${date}.txt`;
-				node.iconPath = new vscode.ThemeIcon('file-text');
+				const progressKey = this.progressKey(element.category!, date);
+				const progress = this.progressCache.get(progressKey);
+				if (progress && progress.total > 0 && progress.resolved >= progress.total) {
+					node.iconPath = this.resolvedCompleteIcon;
+				} else {
+					node.iconPath = new vscode.ThemeIcon('file-text');
+				}
 				node.command = {
 					command: 'dota2tools.logs.open',
 					title: localize('dota2tools.logs.open'),
@@ -140,7 +162,7 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		const days = this.getRecentDayCount();
 		for (let i = 0; i < days; i++) {
 			const date = new Date(now);
-			date.setDate(now.getDate() - i);
+			date.setDate(now.getDate() - (i + 1));
 			result.push(formatter.format(date));
 		}
 		return result;
@@ -182,6 +204,19 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			return;
 		}
 
+		await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: localize('errorLog.opening') }, async () => {
+			try {
+				const entries = await this.fetchLogEntries(baseUrl, payload);
+				this.storeEntries(payload, entries);
+				await this.renderWebview(payload, entries);
+			} catch (error) {
+				console.error('[ErrorLogTreeProvider] openLog failed', error);
+				vscode.window.showErrorMessage(localize('errorLog.openFailed'));
+			}
+		});
+	}
+
+	private async fetchLogEntries(baseUrl: string, payload: LogCommandPayload): Promise<AggregatedLogEntry[]> {
 		const { start, end } = this.computeDateRange(payload.label);
 		let url: string;
 		try {
@@ -197,17 +232,93 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 			const params = new URLSearchParams({ start_time: String(start), end_time: String(end), fix_status: '-1' }).toString();
 			url = `${baseUrl}${separator}${params}`;
 		}
+		const response = await axios.get<LogApiResponse>(url, { responseType: 'json' });
+		return this.transformLogResponse(payload, response.data);
+	}
 
-		await vscode.window.withProgress({ location: vscode.ProgressLocation.Window, title: localize('errorLog.opening') }, async () => {
-			try {
-				const response = await axios.get<LogApiResponse>(url, { responseType: 'json' });
-				const aggregated = this.transformLogResponse(payload, response.data);
-				await this.renderWebview(payload, aggregated);
-			} catch (error) {
-				console.error('[ErrorLogTreeProvider] openLog failed', error);
-				vscode.window.showErrorMessage(localize('errorLog.openFailed'));
+	private storeEntries(payload: LogCommandPayload, entries: AggregatedLogEntry[]): void {
+		const key = this.progressKey(payload.category, payload.label);
+		const clonedEntries = entries.map((entry) => ({ ...entry }));
+		this.entriesCache.set(key, clonedEntries);
+		this.updateProgressFromEntries(payload.category, payload.label, clonedEntries);
+	}
+
+	private ensureProgressPrefetch(category: LogCategoryKey, date: string, baseUrl: string): void {
+		const key = this.progressKey(category, date);
+		if (this.progressCache.has(key) || this.progressRequests.has(key)) {
+			return;
+		}
+		const payload: LogCommandPayload = { category, label: date };
+		const request = this.fetchLogEntries(baseUrl, payload)
+			.then((entries) => {
+				this.storeEntries(payload, entries);
+			})
+			.catch((error) => {
+				console.warn('[ErrorLogTreeProvider] ensureProgressPrefetch failed', error);
+			})
+			.finally(() => {
+				this.progressRequests.delete(key);
+			});
+		this.progressRequests.set(key, request);
+	}
+
+	private buildDateDescription(category: LogCategoryKey, date: string): string {
+		const baseLabel = localize(metaLabelKey(category));
+		const key = this.progressKey(category, date);
+		const progress = this.progressCache.get(key);
+		if (!progress) {
+			return baseLabel;
+		}
+		return `${baseLabel} ${this.formatProgress(progress)}`;
+	}
+
+	private formatProgress(progress: DateProgress): string {
+		return `[${progress.resolved}/${progress.total}]`;
+	}
+
+	private updateProgressFromEntries(category: LogCategoryKey, date: string, entries: AggregatedLogEntry[]): void {
+		const key = this.progressKey(category, date);
+		const progress = this.calculateProgress(entries);
+		const previous = this.progressCache.get(key);
+		const changed = !previous || previous.resolved !== progress.resolved || previous.total !== progress.total;
+		this.progressCache.set(key, progress);
+		if (changed) {
+			this._onDidChangeTreeData.fire(undefined);
+		}
+	}
+
+	private calculateProgress(entries: AggregatedLogEntry[]): DateProgress {
+		let total = 0;
+		let resolved = 0;
+		for (const entry of entries) {
+			const count = Number.isFinite(entry.count) ? entry.count : 0;
+			total += count;
+			if (entry.resolved) {
+				resolved += count;
 			}
-		});
+		}
+		return { resolved, total };
+	}
+
+	private progressKey(category: LogCategoryKey, date: string): string {
+		return `${category}:${date}`;
+	}
+
+	private updateCachedEntryResolution(payload: LogCommandPayload, id: number, resolved: boolean): void {
+		const key = this.progressKey(payload.category, payload.label);
+		const cachedEntries = this.entriesCache.get(key);
+		if (!cachedEntries) {
+			return;
+		}
+		const target = cachedEntries.find((entry) => entry.id === id);
+		if (!target) {
+			return;
+		}
+		if (target.resolved === resolved) {
+			return;
+		}
+		target.resolved = resolved;
+		this.updateProgressFromEntries(payload.category, payload.label, cachedEntries);
 	}
 
 	private transformLogResponse(payload: LogCommandPayload, response: LogApiResponse | undefined): AggregatedLogEntry[] {
@@ -328,6 +439,7 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		const key = this.createResolvedKey(payload.category, id);
 		if (!resolved) {
 			this.resolvedState.set(key, false);
+			this.updateCachedEntryResolution(payload, id, false);
 			await panel.webview.postMessage({ type: 'resolveStatusUpdate', id, resolved: false, success: true });
 			return;
 		}
@@ -335,10 +447,12 @@ export class ErrorLogTreeProvider implements vscode.TreeDataProvider<LogNode>, v
 		try {
 			await this.markEntriesAsFixed(payload.category, [id]);
 			this.resolvedState.set(key, true);
+			this.updateCachedEntryResolution(payload, id, true);
 			await panel.webview.postMessage({ type: 'resolveStatusUpdate', id, resolved: true, success: true });
 		} catch (error) {
 			console.error('[ErrorLogTreeProvider] markEntriesAsFixed failed', error);
 			this.resolvedState.set(key, false);
+			this.updateCachedEntryResolution(payload, id, false);
 			await panel.webview.postMessage({ type: 'resolveStatusUpdate', id, resolved: false, success: false });
 			vscode.window.showErrorMessage(localize('errorLog.fixFailed'));
 		}
