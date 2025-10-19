@@ -1,0 +1,4756 @@
+"KeyValue"
+{
+	"ion_shell_d"
+	{
+		"Rarity"								"0"
+		"Note"									"离子外壳"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/ion_shell"
+		"AbilityTextureName"					"dark_seer_ion_shell"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"ion_shell"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"60"
+				"_spell_power"					"1.5"
+			}
+			"radius"							"600"
+			"duration"							"8"
+		}
+	}
+	"aphotic_shield_d"
+	{
+		"Rarity"								"0"
+		"Note"									"无光之盾"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/aphotic_shield"
+		"AbilityTextureName"					"abaddon_aphotic_shield"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"aphotic_shield"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"6"
+			}
+			"radius"							"600"
+			"duration"							"8"
+			"shield"
+			{
+				"value"							"500"
+				"_health"						"0.3"
+			}
+		}
+	}
+	"lucky_shot_d"
+	{
+		"Rarity"								"0"
+		"Note"									"幸运一击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/lucky_shot"
+		"AbilityTextureName"					"pangolier_lucky_shot"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"lucky_shot"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"chance"							"15"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"4"
+			}
+			"duration"							"1.5"
+		}
+	}
+	"phantom_edge_d"
+	{
+		"Rarity"								"0"
+		"Note"									"聚形散气"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/phantom_edge"
+		"AbilityTextureName"					"phantom_lancer_phantom_edge"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"phantom_edge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"400"
+				"_attack_damage"				"4"
+			}
+			"duration"							"5"
+			"health_regen_pct"					"5"
+		}
+	}
+	"echo_stomp_d"
+	{
+		"Rarity"								"0"
+		"Note"									"回音重踏"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/echo_stomp"
+		"AbilityTextureName"					"elder_titan_echo_stomp"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"echo_stomp"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"500"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"1200"
+				"_all"							"5"
+			}
+			"radius"							"500"
+			"duration"							"3"
+		}
+	}
+	"whirling_death_d"
+	{
+		"Rarity"								"0"
+		"Note"									"死亡旋风"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/whirling_death"
+		"AbilityTextureName"					"shredder_whirling_death"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"whirling_death"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"900"
+				"_health"						"0.6"
+			}
+			"radius"							"300"
+			"threshold"							"10"
+		}
+	}
+	"decay_d"
+	{
+		"Rarity"								"0"
+		"Note"									"腐朽"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/decay"
+		"AbilityTextureName"					"undying_decay"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"decay"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_str"							"3"
+				"_health"						"1"
+			}
+			"radius"							"350"
+			"str_gain"							"120"
+			"duration"							"60"
+		}
+	}
+	"anchor_smash_d"
+	{
+		"Rarity"								"0"
+		"Note"									"锚击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/anchor_smash"
+		"AbilityTextureName"					"tidehunter_anchor_smash"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"anchor_smash"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"350"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"3000"
+				"_str"							"18"
+			}
+			"radius"							"350"
+			"attack_reduce_pct"					"20"
+			"duration"							"6"
+		}
+	}
+	"burning_spear_d"
+	{
+		"Rarity"								"0"
+		"Note"									"沸血之矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/burning_spear"
+		"AbilityTextureName"					"huskar_burning_spear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"burning_spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"200"
+				"_str"							"0.5"
+			}
+			"duration"							"3"
+			"health_cost_pct"
+			{
+				"value"							"10"
+				"_health"						"0.01"
+			}
+		}
+	}
+	"lucent_beam_d"
+	{
+		"Rarity"								"0"
+		"Note"									"月光"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/lucent_beam"
+		"AbilityTextureName"					"luna_lucent_beam"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"lucent_beam"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"2.5"
+			}
+			"stun_duration"						"0.3"
+			"chance"							"20"
+		}
+	}
+	"fan_of_knives_d"
+	{
+		"Rarity"								"0"
+		"Note"									"刀阵旋风"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/fan_of_knives"
+		"AbilityTextureName"					"phantom_assassin/persona/phantom_assassin_fan_of_knives_persona1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"fan_of_knives"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"550"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"1100"
+				"_attack_damage"				"11"
+			}
+			"radius"							"550"
+		}
+	}
+	"shadowraze_d"
+	{
+		"Rarity"								"0"
+		"Note"									"毁灭阴影"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shadowraze"
+		"AbilityTextureName"					"nevermore_shadowraze2"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shadowraze"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"1.5"
+			}
+			"radius"							"300"
+			"count"								"3"
+			"damage_pct"						"30"
+			"duration"							"15"
+		}
+	}
+	"frost_nova_d"
+	{
+		"Rarity"								"0"
+		"Note"									"寒霜爆发"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/frost_nova"
+		"AbilityTextureName"					"lich_frost_nova"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"frost_nova"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"400"
+				"_spell_power"					"2"
+			}
+			"radius"							"300"
+			"chance"							"20"
+			"chill"								"5"
+		}
+	}
+	"split_earth_d"
+	{
+		"Rarity"								"0"
+		"Note"									"撕裂大地"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/split_earth"
+		"AbilityTextureName"					"leshrac_split_earth"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"split_earth"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS | DOTA_UNIT_TARGET_TREE"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"1500"
+				"_spell_power"					"12"
+			}
+			"radius"							"300"
+			"stun_duration"						"2"
+		}
+	}
+	"death_pulse_d"
+	{
+		"Rarity"								"0"
+		"Note"									"死亡脉冲"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/death_pulse"
+		"AbilityTextureName"					"necrolyte_death_pulse"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"death_pulse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCooldown"						"7"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"3"
+			}
+			"radius"							"600"
+			"heal_pct"							"10"
+		}
+	}
+	"plague_ward_d"
+	{
+		"Rarity"								"0"
+		"Note"									"蛇棒"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/plague_ward"
+		"AbilityTextureName"					"shadow_shaman_mass_serpent_ward"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"plague_ward"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"9"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"duration"							"12"
+			"attack"
+			{
+				"value"							"0"
+				"_attack_damage"				"0.6"
+				"_upgrade"						"1"
+			}
+			"attack_range"						"900"
+			"attack_rate"						"1.6"
+			"count"								"3"
+			"chance"							"15"
+			"duration_2"						"3"
+		}
+	}
+	"purification_d"
+	{
+		"Rarity"								"0"
+		"Note"									"洗礼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/purification"
+		"AbilityTextureName"					"omniknight_purification"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"purification"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"60"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"5"
+			}
+			"heal_pct"							"30"
+			"radius"							"300"
+		}
+	}
+	"dragon_blood_d"
+	{
+		"Rarity"								"0"
+		"Note"									"龙族血统"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/dragon_blood"
+		"AbilityTextureName"					"dragon_knight_dragon_blood"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"dragon_blood"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"8"
+		"AbilityValues"
+		{
+			"health_regen_pct"					"2"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+			"radius"							"600"
+		}
+	}
+	"arcane_research_d"
+	{
+		"Rarity"								"0"
+		"Note"									"奥术精研"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arcane_research"
+		"AbilityTextureName"					"rubick_null_field"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arcane_research"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityValues"
+		{
+			"sp_per_sec"
+			{
+				"value"							"4"
+				"_upgrade"						"1"
+			}
+			"crit_damage"						"20"
+			"crit_chance"						"5"
+		}
+	}
+	"physical_research_d"
+	{
+		"Rarity"								"0"
+		"Note"									"体术精研"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/physical_research"
+		"AbilityTextureName"					"rubick_null_field_offensive"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"physical_research"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityValues"
+		{
+			"attack_per_sec"
+			{
+				"value"							"4"
+				"_upgrade"						"1"
+			}
+			"crit_damage"						"20"
+			"crit_chance"						"5"
+		}
+	}
+	"grow_d"
+	{
+		"Rarity"								"0"
+		"Note"									"长大"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/grow"
+		"AbilityTextureName"					"tiny_grow"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"grow"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityValues"
+		{
+			"attribute_per_sec"
+			{
+				"value"							"2"
+				"_upgrade"						"1"
+			}
+			"attribute_per_kill"				"0.2"
+			"value1"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+			"value2"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+		}
+	}
+	"petrify_d"
+	{
+		"Rarity"								"0"
+		"Note"									"贪婪"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/petrify"
+		"AbilityTextureName"					"meepo_petrify"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"petrify"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityValues"
+		{
+			"gold_pct"
+			{
+				"value"							"30"
+				"_upgrade"						"1"
+			}
+			"drop_pct"
+			{
+				"value"							"20"
+				"_upgrade"						"1"
+			}
+		}
+	}
+	"ion_shell_c"
+	{
+		"Rarity"								"1"
+		"Note"									"离子外壳"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/ion_shell"
+		"AbilityTextureName"					"dark_seer_ion_shell"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"ion_shell"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"120"
+				"_spell_power"					"3"
+			}
+			"radius"							"600"
+			"duration"							"10"
+		}
+	}
+	"aphotic_shield_c"
+	{
+		"Rarity"								"1"
+		"Note"									"无光之盾"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/aphotic_shield"
+		"AbilityTextureName"					"abaddon_aphotic_shield"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"aphotic_shield"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"12"
+			}
+			"radius"							"600"
+			"duration"							"10"
+			"shield"
+			{
+				"value"							"800"
+				"_health"						"0.6"
+			}
+		}
+	}
+	"infernal_blade_c"
+	{
+		"Rarity"								"1"
+		"Note"									"炎刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/infernal_blade"
+		"AbilityTextureName"					"doom_bringer_infernal_blade"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"infernal_blade"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+			"damage_interval"
+			{
+				"value"							"0"
+				"_health"						"0.3"
+			}
+			"duration"							"10"
+			"stun_duration"						"1"
+		}
+	}
+	"lucky_shot_c"
+	{
+		"Rarity"								"1"
+		"Note"									"幸运一击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/lucky_shot"
+		"AbilityTextureName"					"pangolier_lucky_shot"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"lucky_shot"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"chance"							"15"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"7"
+			}
+			"duration"							"2.5"
+		}
+	}
+	"phantom_edge_c"
+	{
+		"Rarity"								"1"
+		"Note"									"聚形散气"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/phantom_edge"
+		"AbilityTextureName"					"phantom_lancer_phantom_edge"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"phantom_edge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"800"
+				"_attack_damage"				"8"
+			}
+			"duration"							"5"
+			"health_regen_pct"					"10"
+		}
+	}
+	"shuriken_toss_c"
+	{
+		"Rarity"								"1"
+		"Note"									"飞镖"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shuriken_toss"
+		"AbilityTextureName"					"bounty_hunter_shuriken_toss"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shuriken_toss"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"5"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"4.3"
+			}
+			"armor_reduce_factor"				"2"
+		}
+	}
+	"echo_stomp_c"
+	{
+		"Rarity"								"1"
+		"Note"									"回音重踏"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/echo_stomp"
+		"AbilityTextureName"					"elder_titan_echo_stomp"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"echo_stomp"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"500"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"2500"
+				"_all"							"10"
+			}
+			"radius"							"500"
+			"duration"							"3"
+		}
+	}
+	"whirling_death_c"
+	{
+		"Rarity"								"1"
+		"Note"									"死亡旋风"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/whirling_death"
+		"AbilityTextureName"					"shredder_whirling_death"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"whirling_death"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"2000"
+				"_health"						"1"
+			}
+			"radius"							"300"
+			"threshold"							"10"
+		}
+	}
+	"brain_sap_c"
+	{
+		"Rarity"								"1"
+		"Note"									"蚀脑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/brain_sap"
+		"AbilityTextureName"					"bane_brain_sap"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"brain_sap"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"25"
+			}
+			"radius"							"400"
+			"regen"								"3"
+		}
+	}
+	"decay_c"
+	{
+		"Rarity"								"1"
+		"Note"									"腐朽"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/decay"
+		"AbilityTextureName"					"undying_decay"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"decay"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"8"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_str"							"4"
+				"_health"						"1.5"
+			}
+			"radius"							"350"
+			"str_gain"							"300"
+			"duration"							"60"
+		}
+	}
+	"anchor_smash_c"
+	{
+		"Rarity"								"1"
+		"Note"									"锚击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/anchor_smash"
+		"AbilityTextureName"					"tidehunter_anchor_smash"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"anchor_smash"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"350"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"6000"
+				"_str"							"36"
+			}
+			"radius"							"350"
+			"attack_reduce_pct"					"30"
+			"duration"							"6"
+		}
+	}
+	"burning_spear_c"
+	{
+		"Rarity"								"1"
+		"Note"									"沸血之矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/burning_spear"
+		"AbilityTextureName"					"huskar_burning_spear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"burning_spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"400"
+				"_str"							"1"
+			}
+			"duration"							"3"
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.01"
+			}
+		}
+	}
+	"double_edge_c"
+	{
+		"Rarity"								"1"
+		"Note"									"双刃剑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/double_edge"
+		"AbilityTextureName"					"centaur_double_edge"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"double_edge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"15"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_str"							"18"
+			}
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.2"
+			}
+			"radius"							"300"
+		}
+	}
+	"lucent_beam_c"
+	{
+		"Rarity"								"1"
+		"Note"									"月光"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/lucent_beam"
+		"AbilityTextureName"					"luna_lucent_beam"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"lucent_beam"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"5"
+			}
+			"stun_duration"						"0.3"
+			"chance"							"20"
+		}
+	}
+	"fan_of_knives_c"
+	{
+		"Rarity"								"1"
+		"Note"									"刀阵旋风"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/fan_of_knives"
+		"AbilityTextureName"					"phantom_assassin/persona/phantom_assassin_fan_of_knives_persona1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"fan_of_knives"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"550"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"2500"
+				"_attack_damage"				"18"
+			}
+			"radius"							"550"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"shadowraze_c"
+	{
+		"Rarity"								"1"
+		"Note"									"毁灭阴影"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shadowraze"
+		"AbilityTextureName"					"nevermore_shadowraze2"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shadowraze"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"3"
+			}
+			"radius"							"300"
+			"count"								"3"
+			"damage_pct"						"30"
+			"duration"							"20"
+		}
+	}
+	"whirling_axes_c"
+	{
+		"Rarity"								"1"
+		"Note"									"旋风飞斧"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/whirling_axes"
+		"AbilityTextureName"					"troll_warlord_whirling_axes_ranged"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"whirling_axes"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"1.2"
+			}
+			"radius"							"350"
+			"chance"							"20"
+			"count"								"3"
+		}
+	}
+	"essence_shift_c"
+	{
+		"Rarity"								"1"
+		"Note"									"能量转移"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/essence_shift"
+		"AbilityTextureName"					"slark_essence_shift"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"essence_shift"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_agi"							"1.2"
+			}
+			"agi"								"80"
+			"armor"								"1"
+			"duration"							"30"
+			"reduce"							"4"
+		}
+	}
+	"frost_nova_c"
+	{
+		"Rarity"								"1"
+		"Note"									"寒霜爆发"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/frost_nova"
+		"AbilityTextureName"					"lich_frost_nova"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"frost_nova"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"800"
+				"_spell_power"					"4"
+			}
+			"radius"							"300"
+			"chance"							"20"
+			"chill"								"7"
+		}
+	}
+	"split_earth_c"
+	{
+		"Rarity"								"1"
+		"Note"									"撕裂大地"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/split_earth"
+		"AbilityTextureName"					"leshrac_split_earth"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"split_earth"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"3000"
+				"_spell_power"					"25"
+			}
+			"radius"							"350"
+			"stun_duration"						"2"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"death_pulse_c"
+	{
+		"Rarity"								"1"
+		"Note"									"死亡脉冲"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/death_pulse"
+		"AbilityTextureName"					"necrolyte_death_pulse"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"death_pulse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"600"
+		"AbilityCooldown"						"7"
+		"AbilityManaCost"						"90"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"5"
+			}
+			"radius"							"600"
+			"heal_pct"							"25"
+		}
+	}
+	"arcane_bolt_c"
+	{
+		"Rarity"								"1"
+		"Note"									"奥法鹰隼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arcane_bolt"
+		"AbilityTextureName"					"skywrath_mage_arcane_bolt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arcane_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"5"
+			}
+			"armor_reduce_factor"				"1"
+			"chance"							"20"
+		}
+	}
+	"glaives_of_wisdom_c"
+	{
+		"Rarity"								"1"
+		"Note"									"智慧之刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/glaives_of_wisdom"
+		"AbilityTextureName"					"silencer_glaives_of_wisdom"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"glaives_of_wisdom"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"300"
+				"_int"							"1"
+			}
+			"int"								"100"
+			"duration"							"30"
+		}
+	}
+	"summon_wolves_c"
+	{
+		"Rarity"								"1"
+		"Note"									"召狼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/summon_wolves"
+		"AbilityTextureName"					"lycan_summon_wolves"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"summon_wolves"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_attack_damage"				"1"
+				"_upgrade"						"1"
+			}
+			"unit_attak_rate"					"1.6"
+			"summon_count"						"2"
+			"chance"							"15"
+			"max_stack"							"5"
+			"reduce_pct"						"5"
+			"duration"							"3"
+		}
+	}
+	"bounty_hunter_c"
+	{
+		"Rarity"								"1"
+		"Note"									"赏金猎人"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/bounty_hunter"
+		"AbilityTextureName"					"bounty_hunter_wind_walk"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"bounty_hunter"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"8"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"6"
+			}
+			"gold"								"200"
+			"equip_rarity"						"4"
+			"book_rarity"						"4"
+		}
+	}
+	"artifact_hunter_c"
+	{
+		"Rarity"								"1"
+		"Note"									"宝物猎人"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/artifact_hunter"
+		"AbilityTextureName"					"bounty_hunter_wind_walk_ally"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"artifact_hunter"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCooldown"						"8"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"8"
+			}
+			"chance"							"10"
+			"equip_rarity"						"4"
+			"book_rarity"						"4"
+		}
+	}
+	"blood_bath_b"
+	{
+		"Rarity"								"2"
+		"Note"									"血祭"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/blood_bath"
+		"AbilityTextureName"					"bloodseeker_blood_bath"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"blood_bath"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"10"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"15"
+				"_upgrade"						"1"
+			}
+			"armor_reduce_factor"				"1"
+			"radius"							"600"
+		}
+	}
+	"infernal_blade_b"
+	{
+		"Rarity"								"2"
+		"Note"									"炎刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/infernal_blade"
+		"AbilityTextureName"					"doom_bringer_infernal_blade"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"infernal_blade"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"4"
+			}
+			"damage_interval"
+			{
+				"value"							"0"
+				"_health"						"0.5"
+			}
+			"duration"							"8"
+			"stun_duration"						"1"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"torrent_b"
+	{
+		"Rarity"								"2"
+		"Note"									"洪流"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/torrent"
+		"AbilityTextureName"					"kunkka_torrent"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"torrent"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"40"
+			}
+			"stun_duration"						"1.5"
+			"armor_reduce_factor"				"2"
+			"radius"							"300"
+		}
+	}
+	"shuriken_toss_b"
+	{
+		"Rarity"								"2"
+		"Note"									"飞镖"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shuriken_toss"
+		"AbilityTextureName"					"bounty_hunter_shuriken_toss"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shuriken_toss"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"5"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"12"
+			}
+			"armor_reduce_factor"				"3"
+		}
+	}
+	"powershot_b"
+	{
+		"Rarity"								"2"
+		"Note"									"多重射击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/powershot"
+		"AbilityTextureName"					"windrunner_powershot"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"powershot"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"13"
+			}
+			"count"								"3"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"brain_sap_b"
+	{
+		"Rarity"								"2"
+		"Note"									"蚀脑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/brain_sap"
+		"AbilityTextureName"					"bane_brain_sap"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"brain_sap"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"37.5"
+			}
+			"radius"							"400"
+			"regen"								"3"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"resonant_pulse_b"
+	{
+		"Rarity"								"2"
+		"Note"									"共鸣脉冲"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/resonant_pulse"
+		"AbilityTextureName"					"void_spirit_resonant_pulse"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"resonant_pulse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"500"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"20"
+			}
+			"radius"							"500"
+			"shield"
+			{
+				"value"							"0"
+				"_health"						"0.25"
+			}
+			"duration"							"8"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"double_edge_b"
+	{
+		"Rarity"								"2"
+		"Note"									"双刃剑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/double_edge"
+		"AbilityTextureName"					"centaur_double_edge"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"double_edge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_str"							"32"
+			}
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.2"
+			}
+			"radius"							"300"
+		}
+	}
+	"breathe_fire_b"
+	{
+		"Rarity"								"2"
+		"Note"									"火焰吐息"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/breathe_fire"
+		"AbilityTextureName"					"dragon_knight_breathe_fire"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"breathe_fire"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"20"
+			}
+			"threshold"							"10"
+			"radius"							"450"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"burning_spear_b"
+	{
+		"Rarity"								"2"
+		"Note"									"沸血之矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/burning_spear"
+		"AbilityTextureName"					"huskar_burning_spear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"burning_spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"800"
+				"_str"							"2"
+			}
+			"duration"							"3"
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.01"
+			}
+		}
+	}
+	"wave_of_terror_b"
+	{
+		"Rarity"								"2"
+		"Note"									"恐怖波动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wave_of_terror"
+		"AbilityTextureName"					"vengefulspirit_wave_of_terror"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wave_of_terror"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"4000"
+				"_attack_damage"				"5"
+			}
+			"width"								"200"
+			"distance"							"600"
+			"armor_reduce_factor"				"3"
+			"chance"							"20"
+		}
+	}
+	"whirling_axes_b"
+	{
+		"Rarity"								"2"
+		"Note"									"旋风飞斧"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/whirling_axes"
+		"AbilityTextureName"					"troll_warlord_whirling_axes_ranged"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"whirling_axes"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"3"
+			}
+			"radius"							"350"
+			"chance"							"20"
+			"count"								"3"
+		}
+	}
+	"dark_pact_b"
+	{
+		"Rarity"								"2"
+		"Note"									"黑暗契约"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/dark_pact"
+		"AbilityTextureName"					"slark_dark_pact"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"dark_pact"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"400"
+		"AbilityCooldown"						"8"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"10"
+			}
+			"radius"							"400"
+			"duration"							"0.5"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"essence_shift_b"
+	{
+		"Rarity"								"2"
+		"Note"									"能量转移"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/essence_shift"
+		"AbilityTextureName"					"slark_essence_shift"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"essence_shift"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_agi"							"2.5"
+			}
+			"agi"								"160"
+			"armor"								"2"
+			"duration"							"30"
+			"reduce"							"8"
+		}
+	}
+	"arcane_bolt_b"
+	{
+		"Rarity"								"2"
+		"Note"									"奥法鹰隼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arcane_bolt"
+		"AbilityTextureName"					"skywrath_mage_arcane_bolt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arcane_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"9"
+			}
+			"armor_reduce_factor"				"1"
+			"chance"							"20"
+		}
+	}
+	"fade_bolt_b"
+	{
+		"Rarity"								"2"
+		"Note"									"弱化能流"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/fade_bolt"
+		"AbilityTextureName"					"rubick_fade_bolt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"fade_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"15"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"17"
+			}
+			"armor_reduce_factor"				"0.7"
+			"attack_reduce_pct"					"60"
+			"radius"							"900"
+			"duration"							"2"
+		}
+	}
+	"overload_b"
+	{
+		"Rarity"								"2"
+		"Note"									"超负荷"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/overload"
+		"AbilityTextureName"					"storm_spirit_overload"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"overload"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"5"
+			}
+			"radius"							"300"
+			"duration"							"2"
+			"attackspeed"						"30"
+			"mana_cost_pct"						"2"
+			"bonus_attack_damage"				"40"
+			"bonus_spell_power"					"40"
+		}
+	}
+	"glaives_of_wisdom_b"
+	{
+		"Rarity"								"2"
+		"Note"									"智慧之刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/glaives_of_wisdom"
+		"AbilityTextureName"					"silencer_gaives_of_wisdom"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"glaives_of_wisdom"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"600"
+				"_int"							"2"
+			}
+			"int"								"300"
+			"duration"							"30"
+		}
+	}
+	"bone_guard_b"
+	{
+		"Rarity"								"2"
+		"Note"									"白骨护卫"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/bone_guard"
+		"AbilityTextureName"					"skeleton_king_bone_guard"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"bone_guard"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"120"
+		"AbilityValues"
+		{
+			"duration"							"15"
+			"attack"
+			{
+				"value"							"0"
+				"_attack_damage"				"1"
+				"_upgrade"						"1"
+			}
+			"unit_health"
+			{
+				"value"							"0"
+				"_health"						"1"
+			}
+			"unit_armor"
+			{
+				"value"							"0"
+				"_armor"						"1"
+			}
+			"unit_attak_rate"					"1.3"
+			"summon_count"						"2"
+			"attribute_pct"						"4"
+			"max_stack"							"10"
+		}
+	}
+	"tempering_str_b"
+	{
+		"Rarity"								"2"
+		"Note"									"力之修行"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/tempering_str"
+		"AbilityTextureName"					"brewmaster_primal_companion_fire"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"tempering_str"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityValues"
+		{
+			"reduce_pct"						"20"
+			"value"								"0.05"
+			"max"
+			{
+				"value"							"600"
+				"_upgrade"						"1"
+			}
+			"attribute_pct"						"15"
+			"count"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+		}
+	}
+	"tempering_agi_b"
+	{
+		"Rarity"								"2"
+		"Note"									"敏之修行"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/tempering_agi"
+		"AbilityTextureName"					"brewmaster_primal_companion_earth"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"tempering_agi"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityValues"
+		{
+			"reduce_pct"						"20"
+			"value"								"0.05"
+			"max"
+			{
+				"value"							"600"
+				"_upgrade"						"1"
+			}
+			"attribute_pct"						"15"
+			"count"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+		}
+	}
+	"tempering_int_b"
+	{
+		"Rarity"								"2"
+		"Note"									"智之修行"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/tempering_int"
+		"AbilityTextureName"					"brewmaster_primal_companion_storm"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"tempering_int"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityValues"
+		{
+			"reduce_pct"						"20"
+			"value"								"0.05"
+			"max"
+			{
+				"value"							"600"
+				"_upgrade"						"1"
+			}
+			"attribute_pct"						"15"
+			"count"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+		}
+	}
+	"blood_bath_a"
+	{
+		"Rarity"								"3"
+		"Note"									"血祭"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/blood_bath"
+		"AbilityTextureName"					"bloodseeker_blood_bath"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"blood_bath"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"8"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"28"
+				"_upgrade"						"1"
+			}
+			"armor_reduce_factor"				"2"
+			"radius"							"600"
+		}
+	}
+	"infernal_blade_a"
+	{
+		"Rarity"								"3"
+		"Note"									"炎刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/infernal_blade"
+		"AbilityTextureName"					"doom_bringer_infernal_blade"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"infernal_blade"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"7"
+			}
+			"damage_interval"
+			{
+				"value"							"0"
+				"_health"						"1"
+			}
+			"duration"							"8"
+			"stun_duration"						"1"
+			"armor_reduce_factor"				"2"
+		}
+	}
+	"torrent_a"
+	{
+		"Rarity"								"3"
+		"Note"									"洪流"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/torrent"
+		"AbilityTextureName"					"kunkka_torrent"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"torrent"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"60"
+			}
+			"stun_duration"						"3"
+			"armor_reduce_factor"				"2"
+			"radius"							"300"
+		}
+	}
+	"firestorm_a"
+	{
+		"Rarity"								"3"
+		"Note"									"火焰风暴"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/firestorm"
+		"AbilityTextureName"					"abyssal_underlord_firestorm"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"firestorm"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"450"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"12"
+			}
+			"count"								"6"
+			"regen_pct"							"10"
+			"armor_reduce_factor"				"0.5"
+			"radius"							"450"
+		}
+	}
+	"shuriken_toss_a"
+	{
+		"Rarity"								"3"
+		"Note"									"飞镖"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shuriken_toss"
+		"AbilityTextureName"					"bounty_hunter_shuriken_toss"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shuriken_toss"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"5"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"22"
+			}
+			"armor_reduce_factor"				"4"
+		}
+	}
+	"powershot_a"
+	{
+		"Rarity"								"3"
+		"Note"									"多重射击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/powershot"
+		"AbilityTextureName"					"windrunner_powershot_arcana"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"powershot"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"15"
+			}
+			"count"								"5"
+			"armor_reduce_factor"				"1.5"
+		}
+	}
+	"spectral_blade_a"
+	{
+		"Rarity"								"3"
+		"Note"									"幽魂之剑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/spectral_blade"
+		"AbilityTextureName"					"skeleton_king_spectral_blade"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"spectral_blade"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"40"
+			}
+			"armor_reduce_factor"				"4"
+		}
+	}
+	"brain_sap_a"
+	{
+		"Rarity"								"3"
+		"Note"									"蚀脑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/brain_sap"
+		"AbilityTextureName"					"bane_brain_sap"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"brain_sap"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"18"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"65"
+			}
+			"radius"							"400"
+			"regen"								"3"
+			"armor_reduce_factor"				"4"
+		}
+	}
+	"storm_surge_a"
+	{
+		"Rarity"								"3"
+		"Note"									"风暴涌动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/storm_surge"
+		"AbilityTextureName"					"razor_storm_surge"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"storm_surge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"15.6"
+			}
+			"radius"							"700"
+			"shield"
+			{
+				"value"							"0"
+				"_health"						"0.8"
+			}
+			"duration"							"4"
+			"distance"							"50"
+			"point"								"10"
+			"max"								"900"
+		}
+	}
+	"resonant_pulse_a"
+	{
+		"Rarity"								"3"
+		"Note"									"共鸣脉冲"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/resonant_pulse"
+		"AbilityTextureName"					"void_spirit_resonant_pulse"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"resonant_pulse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"500"
+		"AbilityCooldown"						"18"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"60"
+			}
+			"radius"							"500"
+			"shield"
+			{
+				"value"							"0"
+				"_health"						"0.5"
+			}
+			"duration"							"8"
+		}
+	}
+	"deafening_blast_a"
+	{
+		"Rarity"								"3"
+		"Note"									"超震声波"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/deafening_blast"
+		"AbilityTextureName"					"invoker_deafening_blast"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"deafening_blast"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"24"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"80"
+			}
+			"distance"							"1000"
+			"radius"							"200"
+			"duration"							"1.6"
+		}
+	}
+	"double_edge_a"
+	{
+		"Rarity"								"3"
+		"Note"									"双刃剑"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/double_edge"
+		"AbilityTextureName"					"centaur_double_edge"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"double_edge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_str"							"58"
+			}
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.2"
+			}
+			"radius"							"300"
+		}
+	}
+	"breathe_fire_a"
+	{
+		"Rarity"								"3"
+		"Note"									"火焰吐息"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/breathe_fire"
+		"AbilityTextureName"					"dragon_knight_breathe_fire"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"breathe_fire"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"28"
+			}
+			"threshold"							"10"
+			"radius"							"450"
+			"armor_reduce_factor"				"2"
+		}
+	}
+	"burning_spear_a"
+	{
+		"Rarity"								"3"
+		"Note"									"沸血之矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/burning_spear"
+		"AbilityTextureName"					"huskar_burning_spear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"burning_spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"4"
+			}
+			"duration"							"3"
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.01"
+			}
+		}
+	}
+	"slithereen_crush_a"
+	{
+		"Rarity"								"3"
+		"Note"									"鱼人碎击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/slithereen_crush"
+		"AbilityTextureName"					"slardar_slithereen_crush"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"slithereen_crush"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"350"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"20"
+			}
+			"stun_duration"						"1"
+			"radius"							"350"
+			"armor_reduce_factor"				"6"
+		}
+	}
+	"wave_of_terror_a"
+	{
+		"Rarity"								"3"
+		"Note"									"恐怖波动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wave_of_terror"
+		"AbilityTextureName"					"vengefulspirit/huangs_umbra_icons/vengefulspirit_wave_of_terror"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wave_of_terror"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"8"
+			}
+			"width"								"200"
+			"distance"							"600"
+			"armor_reduce_factor"				"4"
+			"chance"							"20"
+		}
+	}
+	"whirling_axes_a"
+	{
+		"Rarity"								"3"
+		"Note"									"旋风飞斧"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/whirling_axes"
+		"AbilityTextureName"					"troll_warlord_whirling_axes_ranged"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"whirling_axes"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"4"
+			}
+			"radius"							"350"
+			"chance"							"20"
+			"armor_reduce_factor"				"0.6"
+			"count"								"4"
+		}
+	}
+	"dark_pact_a"
+	{
+		"Rarity"								"3"
+		"Note"									"黑暗契约"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/dark_pact"
+		"AbilityTextureName"					"slark_dark_pact"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"dark_pact"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"400"
+		"AbilityCooldown"						"8"
+		"AbilityManaCost"						"18"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"20"
+			}
+			"radius"							"400"
+			"duration"							"0.8"
+			"armor_reduce_factor"				"2"
+		}
+	}
+	"lucent_beam_a"
+	{
+		"Rarity"								"3"
+		"Note"									"月光"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/lucent_beam"
+		"AbilityTextureName"					"luna_lucent_beam_alt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"lucent_beam"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"14"
+			}
+			"armor_reduce_factor"				"2"
+			"stun_duration"						"0.8"
+			"chance"							"12"
+		}
+	}
+	"essence_shift_a"
+	{
+		"Rarity"								"3"
+		"Note"									"能量转移"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/essence_shift"
+		"AbilityTextureName"					"slark_essence_shift"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"essence_shift"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_agi"							"4"
+			}
+			"agi"								"320"
+			"armor"								"4"
+			"duration"							"30"
+			"reduce"							"16"
+		}
+	}
+	"arcane_bolt_a"
+	{
+		"Rarity"								"3"
+		"Note"									"奥法鹰隼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arcane_bolt"
+		"AbilityTextureName"					"skywrath_mage_arcane_bolt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arcane_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"15"
+			}
+			"armor_reduce_factor"				"1"
+			"chance"							"20"
+		}
+	}
+	"fade_bolt_a"
+	{
+		"Rarity"								"3"
+		"Note"									"弱化能流"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/fade_bolt"
+		"AbilityTextureName"					"rubick_fade_bolt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"fade_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"31.6"
+			}
+			"attack_reduce_pct"					"60"
+			"radius"							"900"
+			"duration"							"2"
+		}
+	}
+	"split_earth_a"
+	{
+		"Rarity"								"3"
+		"Note"									"撕裂大地"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/split_earth"
+		"AbilityTextureName"					"leshrac/tormented_staff/leshrac_split_earth"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"split_earth"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"24"
+		"AbilityManaCost"						"180"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"90"
+			}
+			"radius"							"350"
+			"stun_duration"						"1.5"
+		}
+	}
+	"overload_a"
+	{
+		"Rarity"								"3"
+		"Note"									"超负荷"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/overload"
+		"AbilityTextureName"					"storm_spirit_overload"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"overload"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"4"
+			}
+			"radius"							"300"
+			"duration"							"2"
+			"attackspeed"						"40"
+			"mana_cost_pct"						"4"
+			"bonus_attack_damage"				"80"
+			"bonus_spell_power"					"80"
+		}
+	}
+	"glaives_of_wisdom_a"
+	{
+		"Rarity"								"3"
+		"Note"									"智慧之刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/glaives_of_wisdom"
+		"AbilityTextureName"					"silencer/bts_silencer_ability/silencer_glaives_of_wisdom"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"glaives_of_wisdom"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"1500"
+				"_int"							"4"
+			}
+			"int"								"400"
+			"duration"							"30"
+		}
+	}
+	"spirit_bear_a"
+	{
+		"Rarity"								"3"
+		"Note"									"熊灵"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/spirit_bear"
+		"AbilityTextureName"					"lone_druid_spirit_bear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"spirit_bear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"12"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_attack_damage"				"2"
+				"_upgrade"						"1"
+			}
+			"unit_health"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+			"unit_armor"
+			{
+				"value"							"0"
+				"_armor"						"1"
+			}
+			"unit_attak_rate"					"1.1"
+			"summon_count"						"1"
+			"chance"							"25"
+			"lifesteal"							"5"
+			"share_pct"							"50"
+			"radius"							"300"
+		}
+	}
+	"blood_bath_s"
+	{
+		"Rarity"								"4"
+		"Note"									"血祭"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/blood_bath"
+		"AbilityTextureName"					"bloodseeker_blood_bath"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"blood_bath"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"5"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"50"
+				"_upgrade"						"1"
+			}
+			"armor_reduce_factor"				"4"
+			"radius"							"600"
+		}
+	}
+	"infernal_blade_s"
+	{
+		"Rarity"								"4"
+		"Note"									"炎刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/infernal_blade"
+		"AbilityTextureName"					"doom_bringer/doom_2021_immortal_ability_icon/doom_2021_immortal_infernal_blade"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"infernal_blade"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"12"
+			}
+			"damage_interval"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+			"duration"							"8"
+			"stun_duration"						"1"
+			"armor_reduce_factor"				"4"
+		}
+	}
+	"firestorm_s"
+	{
+		"Rarity"								"4"
+		"Note"									"火焰风暴"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/firestorm"
+		"AbilityTextureName"					"abyssal_underlord_firestorm"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"firestorm"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"450"
+		"AbilityCooldown"						"24"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"20"
+			}
+			"count"								"8"
+			"regen_pct"							"10"
+			"armor_reduce_factor"				"1"
+			"radius"							"450"
+		}
+	}
+	"shuriken_toss_s"
+	{
+		"Rarity"								"4"
+		"Note"									"飞镖"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shuriken_toss"
+		"AbilityTextureName"					"bounty_hunter_twinblade_shuriken_toss"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shuriken_toss"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"5"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"4.3"
+			}
+			"armor_reduce_factor"				"0.8"
+			"count"								"8"
+		}
+	}
+	"spear_s"
+	{
+		"Rarity"								"4"
+		"Note"									"战神迅矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/spear"
+		"AbilityTextureName"					"mars_spear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"25"
+			}
+			"armor_reduce_factor"				"4"
+			"chance"							"10"
+		}
+	}
+	"storm_surge_s"
+	{
+		"Rarity"								"4"
+		"Note"									"风暴涌动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/storm_surge"
+		"AbilityTextureName"					"razor/arcana/razor_unstable_current_alt1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"storm_surge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"24.4"
+			}
+			"radius"							"700"
+			"shield"
+			{
+				"value"							"0"
+				"_health"						"1"
+			}
+			"duration"							"4"
+			"distance"							"30"
+			"point"								"10"
+			"max"								"900"
+		}
+	}
+	"resonant_pulse_s"
+	{
+		"Rarity"								"4"
+		"Note"									"共鸣脉冲"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/resonant_pulse"
+		"AbilityTextureName"					"void_spirit_resonant_pulse"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"resonant_pulse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"500"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"68"
+			}
+			"radius"							"500"
+			"shield"
+			{
+				"value"							"0"
+				"_health"						"1"
+			}
+			"duration"							"8"
+		}
+	}
+	"deafening_blast_s"
+	{
+		"Rarity"								"4"
+		"Note"									"超震声波"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/deafening_blast"
+		"AbilityTextureName"					"invoker_deafening_blast"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"deafening_blast"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"150"
+			}
+			"distance"							"1000"
+			"radius"							"200"
+			"duration"							"2.2"
+		}
+	}
+	"breathe_fire_s"
+	{
+		"Rarity"								"4"
+		"Note"									"火焰吐息"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/breathe_fire"
+		"AbilityTextureName"					"dragon_knight_breathe_fire"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"breathe_fire"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"45"
+			}
+			"threshold"							"10"
+			"radius"							"450"
+			"armor_reduce_factor"				"4"
+		}
+	}
+	"burning_spear_s"
+	{
+		"Rarity"								"4"
+		"Note"									"沸血之矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/burning_spear"
+		"AbilityTextureName"					"huskar/husk_2021_immortal_weapon_ability_icon/husk_2021_immortal_burning_spear"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"burning_spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"8"
+			}
+			"duration"							"3"
+			"health_cost_pct"
+			{
+				"value"							"0"
+				"_health"						"0.01"
+			}
+			"radius"							"300"
+		}
+	}
+	"wave_of_terror_s"
+	{
+		"Rarity"								"4"
+		"Note"									"恐怖波动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wave_of_terror"
+		"AbilityTextureName"					"vengefulspirit_wave_of_terror_alt2"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wave_of_terror"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"12"
+			}
+			"width"								"200"
+			"distance"							"600"
+			"armor_reduce_factor"				"5"
+			"chance"							"20"
+			"armor_reduce_pct"					"3"
+			"duration"							"2"
+			"max"								"3"
+		}
+	}
+	"essence_shift_s"
+	{
+		"Rarity"								"4"
+		"Note"									"能量转移"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/essence_shift"
+		"AbilityTextureName"					"essence_shift_s"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"essence_shift"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_agi"							"6"
+			}
+			"agi"								"640"
+			"armor"								"6"
+			"duration"							"30"
+			"reduce"							"24"
+			"threshold"							"30"
+			"evade"								"12"
+			"regen"								"6"
+			"duration_2"						"6"
+		}
+	}
+	"slithereen_crush_s"
+	{
+		"Rarity"								"4"
+		"Note"									"鱼人碎击"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/slithereen_crush"
+		"AbilityTextureName"					"slardar/grasping_bludgeon/slardar_slithereen_crush"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"slithereen_crush"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"350"
+		"AbilityCooldown"						"15"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"65"
+			}
+			"stun_duration"						"2"
+			"radius"							"350"
+			"armor_reduce_factor"				"20"
+		}
+	}
+	"dark_pact_s"
+	{
+		"Rarity"								"4"
+		"Note"									"黑暗契约"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/dark_pact"
+		"AbilityTextureName"					"slark_dark_pact_immortal"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"dark_pact"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"400"
+		"AbilityCooldown"						"8"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"40"
+			}
+			"radius"							"400"
+			"duration"							"0.5"
+			"armor_reduce_factor"				"3"
+		}
+	}
+	"eclipse_s"
+	{
+		"Rarity"								"4"
+		"Note"									"月蚀"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/eclipse"
+		"AbilityTextureName"					"luna_lucent_beam_alt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"eclipse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"16"
+			}
+			"armor_reduce_factor"				"4"
+			"stun_duration"						"0.5"
+			"count"								"6"
+			"chance"							"12"
+		}
+	}
+	"storm_cyclone_s"
+	{
+		"Rarity"								"4"
+		"Note"									"闪电风暴"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/storm_cyclone"
+		"AbilityTextureName"					"invoker/dark_artistry/invoker_tornado"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"storm_cyclone"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"6"
+			}
+			"radius"							"300"
+			"duration"							"3"
+			"armor_reduce_factor"				"1"
+			"chance"							"20"
+			"speed"								"150"
+		}
+	}
+	"arcane_bolt_s"
+	{
+		"Rarity"								"4"
+		"Note"									"奥法鹰隼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arcane_bolt"
+		"AbilityTextureName"					"skywrath_mage_arcane_bolt_alt1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arcane_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"30"
+			}
+			"armor_reduce_factor"				"3"
+			"chance"							"20"
+			"count"								"3"
+			"heal"
+			{
+				"value"							"0"
+				"_health"						"0.01"
+			}
+		}
+	}
+	"diabolic_edict_s"
+	{
+		"Rarity"								"4"
+		"Note"									"恶魔赦令"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/diabolic_edict"
+		"AbilityTextureName"					"leshrac_diabolic_edict_ti9"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"diabolic_edict"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"600"
+		"AbilityCooldown"						"15"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"1.5"
+			}
+			"armor_reduce_factor"				"0.5"
+			"count"								"40"
+			"interval"							"0.15"
+		}
+	}
+	"fade_bolt_s"
+	{
+		"Rarity"								"4"
+		"Note"									"弱化能流"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/fade_bolt"
+		"AbilityTextureName"					"rubick_fade_bolt"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"fade_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"240"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"50"
+			}
+			"armor_reduce_factor"				"2"
+			"attack_reduce_pct"					"60"
+			"radius"							"900"
+			"duration"							"2"
+		}
+	}
+	"overload_s"
+	{
+		"Rarity"								"4"
+		"Note"									"超负荷"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/overload"
+		"AbilityTextureName"					"storm_spirit_overload_ti8"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"overload"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"12"
+			}
+			"radius"							"300"
+			"duration"							"2"
+			"attackspeed"						"50"
+			"mana_cost_pct"						"6"
+			"bonus_attack_damage"				"120"
+			"bonus_spell_power"					"120"
+		}
+	}
+	"tempest_double_s"
+	{
+		"Rarity"								"4"
+		"Note"									"风暴双雄"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/tempest_double"
+		"AbilityTextureName"					"arc_warden_tempest_double"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"tempest_double"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"20"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_primary"						"4"
+				"_upgrade"						"1"
+			}
+			"unit_health"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+			"unit_armor"
+			{
+				"value"							"0"
+				"_armor"						"2"
+			}
+			"unit_attak_rate"					"1"
+			"summon_count"						"1"
+			"level"								"1"
+		}
+	}
+	"wisp_str_s"
+	{
+		"Rarity"								"4"
+		"Note"									"火之精灵"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wisp_str"
+		"AbilityTextureName"					"invoker_exort_persona1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wisp_str"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_str"							"8"
+				"_upgrade"						"1"
+			}
+			"interval"							"2"
+			"damage_pct"						"0"
+			"attackspeed"						"40"
+			"radius"							"900"
+			"damage_radius"						"200"
+			"chance"							"20"
+			"armor_reduce_factor"				"2"
+			"damage"
+			{
+				"value"							"0"
+				"_str"							"8"
+			}
+		}
+	}
+	"wisp_agi_s"
+	{
+		"Rarity"								"4"
+		"Note"									"雷之精灵"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wisp_agi"
+		"AbilityTextureName"					"invoker_wex_persona1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wisp_agi"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_agi"							"8"
+				"_upgrade"						"1"
+			}
+			"interval"							"2"
+			"damage_pct"						"0"
+			"attackspeed"						"40"
+			"radius"							"900"
+			"damage_radius"						"200"
+			"buff_attackspeed"					"40"
+			"duration"							"6"
+			"cooldown"							"15"
+		}
+	}
+	"wisp_int_s"
+	{
+		"Rarity"								"4"
+		"Note"									"冰之精灵"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wisp_int"
+		"AbilityTextureName"					"invoker_quas_persona1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wisp_int"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_int"							"8"
+				"_upgrade"						"1"
+			}
+			"interval"							"2"
+			"damage_pct"						"30"
+			"attackspeed"						"40"
+			"radius"							"900"
+			"damage_radius"						"200"
+			"cooldown"							"15"
+			"mana"								"12"
+			"reduce"							"8"
+		}
+	}
+	"solar_guardian_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"天光现世"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/solar_guardian"
+		"AbilityTextureName"					"dawnbreaker_solar_guardian"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"solar_guardian"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage_reduce"						"60"
+			"duration"							"4"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"30"
+			}
+			"damage_interval"
+			{
+				"value"							"0"
+				"_health"						"10"
+			}
+			"armor_reduce_factor"				"40"
+			"radius"							"500"
+			"heal_pct"							"10"
+			"interval"							"0.5"
+			"crit_strength"						"30"
+		}
+	}
+	"overgrowth_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"疯狂生长"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/overgrowth"
+		"AbilityTextureName"					"treant/treant_ti10_immortal_ability_icon/treant_ti10_immortal_overgrowth"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"overgrowth"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"500"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"duration"							"4"
+			"radius"							"500"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"37"
+			}
+			"reduce_pct"						"60"
+			"radius_mini"						"150"
+		}
+	}
+	"doom_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"末日"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/doom"
+		"AbilityTextureName"					"doom_bringer_doom"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"doom"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"duration"							"12"
+			"radius"							"400"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"18"
+			}
+			"reduce_armor_pct"					"50"
+			"armor_reduce_factor"				"10"
+			"interval"							"1"
+		}
+	}
+	"sun_ray_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"烈日炙烤"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/sun_ray"
+		"AbilityTextureName"					"phoenix_sun_ray"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"sun_ray"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"duration"							"8"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"4"
+			}
+			"movespeed"							"60"
+			"interval"							"0.5"
+			"crit_strength"						"60"
+		}
+	}
+	"reapers_scythe_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"死神镰刀"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/reapers_scythe"
+		"AbilityTextureName"					"necrolyte/necro_ti7_immortal/necrolyte_reapers_scythe"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"reapers_scythe"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"25"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"96"
+			}
+			"reduce_pct"						"15"
+			"crit_strength"						"100"
+		}
+	}
+	"spear_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"战神迅矛"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/spear"
+		"AbilityTextureName"					"mars/ti9_immortal_weapon/mars_spear_immortal"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"spear"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"35"
+			}
+			"armor_reduce_factor"				"16"
+			"chance"							"10"
+			"radius"							"400"
+		}
+	}
+	"eye_of_the_storm_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"风暴之眼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/eye_of_the_storm"
+		"AbilityTextureName"					"razor/arcana/razor_eye_of_the_storm_alt1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"eye_of_the_storm"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"800"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"6"
+			}
+			"interval"							"0.4"
+			"radius"							"800"
+			"duration"							"10"
+			"armor_reduce_factor"				"1"
+		}
+	}
+	"unleash_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"怒拳破"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/unleash"
+		"AbilityTextureName"					"marci_unleash"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"unleash"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"attack_rate"						"0.1"
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"0.5"
+			}
+			"duration"							"15"
+			"radius"							"400"
+			"threshold"							"12"
+			"armor_reduce_factor"				"4"
+			"damage_aoe"
+			{
+				"value"							"0"
+				"_attack_damage"				"2"
+			}
+		}
+	}
+	"shuriken_toss_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"飞镖"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shuriken_toss"
+		"AbilityTextureName"					"bounty_hunter_twinblade_shuriken_toss"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shuriken_toss"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"5"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"4.3"
+			}
+			"armor_reduce_factor"				"0.8"
+			"count"								"12"
+		}
+	}
+	"astral_step_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"太虚之径"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/astral_step"
+		"AbilityTextureName"					"void_spirit/vs_2021_immortal_ability_icon/vs_2021_immortal_astral_step"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"astral_step"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"threshold"							"8"
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"36"
+			}
+			"armor_reduce_factor"				"5"
+		}
+	}
+	"sonic_wave_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"超声波"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/sonic_wave"
+		"AbilityTextureName"					"queen_of_pain/arcana/queenofpain_sonic_wave_alt1"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"sonic_wave"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"starting_aoe"						"100"
+			"distance"							"900"
+			"final_aoe"							"450"
+			"speed"								"900"
+			"damage"
+			{
+				"value"							"0"
+				"_all"							"77"
+			}
+			"armor_reduce_factor"				"60"
+		}
+	}
+	"echo_stomp_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"雷霆万钧"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/echo_stomp"
+		"AbilityTextureName"					"ursa/ti10_immortal_back/ursa_earthshock_immortal_ti10"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"echo_stomp"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"400"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"26"
+			}
+			"radius"							"400"
+			"duration"							"4"
+			"crit_strength"						"40"
+		}
+	}
+	"fiends_grip_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"魔爪"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/fiends_grip"
+		"AbilityTextureName"					"bane/bane_fall20_immortal_ability_icon/bane_fall20_immortal_fiends_grip"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"fiends_grip"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"40"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"50"
+			}
+			"duration"							"5"
+			"armor_reduce_factor"				"15"
+		}
+	}
+	"death_coil_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"迷雾缠绕"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/death_coil"
+		"AbilityTextureName"					"abaddon_death_coil_alliance"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"death_coil"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"count"								"6"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"4"
+			}
+			"duration"							"6"
+		}
+	}
+	"storm_surge_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"风暴涌动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/storm_surge"
+		"AbilityTextureName"					"razor/arcana/razor_unstable_current_alt2"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"storm_surge"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"50"
+			}
+			"radius"							"700"
+			"shield"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+			"duration"							"4"
+			"distance"							"50"
+			"point"								"10"
+			"max"								"900"
+			"crit_strength"						"50"
+		}
+	}
+	"purification_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"洗礼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/purification"
+		"AbilityTextureName"					"omni_knight/adoring_wingfall/omniknight_purification"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"purification"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"40"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"threshold"							"3"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"30"
+			}
+			"armor_reduce_factor"				"6"
+			"duration"							"20"
+			"damage_reduce"						"30"
+			"radius"							"300"
+			"heal_pct"							"15"
+		}
+	}
+	"ravage_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"毁灭"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/ravage"
+		"AbilityTextureName"					"tidehunter/tide_2021_immortal_ability_icon/tide_2021_immortal_ravage"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"ravage"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"1200"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"1200"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"120"
+			}
+			"duration"							"2"
+			"crit_strength"						"64"
+		}
+	}
+	"arena_of_blood_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"热血竞技场"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arena_of_blood"
+		"AbilityTextureName"					"mars_arena_of_blood"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arena_of_blood"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"550"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"80"
+			}
+			"duration"							"3"
+			"crit_strength"						"64"
+		}
+	}
+	"stampede_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"奔袭冲撞"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/stampede"
+		"AbilityTextureName"					"centaur/berserkers_edge/centaur_stampede"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"stampede"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"400"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"40"
+			}
+			"crit_strength"						"48"
+		}
+	}
+	"ghostship_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"幽灵船"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/ghostship"
+		"AbilityTextureName"					"kunkka_ghostship_immortal"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"ghostship"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"12"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"600"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"90"
+			}
+			"crit_strength"						"96"
+		}
+	}
+	"breathe_fire_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"火焰吐息"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/breathe_fire"
+		"AbilityTextureName"					"jakiro/immortal/jakiro_dual_breath"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"breathe_fire"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"36"
+			}
+			"threshold"							"6"
+			"radius"							"450"
+			"armor_reduce_factor"				"16"
+		}
+	}
+	"reverse_polarity_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"两级反转"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/reverse_polarity"
+		"AbilityTextureName"					"magnataur/forgemaster_icons/magnataur_reverse_polarity"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"reverse_polarity"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCastRange"						"600"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"600"
+			"stun_duration"						"4"
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"166"
+			}
+			"crit_strength"						"48"
+		}
+	}
+	"wave_of_terror_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"恐怖波动"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wave_of_terror"
+		"AbilityTextureName"					"vengefulspirit/arcana/imperia/vengefulspirit_wave_of_terror_alt3"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wave_of_terror"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"15"
+			}
+			"width"								"200"
+			"distance"							"600"
+			"armor_reduce_factor"				"6"
+			"chance"							"20"
+			"armor_reduce_pct"					"5"
+			"duration"							"2"
+			"max"								"3"
+		}
+	}
+	"essence_shift_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"能量转移"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/essence_shift"
+		"AbilityTextureName"					"essence_shift_ss"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"essence_shift"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_agi"							"7"
+			}
+			"agi"								"1200"
+			"armor"								"8"
+			"duration"							"30"
+			"reduce"							"32"
+			"threshold"							"30"
+			"evade"								"15"
+			"regen"								"12"
+			"duration_2"						"6"
+		}
+	}
+	"eclipse_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"月蚀"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/eclipse"
+		"AbilityTextureName"					"luna/zodiac_sigils_skills/luna_eclipse"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"eclipse"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"32"
+			}
+			"armor_reduce_factor"				"8"
+			"stun_duration"						"0.7"
+			"count"								"8"
+			"chance"							"12"
+		}
+	}
+	"lunar_orbit_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"月刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/lunar_orbit"
+		"AbilityTextureName"					"luna_lunar_orbit"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"lunar_orbit"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"7"
+			}
+			"armor_reduce_factor"				"9"
+			"count"								"6"
+			"duration"							"8"
+		}
+	}
+	"shadowraze_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"毁灭阴影"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/shadowraze"
+		"AbilityTextureName"					"nevermore_shadowraze2_demon"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"shadowraze"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"17.8"
+			}
+			"radius"							"300"
+			"count"								"9"
+			"damage_pct"						"30"
+			"duration"							"15"
+		}
+	}
+	"whirlwind_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"箭雨"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/whirlwind"
+		"AbilityTextureName"					"windrunner_whirlwind"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"whirlwind"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"6"
+			}
+			"radius"							"900"
+			"interval"							"0.2"
+			"duration"							"6"
+		}
+	}
+	"assassinate_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"暗杀"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/assassinate"
+		"AbilityTextureName"					"sniper_fall20_assassinate"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"assassinate"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"40"
+			}
+			"armor_reduce_factor"				"2"
+			"chance"							"20"
+		}
+	}
+	"storm_cyclone_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"闪电风暴"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/storm_cyclone"
+		"AbilityTextureName"					"invoker/dark_artistry/invoker_tornado"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"storm_cyclone"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"12"
+			}
+			"radius"							"300"
+			"duration"							"3"
+			"armor_reduce_factor"				"7"
+			"chance"							"20"
+			"speed"								"150"
+		}
+	}
+	"arcane_bolt_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"奥法鹰隼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/arcane_bolt"
+		"AbilityTextureName"					"skywrath_mage_arcane_bolt_alt2"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"arcane_bolt"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"40"
+			}
+			"armor_reduce_factor"				"3"
+			"chance"							"20"
+			"count"								"5"
+			"heal"
+			{
+				"value"							"0"
+				"_health"						"0.02"
+			}
+		}
+	}
+	"finger_of_death_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"死亡一指"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/finger_of_death"
+		"AbilityTextureName"					"lion/finger_of_death/lion_finger_of_death_immortal"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"finger_of_death"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"15"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"42"
+			}
+			"radius"							"325"
+			"damage_bonus_pct"					"0.1"
+			"max_count"							"2000"
+			"armor_reduce_factor"				"90"
+		}
+	}
+	"dream_coil_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"梦境缠绕"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/dream_coil"
+		"AbilityTextureName"					"puck/puck_ti10_immortal_ability_icons/puck_dream_coil_ti10"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"dream_coil"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"400"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"6.7"
+			}
+			"duration"							"6"
+			"interval"							"0.25"
+		}
+	}
+	"ball_lightning_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"球状闪电"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/ball_lightning"
+		"AbilityTextureName"					"storm_spirit_ball_lightning_orchid"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"ball_lightning"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"400"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"8"
+			}
+			"duration"							"8"
+			"interval"							"0.5"
+			"armor_reduce_factor"				"4"
+		}
+	}
+	"cube_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"星魄之蚀"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/cube"
+		"AbilityTextureName"					"rubick/arcana/rubick_arcane_supremacy_arcana"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"cube"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"800"
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"96"
+			}
+			"armor_reduce_factor"				"69"
+		}
+	}
+	"spirit_walk_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"墨涌"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/spirit_walk"
+		"AbilityTextureName"					"grimstroke_spirit_walk"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"spirit_walk"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"1200"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"radius"							"500"
+			"damage_end"
+			{
+				"value"							"0"
+				"_spell_power"					"28"
+			}
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"7"
+			}
+			"duration"							"4"
+		}
+	}
+	"overload_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"超负荷"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/overload"
+		"AbilityTextureName"					"storm_spirit_overload_ti8_golden"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"overload"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_spell_power"					"24"
+			}
+			"radius"							"300"
+			"duration"							"2"
+			"attackspeed"						"60"
+			"mana_cost_pct"						"10"
+			"bonus_attack_damage"				"200"
+			"bonus_spell_power"					"200"
+		}
+	}
+	"glaives_of_wisdom_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"智慧之刃"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/glaives_of_wisdom"
+		"AbilityTextureName"					"silencer/ti8_immortal_weapon/silencer_glaives_of_wisdom_immortal"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"glaives_of_wisdom"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_int"							"7"
+			}
+			"int"								"1500"
+			"duration"							"30"
+		}
+	}
+	"tempest_double_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"风暴双雄"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/tempest_double"
+		"AbilityTextureName"					"arc_warden_tempest_double"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"tempest_double"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityCooldown"						"20"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_primary"						"7"
+				"_upgrade"						"1"
+			}
+			"unit_health"
+			{
+				"value"							"0"
+				"_health"						"3"
+			}
+			"unit_armor"
+			{
+				"value"							"0"
+				"_armor"						"3"
+			}
+			"unit_attak_rate"					"0.75"
+			"summon_count"						"1"
+			"level"								"2"
+		}
+	}
+	"wisp_all_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"元素精灵"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/wisp_all"
+		"AbilityTextureName"					"invoker_invoke"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"wisp_all"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityTag"							"SUMMON"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"attack"
+			{
+				"value"							"0"
+				"_all"							"4"
+				"_upgrade"						"1"
+			}
+			"interval"							"1"
+			"radius"							"900"
+			"damage_radius"						"200"
+			"buff_attackspeed"					"60"
+			"duration"							"6"
+			"cooldown"							"15"
+			"mana"								"24"
+			"reduce"							"16"
+			"chance"							"20"
+			"armor_reduce_factor"				"4"
+			"damage"
+			{
+				"value"							"0"
+				"_all"							"4"
+			}
+		}
+	}
+	"tricks_of_the_trade_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"绝杀秘技"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/tricks_of_the_trade"
+		"AbilityTextureName"					"riki_crownfall_tricks_of_the_trade"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"tricks_of_the_trade"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_PHYSICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"count"								"8"
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"18"
+			}
+			"duration"							"1.8"
+			"width"								"150"
+			"armor_reduce_factor"				"12"
+		}
+	}
+	"blood_mist_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"血雾"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/blood_mist"
+		"AbilityTextureName"					"bloodseeker_blood_mist"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"blood_mist"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"health_cost"
+			{
+				"value"							"0"
+				"_health"						"0.08"
+			}
+			"damage"
+			{
+				"value"							"0"
+				"_health"						"4"
+			}
+			"radius"							"600"
+			"armor_reduce_factor"				"2"
+			"heal"
+			{
+				"value"							"0"
+				"_health"						"0.02"
+			}
+			"max_shield"
+			{
+				"value"							"0"
+				"_health"						"2"
+			}
+		}
+	}
+	"rampage_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"狂战士之怒"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/rampage"
+		"AbilityTextureName"					"troll_warlord_rampage"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"rampage"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+		"AbilityCooldown"						"20"
+		"AbilityManaCost"						"300"
+		"AbilityValues"
+		{
+			"damage_reduce"						"75"
+			"attackspeed"						"200"
+			"attack_rate"						"0.1"
+			"duration"							"6"
+		}
+	}
+	"enchant_totem_ss"
+	{
+		"Rarity"								"5"
+		"Note"									"强化图腾"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/book/enchant_totem"
+		"AbilityTextureName"					"earthshaker_enchant_totem"
+		"MaxLevel"								"1"
+		"AbilitySharedCooldown"					"enchant_totem"
+		"CustomAbilityType"						"LEARNABLE"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+		"AbilityCooldown"						"5"
+		"AbilityManaCost"						"150"
+		"AbilityValues"
+		{
+			"attack_factor"						"5"
+			"duration"							"3"
+			"stun_duration"						"3"
+		}
+	}
+}

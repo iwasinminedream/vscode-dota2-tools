@@ -1,0 +1,335 @@
+body {
+	margin: 0;
+	padding: 0;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+}
+
+[hidden] {
+	display: none !important;
+}
+
+.kv-container {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+}
+
+.kv-header {
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+	background-color: var(--vscode-sideBar-background);
+}
+
+.kv-header h2 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 500;
+}
+
+.kv-subtitle {
+	margin: 2px 0 0;
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-formula-bar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 16px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-editor-background);
+}
+
+.kv-formula-bar input {
+	border: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	padding: 4px 8px;
+	min-height: 26px;
+	box-sizing: border-box;
+}
+
+.kv-formula-bar input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+}
+
+.kv-formula-address {
+	flex: 0 0 72px;
+	text-align: center;
+	font-weight: 500;
+}
+
+.kv-formula-value {
+	flex: 1 1 auto;
+}
+
+.kv-formula-value:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.kv-empty {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--vscode-descriptionForeground);
+	font-size: 13px;
+}
+
+#kv-error {
+	color: var(--vscode-errorForeground);
+}
+
+.kv-table {
+	flex: 1;
+	overflow: auto;
+	position: relative;
+}
+
+.kv-table table {
+	border-collapse: collapse;
+	table-layout: fixed;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+}
+
+.kv-table thead {
+	position: sticky;
+	top: 0;
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+	z-index: 1;
+}
+
+.kv-table th,
+.kv-table td {
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.kv-table td {
+	vertical-align: middle;
+	position: relative;
+}
+
+.kv-table th {
+	font-weight: 500;
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+	text-align: left;
+	position: sticky;
+	top: 0;
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+	padding-right: 18px;
+}
+
+.kv-table tr:nth-child(even) {
+	background: rgba(130, 130, 130, 0.06);
+}
+
+.kv-table tr:hover td {
+	background: rgba(130, 130, 130, 0.12);
+}
+
+
+.kv-table input {
+	width: 100%;
+	border: none;
+	background: transparent;
+	color: var(--vscode-editor-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+}
+
+.kv-table input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	background: rgba(130, 130, 130, 0.12);
+}
+
+.kv-table select {
+	width: calc(100% + 16px);
+	margin: -8px;
+	padding: 8px;
+	border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border));
+	background: var(--vscode-dropdown-background);
+	color: var(--vscode-dropdown-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-font-size);
+	box-sizing: border-box;
+	border-radius: 2px;
+}
+
+.kv-table select:hover {
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-table select:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	background: var(--vscode-dropdown-background);
+	color: var(--vscode-dropdown-foreground);
+}
+
+
+.kv-select-cell {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	width: 100%;
+	min-height: 22px;
+}
+
+.kv-select-cell select {
+	width: 100%;
+	margin: 0;
+	padding: 6px 8px;
+	box-sizing: border-box;
+}
+
+.kv-select-cell.kv-select-editing {
+	z-index: 2;
+}
+
+.kv-select-cell.kv-select-editing .kv-select-display {
+	opacity: 0.4;
+}
+
+.kv-select-display {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	width: 100%;
+}
+
+.kv-select-tag {
+	background: var(--vscode-button-secondaryBackground, rgba(37, 150, 190, 0.18));
+	color: var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground));
+	border-radius: 12px;
+	padding: 2px 8px;
+	font-size: 11px;
+	line-height: 1.3;
+}
+
+.kv-select-placeholder {
+	color: var(--vscode-descriptionForeground);
+	font-size: 11px;
+}
+
+.kv-select-hidden {
+	display: none;
+}
+
+.kv-multiselect-overlay {
+	position: absolute;
+	max-height: 240px;
+	min-width: 160px;
+	background: var(--vscode-editorWidget-background);
+	color: var(--vscode-editorWidget-foreground);
+	border: 1px solid var(--vscode-editorWidget-border);
+	border-radius: 4px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	overflow: auto;
+	z-index: 20;
+	padding: 6px 0;
+}
+
+.kv-multiselect-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 12px;
+	cursor: pointer;
+	font-size: 12px;
+}
+
+.kv-multiselect-option:hover {
+	background: var(--vscode-list-hoverBackground);
+}
+
+.kv-multiselect-option-checked {
+	background: var(--vscode-list-activeSelectionBackground);
+	color: var(--vscode-list-activeSelectionForeground);
+}
+
+.kv-multiselect-option-check {
+	margin-left: 12px;
+	opacity: 0;
+}
+
+.kv-multiselect-option-checked .kv-multiselect-option-check {
+	opacity: 1;
+}
+
+.kv-row-index {
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+	text-align: center;
+}
+
+.kv-cell-selected {
+	background: rgba(37, 150, 190, 0.15);
+	box-shadow: inset 0 0 0 2px var(--vscode-focusBorder);
+}
+
+.kv-column-header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.kv-column-letter {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--vscode-editor-foreground);
+}
+
+.kv-column-name {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.kv-resizer {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 6px;
+	height: 100%;
+	cursor: col-resize;
+	user-select: none;
+}
+
+.kv-resizer::after {
+	content: '';
+	display: block;
+	width: 1px;
+	height: 100%;
+	margin: 0 auto;
+	background: var(--vscode-panel-border);
+	opacity: 0.4;
+}
+
+.kv-resizer:hover::after,
+body.kv-resizing .kv-resizer::after {
+	opacity: 0.9;
+}
+
+body.kv-resizing,
+body.kv-resizing * {
+	cursor: col-resize !important;
+}

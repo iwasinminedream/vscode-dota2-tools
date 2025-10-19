@@ -1,0 +1,53 @@
+{
+	"BaseClass": {
+		"options": [
+			{
+				"value": "ability_lua"
+			},
+			{
+				"value": "ability_datadriven"
+			}
+		],
+		"multiple": false,
+		"separator": ","
+	},
+	"AbilityBehavior": {
+		"options": [
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_PASSIVE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_POINT"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_TOGGLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_UNRESTRICTED"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_CHANNELLED"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_AOE"
+			}
+		],
+		"multiple": true,
+		"separator": "|"
+	}
+}

@@ -26,6 +26,19 @@
 						"filenamePattern": "*"
 					}
 				]
+			},
+			{
+				"viewType": "dota2tools.kv",
+				"displayName": "Dota 2 KV Editor",
+				"priority": "option",
+				"selector": [
+					{
+						"filenamePattern": "*.kv"
+					},
+					{
+						"filenamePattern": "*.txt"
+					}
+				]
 			}
 		],
 		"languages": [
@@ -381,6 +394,16 @@
 				"command": "dota2tools.logs.refreshCategory",
 				"title": "%dota2tools.logs.refreshCategory%",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "dota2tools.kvEditor.openFile",
+				"title": "%dota2tools.kvEditor.openFile%",
+				"category": "Dota2 Tools"
+			},
+			{
+				"command": "dota2tools.kvEditor.openFile",
+				"title": "%dota2tools.kvEditor.openFile%",
+				"category": "Dota2 Tools"
 			}
 		],
 		"menus": {
@@ -724,6 +747,33 @@
 						},
 						"additionalProperties": false,
 						"markdownDescription": "监听文件变更相关设置。"
+					}
+				}
+			},
+			{
+				"title": "%dota2-tools.kv_editor_setting%",
+				"properties": {
+					"dota2-tools.A10.kv_editor.rootPath": {
+						"scope": "resource",
+						"type": "string",
+						"default": "${workspace}/kv",
+						"description": "%dota2-tools.kv_editor.rootPath.description%"
+					},
+					"dota2-tools.A10.kv_editor.type": {
+						"scope": "resource",
+						"type": "string",
+						"enum": [
+							"abilities",
+							"units",
+							"custom"
+						],
+						"enumDescriptions": [
+							"%dota2-tools.kv_editor.type.abilities%",
+							"%dota2-tools.kv_editor.type.units%",
+							"%dota2-tools.kv_editor.type.custom%"
+						],
+						"default": "custom",
+						"description": "%dota2-tools.kv_editor.type.description%"
 					}
 				}
 			},

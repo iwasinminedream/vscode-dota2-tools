@@ -4,13 +4,24 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<script src="KvEditor.js"></script>
-	<link href="KvEditor.css" rel="stylesheet" />
+	<link rel="stylesheet" href="KvEditor.css" />
+	<script defer src="KvEditor.js"></script>
 </head>
 
 <body>
-	<article id="markdown-body">
-	</article>
+	<div class="kv-container">
+		<header class="kv-header">
+			<h2 id="kv-file-name"></h2>
+			<p id="kv-file-meta" class="kv-subtitle"></p>
+		</header>
+		<section class="kv-formula-bar">
+			<input id="kv-editor-address" class="kv-formula-address" type="text" value="" readonly>
+			<input id="kv-editor-value" class="kv-formula-value" type="text" disabled>
+		</section>
+		<section id="kv-empty" class="kv-empty" hidden></section>
+		<section id="kv-error" class="kv-empty" hidden></section>
+		<section id="kv-table" class="kv-table" hidden></section>
+	</div>
 </body>
 
 </html>
