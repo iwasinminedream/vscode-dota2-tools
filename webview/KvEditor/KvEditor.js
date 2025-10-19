@@ -579,7 +579,20 @@ function renderTable(columns, rows, columnOptions) {
 	if (!tableSection) {
 		return;
 	}
-	const preservePending = Boolean(pendingMultiSelectReopen);
+	let preservePending = Boolean(pendingMultiSelectReopen);
+	if (!preservePending && openMultiSelectContext) {
+		const reopenColumn = openMultiSelectContext.select?.dataset.key ?? '';
+		const reopenRowId = openMultiSelectContext.select?.dataset.id ?? '';
+		const reopenRowIndex = openMultiSelectContext.td?.dataset.rowIndex ?? '';
+		if (reopenColumn && reopenRowId) {
+			pendingMultiSelectReopen = {
+				column: reopenColumn,
+				rowId: reopenRowId,
+				rowIndex: reopenRowIndex
+			};
+			preservePending = true;
+		}
+	}
 	closeMultiSelectDropdown({ preservePending });
 	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...columns];
 	const table = document.createElement('table');
