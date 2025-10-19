@@ -1,32 +1,41 @@
 # VS Code Dota2 Tools – Copilot Instructions
 
-## Orientation
-- `src/extension.ts` is the entrypoint; it localizes strings, sets up the status bar, runs `init(...)`, then registers every command under the `dota2tools.*` namespace.
-- `src/init.ts` orchestrates feature modules. Each module exports an `*Init` function and may be skipped by user settings under `dota2-tools.A1.module_list`; read those flags before auto-enabling new functionality.
-- Shared helpers live under `src/utils/`; prefer `localize`, `getWebviewContent`, `writeKeyValue`, and `getPathConfiguration` instead of reinventing file/path handling or webview glue.
-- Global duct-tape types (`Table`, `LuaFunction`, etc.) are declared in `src/declarations/common.d.ts`; keep additions there so strict TS stays happy.
+## Big Picture
+- `src/extension.ts` boots localization (`localizeInit`), status bar, `init(...)`, and a `FeiShu` instance before registering all `dota2tools.*` commands—treat every module init as idempotent.
+- `src/init.ts` walks `moduleList`; each `*Init` skips when `dota2-tools.A1.module_list` disables it and reports progress through `showStatusBarMessage`/`refreshStatusBarMessage`.
+- Core services sit under `src/module/` (API notes, completions, sheets, logs, translate, KV editor) while command handlers live in `src/command/` and reuse shared helpers.
+- `src/utils/` hosts plumbing (`getPathConfiguration`, `writeKeyValue`, `abilityCSV2KV`, `unitCSV2KV`, `getWebviewContent`); prefer these over ad-hoc copies.
+- Singletons (`getLuaApiTree`, `getLuaCompletion`, `FeiShu`, etc.) cache heavy state—retrieve via accessors instead of re-instantiating.
 
-## Data & External Systems
-- API browsing, completion, and notes flow through `DotaApiNote` (`src/Class/DotaApiNote.ts`), which boots from `resource/api_note.json` and then synchronizes against a remote MySQL instance. Avoid blocking edits around `action(...)`; always refresh downstream caches via `apiNote.init` callbacks.
-- Feishu/Lark cloud sync is centralized in `src/module/sheet_cloud.ts` using `FeiShu` (`src/Class/FeiShu.ts`). It polls every few seconds, relies on workspace settings (`dota2-tools.A8.*`), and writes KV files via `abilityCSV2KV`/`unitCSV2KV`. Reuse its helpers for any new cloud-facing tasks.
-- Large static datasets (`resource/*.json`, `resource/*.txt`) back the tree views, completions, and translators. When updating them, ensure corresponding webviews or listeners refresh (e.g., `luaApiTree.refreshRawData`).
-- File-system watchers live under `src/listener/`; they use `node-watch` and respect `dota2-tools.A3.listener`. When adding new watchers, mirror the opt-in/opt-out pattern and reuse `showStatusBarMessage` for user feedback.
+## Module Lifecycle & Config
+- `moduleList` uses `skipModuleList` + `ModuleListConfig` keys; check `dota2-tools.A1.module_list` or call `isSkipModule` patterns when adding new toggles.
+- Settings changes flow through `EventManager` (`Class/event.ts`); listeners should early-return unless `event.affectsConfiguration(...)` matches the module’s namespace.
+- Watchers like `listenerAbilityExcelInit` and `listenerKV2JSInit` read `dota2-tools.A3.listener`; always call their exposed `stopWatch()` before restarting to avoid duplicate `node-watch` handles.
+- Translation, sheet cloud, and other services read bespoke config blocks (`dota2-tools.A7.*`, `A8.*`, `A10.*`); respect existing quick-pick UX and `localize(...)` labels when extending options.
+- `addonInfoInit` auto-detects `game`/`content` via `findFile('addoninfo.txt')`, storing paths for path helpers—new code should consult `getGameDir`/`getContentDir` before touching the file system.
+
+## Data Sources & Sync
+- `Class/DotaApiNote.ts` seeds from `resource/api_note.json` plus MySQL (see `action(...)`); `apiNote.init` refreshes Lua trees and completion providers, so trigger those callbacks after mutating note data.
+- Feishu/Lark automation in `module/sheet_cloud.ts` polls every 5 s, manages branch quick-picks, and converts spreadsheets using `processFileData` + `abilityCSV2KV`/`unitCSV2KV`; keep exports in sync with status bar indicators.
+- Excel → KV workflows go through `cmdExcel2KV` and `eachExcelConfig`, expanding `${game}`/`${content}` placeholders with `getPathConfiguration`/`addonInfo`; reuse these utilities for any new CSV pipelines.
+- Localization and translation modules cascade their updates through `translateInit`, `localization` commands, and `dota2-tools.A7` settings—ensure new integrations honour the configured provider.
+- Resource caches under `resource/` feed completions, webviews, and viewers; after editing them, trigger the appropriate module refresh (e.g., re-run `apiNoteInit`, reload trees, or rerun watchers) so UI stays consistent.
 
 ## UI Patterns
-- Tree views (`src/TreeDataProvider/*`) expect an accompanying command palette workflow (copy/edit/overview). Use `statusBar` helpers to communicate operations and update `messageList` so the tooltip history stays coherent.
-- `errorLogExplorer` (see `src/TreeDataProvider/errorLogTree.ts`) pulls daily TXT logs from the URLs configured in `dota2-tools.A9.LogServer`. Keep the date format `YYYY-MM-DD.txt` and reuse its command wiring (`dota2tools.logs.open`) when adding new log categories.
-- Webviews load HTML from `webview/<feature>/<feature>.html` via `getWebviewContent`; this injects VS Code toolkit + codicons and rewrites relative asset paths. Keep assets alongside the HTML to avoid broken URIs, and rely on `panel.webview.postMessage` for state updates.
-- Custom editors live in `CustomTextEditorProvider/` (e.g., `lazayboyProvider`). Follow that provider’s registration pattern if you add new editors.
-- Any user-facing string must pass through `localize(...)`, and you can reverse-map IDs with `reverseLocalize` when syncing settings.
+- Tree providers in `src/TreeDataProvider/` pair with `statusBar` history; when mutating tree data, append messages via `showStatusBarMessage` to keep tooltips meaningful.
+- Webviews load via `utils/getWebViewContent`, which injects shared assets from `webview/common`; keep new feature assets under `webview/<feature>/` so URI rewriting succeeds.
+- Custom editors like `CustomTextEditorProvider/kvEditorProvider.ts` register through `kvEditorInit`; ensure new editors follow the `register(context)` pattern and expose commands via `TreeDataProvider` or `vscode.openWith`.
+- The KV explorer (`module/kvEditor.ts`) wires settings watchers to `EventManager`; use `readKvEditorSettings` + `updateSettings` to stay aligned with UI filters.
 
-## Build, Test & Release
-- Install deps with `npm install`, compile once with `npm run compile`, or keep `npm run watch` running while iterating (there’s a matching VS Code task). Unit tests run through `npm run test` after `npm run compile-tests`/`lint`; use `npm run watch-tests` for incremental builds.
-- Webpack bundles only the extension host code to `dist/extension.js`; webview code ships unbundled from `webview/` and `lib/`.
-- Publishing is scripted in `publish_patch.js` (wraps `vsce publish patch` and auto-confirms). Make sure `vsce` is installed before executing.
+## Workflows & Tooling
+- Install dependencies with `npm install`; use `npm run watch` or the `npm: watch` VS Code task for webpack builds, and `npm run watch-tests` for test-mode bundling.
+- Production bundles land in `dist/extension.js` via `npm run compile`; ensure new entry points are declared in `webpack.config.js` or marked external.
+- Publishing runs `node publish_patch.js` (wraps `vsce publish patch`); verify `vsce` exists and version bump rules are met before invoking.
+- Feishu dev relies on `@larksuiteoapi/node-sdk` + axios-based `utils/request`; new integrations should reuse `FeiShu.request` to inherit token refresh logic.
 
-## Working Guidelines
-- Whenever you mutate API note data or KV outputs, also touch the cached files under `resource/` to keep offline mode consistent.
-- Respect placeholder paths (`${game}`, `${content}`, `${workspace}`) by resolving them via `getPathConfiguration` or `eachExcelConfig` rather than `path.join` manually.
-- Use `EventManager.fireEvent` to broadcast configuration changes so listeners refresh correctly; new modules should register themselves in `moduleList` to benefit from this wiring.
-- Long-running tasks should toggle the status bar icon via `changeStatusBarState(StatusBarState.LOADING/ALL_DONE)` and log updates with `showStatusBarMessage`.
-- Before introducing new dependencies, confirm they can be webpacked or add them to the `externals` list to avoid breaking bundling.
+## Conventions & Gotchas
+- Always route user-facing strings through `localize(...)`/`reverseLocalize` (`src/utils/localize.ts`), keeping keys in `package.nls*.json`.
+- Extend shared types (`Table`, `LuaFunction`, `ModuleListConfig`, etc.) in `src/declarations/common.d.ts`; missing typings here break the TS build.
+- Prefer `getPathConfiguration` when dealing with `${game}`/`${content}`/`${workspace}` placeholders, and avoid manual string concatenation.
+- Long tasks should toggle `changeStatusBarState(StatusBarState.LOADING/ALL_DONE)` and emit progress via `showStatusBarMessage`; history drives both status bar text and the output channel.
+- When adding watchers or timers, honour existing intervals and dispose handles on deactivate; leaking timers keeps the extension hot and duplicates work.

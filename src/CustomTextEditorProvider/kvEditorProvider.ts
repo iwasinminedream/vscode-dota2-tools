@@ -220,9 +220,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		if (!applied) {
 			throw new Error('写入 KV 文本失败。');
 		}
-		const saved = await document.save();
-		if (!saved) {
-			throw new Error('保存 KV 文件失败。');
+		const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+		if (autoSaveMode && autoSaveMode !== 'off') {
+			const saved = await document.save();
+			if (!saved) {
+				throw new Error('保存 KV 文件失败。');
+			}
 		}
 	}
 
