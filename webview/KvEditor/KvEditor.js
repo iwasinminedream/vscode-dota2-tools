@@ -255,7 +255,7 @@ function getOptionLabel(fieldConfig, value) {
 	return fieldConfig?.options?.find((option) => option.value === value)?.label ?? value;
 }
 
-// 渲染多选下拉的标签展示
+// 渲染下拉选择的标签展示
 function updateSelectDisplay(select, display, fieldConfig) {
 	if (!display) {
 		return;
@@ -283,7 +283,7 @@ function updateSelectDisplay(select, display, fieldConfig) {
 	});
 }
 
-// 根据当前值刷新多选浮层的选中状态
+// 根据当前值刷新下拉浮层的选中状态
 function updateMultiSelectOverlaySelection() {
 	if (!openMultiSelectContext) {
 		return;
@@ -301,35 +301,42 @@ function updateMultiSelectOverlaySelection() {
 	});
 }
 
-// 切换多选浮层中某个选项的勾选状态
+// 切换浮层中某个选项的勾选状态
 function toggleMultiSelectOption(value) {
 	if (!openMultiSelectContext) {
 		return;
 	}
-	const { select, fieldConfig, display, td } = openMultiSelectContext;
-	const currentValues = splitMultiValue(readElementValue(select, fieldConfig), fieldConfig);
-	const selectedSet = new Set(currentValues);
-	if (selectedSet.has(value)) {
-		selectedSet.delete(value);
+	const { select, fieldConfig, display, td, isMulti } = openMultiSelectContext;
+	if (isMulti) {
+		const currentValues = splitMultiValue(readElementValue(select, fieldConfig), fieldConfig);
+		const selectedSet = new Set(currentValues);
+		if (selectedSet.has(value)) {
+			selectedSet.delete(value);
+		} else {
+			selectedSet.add(value);
+		}
+		const orderedValues = (fieldConfig?.options ?? [])
+			.map((option) => option.value)
+			.filter((optionValue) => selectedSet.has(optionValue));
+		const separator = getFieldSeparator(fieldConfig);
+		const newValue = orderedValues.join(separator);
+		const rowId = select.dataset.id ?? '';
+		const columnKey = select.dataset.key ?? '';
+		const rowIndex = td?.dataset.rowIndex ?? '';
+		pendingMultiSelectReopen = { column: columnKey, rowId, rowIndex };
+		setElementValue(select, newValue, fieldConfig);
+		handleElementChange(select, fieldConfig);
+		updateSelectDisplay(select, display, fieldConfig);
+		updateMultiSelectOverlaySelection();
 	} else {
-		selectedSet.add(value);
+		setElementValue(select, value, fieldConfig);
+		handleElementChange(select, fieldConfig);
+		updateSelectDisplay(select, display, fieldConfig);
+		closeMultiSelectDropdown();
 	}
-	const orderedValues = (fieldConfig?.options ?? [])
-		.map((option) => option.value)
-		.filter((optionValue) => selectedSet.has(optionValue));
-	const separator = getFieldSeparator(fieldConfig);
-	const newValue = orderedValues.join(separator);
-	const rowId = select.dataset.id ?? '';
-	const columnKey = select.dataset.key ?? '';
-	const rowIndex = td?.dataset.rowIndex ?? '';
-	pendingMultiSelectReopen = { column: columnKey, rowId, rowIndex };
-	setElementValue(select, newValue, fieldConfig);
-	handleElementChange(select, fieldConfig);
-	updateSelectDisplay(select, display, fieldConfig);
-	updateMultiSelectOverlaySelection();
 }
 
-// 关闭多选浮层并清理监听
+// 关闭下拉浮层并清理监听
 function closeMultiSelectDropdown(options) {
 	if (!openMultiSelectContext) {
 		return;
@@ -349,11 +356,12 @@ function closeMultiSelectDropdown(options) {
 	}
 }
 
-// 打开多选浮层并绑定事件
+// 打开下拉浮层并绑定事件
 function openMultiSelectDropdown(context) {
 	if (!tableSection || !context || !context.fieldConfig) {
 		return;
 	}
+	const isMultiSelect = Boolean(context.fieldConfig?.multiple);
 	if (openMultiSelectContext) {
 		if (openMultiSelectContext.td === context.td) {
 			updateMultiSelectOverlaySelection();
@@ -420,6 +428,7 @@ function openMultiSelectDropdown(context) {
 		display: context.display,
 		fieldConfig: context.fieldConfig,
 		td: context.td,
+		isMulti: isMultiSelect,
 		reposition,
 		outsideHandler,
 		keyHandler,
@@ -607,7 +616,7 @@ function renderTable(columns, rows, columnOptions) {
 		return;
 	}
 	let preservePending = Boolean(pendingMultiSelectReopen);
-	if (!preservePending && openMultiSelectContext) {
+	if (!preservePending && openMultiSelectContext && openMultiSelectContext.isMulti) {
 		const reopenColumn = openMultiSelectContext.select?.dataset.key ?? '';
 		const reopenRowId = openMultiSelectContext.select?.dataset.id ?? '';
 		const reopenRowIndex = openMultiSelectContext.td?.dataset.rowIndex ?? '';
@@ -778,6 +787,7 @@ function renderTable(columns, rows, columnOptions) {
 					} else {
 						const updateSelection = () => {
 							const currentValue = readElementValue(select, fieldConfig);
+							activeCell = { id: row.id ?? '', key: column };
 							selectCell(td, {
 								column,
 								columnLetter,
@@ -791,39 +801,16 @@ function renderTable(columns, rows, columnOptions) {
 								value: currentValue
 							});
 						};
-						const showSelect = () => {
-							select.classList.remove('kv-select-hidden');
-							container.classList.add('kv-select-editing');
-							select.focus();
-						};
-						select.addEventListener('focus', () => {
-							activeCell = { id: row.id ?? '', key: column };
-							updateSelection();
-						});
-						select.addEventListener('blur', () => {
-							activeCell = undefined;
-							select.classList.add('kv-select-hidden');
-							container.classList.remove('kv-select-editing');
-						});
 						select.addEventListener('change', () => {
 							handleElementChange(select, fieldConfig);
 							updateSelectDisplay(select, display, fieldConfig);
-							select.blur();
-						});
-						select.addEventListener('keydown', (event) => {
-							if (event.key === 'Escape') {
-								event.preventDefault();
-								const original = select.dataset.initialValue ?? '';
-								setElementValue(select, original, fieldConfig);
-								select.blur();
-							}
 						});
 						td.addEventListener('click', () => {
 							updateSelection();
 						});
 						td.addEventListener('dblclick', () => {
 							updateSelection();
-							showSelect();
+							openMultiSelectDropdown({ td, select, display, fieldConfig });
 						});
 					}
 				} else {
