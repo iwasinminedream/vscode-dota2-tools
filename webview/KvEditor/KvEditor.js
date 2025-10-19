@@ -65,6 +65,7 @@ if (formulaValueInput) {
 	});
 }
 
+// 根据给定状态切换表格、空白提示和错误提示的显示
 function setSectionVisibility({ showTable, showEmpty, showError }) {
 	if (tableSection) {
 		tableSection.hidden = !showTable;
@@ -77,6 +78,7 @@ function setSectionVisibility({ showTable, showEmpty, showError }) {
 	}
 }
 
+// 清空当前选中单元格及其公式编辑器状态
 function clearSelection() {
 	closeMultiSelectDropdown();
 	if (selectedTd && selectedTd.classList) {
@@ -96,6 +98,7 @@ function clearSelection() {
 	}
 }
 
+// 选中指定单元格并同步公式栏信息
 function selectCell(td, context) {
 	if (!td) {
 		clearSelection();
@@ -141,6 +144,7 @@ function selectCell(td, context) {
 	}
 }
 
+// 还原公式栏内容到单元格初始值
 function revertFormulaValue() {
 	if (!selectedCell || !selectedCell.element) {
 		return;
@@ -152,6 +156,7 @@ function revertFormulaValue() {
 	}
 }
 
+// 将公式栏的修改写回选中单元格
 function commitFormulaValue() {
 	if (!selectedCell || !selectedCell.editable || !selectedCell.element || !formulaValueInput) {
 		return;
@@ -169,11 +174,13 @@ function commitFormulaValue() {
 	handleElementChange(selectedCell.element, selectedCell.fieldConfig);
 }
 
+// 获取字段配置中定义的分隔符
 function getFieldSeparator(fieldConfig) {
 	const separator = fieldConfig?.separator ?? ',';
 	return typeof separator === 'string' && separator.length > 0 ? separator : ',';
 }
 
+// 将多选字段的原始文本拆分为值列表
 function splitMultiValue(value, fieldConfig) {
 	const separator = getFieldSeparator(fieldConfig);
 	if (!value || typeof value !== 'string') {
@@ -185,6 +192,7 @@ function splitMultiValue(value, fieldConfig) {
 		.filter((entry) => entry.length > 0);
 }
 
+// 从输入控件读取当前值
 function readElementValue(element, fieldConfig) {
 	if (!element) {
 		return '';
@@ -197,6 +205,7 @@ function readElementValue(element, fieldConfig) {
 	return element.value ?? '';
 }
 
+// 将指定值写入输入控件
 function setElementValue(element, value, fieldConfig) {
 	if (!element) {
 		return;
@@ -215,6 +224,7 @@ function setElementValue(element, value, fieldConfig) {
 	}
 }
 
+// 处理单元格数据变动并通知扩展端
 function handleElementChange(element, fieldConfig) {
 	if (!element) {
 		return;
@@ -240,10 +250,12 @@ function handleElementChange(element, fieldConfig) {
 	}
 }
 
+// 获取多选项的显示文案
 function getOptionLabel(fieldConfig, value) {
 	return fieldConfig?.options?.find((option) => option.value === value)?.label ?? value;
 }
 
+// 渲染多选下拉的标签展示
 function updateSelectDisplay(select, display, fieldConfig) {
 	if (!display) {
 		return;
@@ -271,6 +283,7 @@ function updateSelectDisplay(select, display, fieldConfig) {
 	});
 }
 
+// 根据当前值刷新多选浮层的选中状态
 function updateMultiSelectOverlaySelection() {
 	if (!openMultiSelectContext) {
 		return;
@@ -288,6 +301,7 @@ function updateMultiSelectOverlaySelection() {
 	});
 }
 
+// 切换多选浮层中某个选项的勾选状态
 function toggleMultiSelectOption(value) {
 	if (!openMultiSelectContext) {
 		return;
@@ -315,6 +329,7 @@ function toggleMultiSelectOption(value) {
 	updateMultiSelectOverlaySelection();
 }
 
+// 关闭多选浮层并清理监听
 function closeMultiSelectDropdown(options) {
 	if (!openMultiSelectContext) {
 		return;
@@ -334,6 +349,7 @@ function closeMultiSelectDropdown(options) {
 	}
 }
 
+// 打开多选浮层并绑定事件
 function openMultiSelectDropdown(context) {
 	if (!tableSection || !context || !context.fieldConfig) {
 		return;
@@ -413,10 +429,12 @@ function openMultiSelectDropdown(context) {
 	updateMultiSelectOverlaySelection();
 }
 
+// 计算列的最小宽度
 function getMinColumnWidth(column) {
 	return column === ROW_NUMBER_COLUMN_KEY ? ROW_NUMBER_MIN_WIDTH : COLUMN_MIN_WIDTH;
 }
 
+// 获取列的当前宽度（含初次估算）
 function getColumnWidth(column, headerText) {
 	if (columnWidths[column]) {
 		return columnWidths[column];
@@ -431,6 +449,7 @@ function getColumnWidth(column, headerText) {
 	return estimated;
 }
 
+// 将列索引转换为字母标记
 function getColumnLetter(index) {
 	let dividend = index + 1;
 	let columnName = '';
@@ -442,6 +461,7 @@ function getColumnLetter(index) {
 	return columnName;
 }
 
+// 根据列宽重算整表宽度
 function refreshTableWidth() {
 	if (!tableSection) {
 		return;
@@ -466,6 +486,7 @@ function refreshTableWidth() {
 	table.style.width = `${Math.max(totalWidth, fallbackWidth)}px`;
 }
 
+// 更新指定列的宽度并刷新布局
 function updateColumnWidth(column, width) {
 	const adjusted = Math.max(getMinColumnWidth(column), width);
 	columnWidths[column] = adjusted;
@@ -487,6 +508,7 @@ function updateColumnWidth(column, width) {
 	refreshTableWidth();
 }
 
+// 开始列宽拖拽操作
 function startColumnResize(event, column) {
 	if (!tableSection) {
 		return;
@@ -504,6 +526,7 @@ function startColumnResize(event, column) {
 	document.body.classList.add('kv-resizing');
 }
 
+// 拖拽过程中实时调整列宽
 function handleColumnResize(event) {
 	if (!resizeState) {
 		return;
@@ -513,6 +536,7 @@ function handleColumnResize(event) {
 	updateColumnWidth(resizeState.column, newWidth);
 }
 
+// 结束列宽拖拽并清理状态
 function stopColumnResize() {
 	if (!resizeState) {
 		return;
@@ -521,6 +545,7 @@ function stopColumnResize() {
 	document.body.classList.remove('kv-resizing');
 }
 
+// 重新聚焦此前活跃的输入控件
 function restoreActiveCell() {
 	if (!activeCell) {
 		return;
@@ -539,6 +564,7 @@ function restoreActiveCell() {
 	}
 }
 
+// 渲染后恢复之前的单元格选中状态
 function restoreSelection(columnLabels, columnLetters, columnOptions) {
 	if (!selectedCellKey) {
 		return;
@@ -575,6 +601,7 @@ function restoreSelection(columnLabels, columnLetters, columnOptions) {
 	});
 }
 
+// 渲染主表格结构和单元格控件
 function renderTable(columns, rows, columnOptions) {
 	if (!tableSection) {
 		return;
@@ -894,6 +921,7 @@ function renderTable(columns, rows, columnOptions) {
 	}
 }
 
+// 根据扩展端消息刷新整体界面
 function render(payload) {
 	if (!payload) {
 		return;
