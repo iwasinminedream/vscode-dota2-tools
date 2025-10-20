@@ -442,3 +442,386 @@ body.kv-resizing,
 body.kv-resizing * {
 	cursor: col-resize !important;
 }
+
+body.kv-texture-menu-open {
+	overflow: hidden;
+}
+
+.kv-texture-menu-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.kv-texture-menu {
+	width: min(960px, 92vw);
+	height: min(640px, 82vh);
+	background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+	color: var(--vscode-editorWidget-foreground, var(--vscode-editor-foreground));
+	border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+	border-radius: 8px;
+	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.kv-texture-menu-header {
+	padding: 16px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-sideBar-background);
+}
+
+.kv-texture-menu-search-row {
+	display: grid;
+	grid-template-columns: auto 1fr auto auto;
+	gap: 12px;
+	align-items: center;
+}
+
+.kv-texture-menu-toggle-group {
+	display: inline-flex;
+	background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+	border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.kv-texture-menu-toggle {
+	appearance: none;
+	border: none;
+	background: transparent;
+	color: inherit;
+	padding: 6px 14px;
+	font-size: 13px;
+	cursor: pointer;
+	transition: background 0.2s ease, color 0.2s ease;
+}
+
+.kv-texture-menu-toggle:not(:disabled):hover {
+	background: rgba(130, 130, 130, 0.16);
+}
+
+.kv-texture-menu-toggle-active {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+}
+
+.kv-texture-menu-toggle-disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.kv-texture-menu-search {
+	position: relative;
+	width: 100%;
+}
+
+.kv-texture-menu-search input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+	border-radius: 6px;
+	background: var(--vscode-input-background, var(--vscode-editor-background));
+	color: var(--vscode-input-foreground, var(--vscode-editor-foreground));
+	font-size: 13px;
+}
+
+.kv-texture-menu-search input:focus {
+	outline: none;
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-texture-menu-filter {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6px;
+	position: relative;
+}
+
+.kv-texture-menu-close {
+	appearance: none;
+	border: none;
+	background: transparent;
+	color: inherit;
+	font-size: 20px;
+	line-height: 1;
+	padding: 0 4px;
+	cursor: pointer;
+}
+
+.kv-texture-menu-close:hover {
+	color: var(--vscode-focusBorder);
+}
+
+.kv-texture-menu-body {
+	flex: 1 1 auto;
+	padding: 16px;
+	overflow: auto;
+	background: var(--vscode-editor-background);
+}
+
+.kv-texture-menu-loading,
+.kv-texture-menu-empty,
+.kv-texture-menu-error {
+	padding: 24px;
+	text-align: center;
+	font-size: 14px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-texture-menu-section {
+	margin-bottom: 24px;
+}
+
+.kv-texture-menu-section-title {
+	font-size: 14px;
+	font-weight: 600;
+	margin-bottom: 12px;
+}
+
+.kv-texture-menu-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+	gap: 4px;
+}
+
+.kv-texture-menu-grid-tight .kv-texture-menu-item img {
+	width: 56px;
+	height: 56px;
+}
+
+.kv-texture-menu-grid-tight .kv-texture-menu-item {
+	padding: 4px;
+	border-radius: 6px;
+}
+
+.kv-texture-menu-hero-filter-btn {
+	border: none;
+	background: transparent;
+	padding: 0 6px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+}
+
+.kv-texture-menu-hero-filter-btn:hover:not(.kv-texture-menu-hero-filter-disabled) {
+	background: rgba(130, 130, 130, 0.1);
+}
+
+.kv-texture-menu-hero-filter-disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.kv-texture-menu-hero-filter-img {
+	width: 28px;
+	height: 28px;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.kv-texture-menu-displaymode-btn {
+	border: none;
+	background: transparent;
+	padding: 6px 8px;
+	cursor: pointer;
+	border-radius: 6px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.kv-texture-menu-displaymode-btn:hover {
+	background: rgba(130, 130, 130, 0.1);
+}
+
+.kv-texture-menu-displaymode-btn .codicon {
+	font-size: 18px;
+}
+
+.kv-texture-menu-displaymode-icononly {
+	background: rgba(130, 130, 130, 0.12);
+}
+
+.kv-texture-menu-hero-dropdown {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	width: 360px;
+	max-height: 360px;
+	overflow: auto;
+	background: var(--vscode-editorWidget-background);
+	border: 1px solid var(--vscode-editorWidget-border);
+	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+	padding: 8px;
+	z-index: 45;
+	border-radius: 6px;
+}
+
+.kv-texture-menu-hero-section {
+	margin-bottom: 8px;
+}
+
+.kv-texture-menu-hero-section-title {
+	font-size: 12px;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.kv-texture-menu-hero-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.kv-texture-menu-hero-select {
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+
+.kv-texture-menu-hero-select img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.kv-texture-menu-hero-select-active {
+	box-shadow: 0 0 0 2px var(--vscode-focusBorder);
+	border-radius: 4px;
+}
+
+.kv-texture-menu-hero-clear {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px 10px;
+	margin-bottom: 8px;
+	border-radius: 12px;
+	border: 1px solid transparent;
+	background: rgba(130, 130, 130, 0.08);
+	color: inherit;
+	cursor: pointer;
+}
+
+.kv-texture-menu-hero-clear:hover {
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-texture-menu-hero-clear-active {
+	border-color: var(--vscode-focusBorder);
+	background: rgba(130, 130, 130, 0.16);
+}
+
+.kv-texture-menu-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 10px;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: var(--vscode-editor-background);
+	color: inherit;
+	cursor: pointer;
+	transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.kv-texture-menu-item-icononly {
+	padding: 6px;
+}
+
+.kv-texture-menu-item:hover {
+	border-color: var(--vscode-focusBorder);
+	background: rgba(130, 130, 130, 0.12);
+}
+
+.kv-texture-menu-item img {
+	width: 64px;
+	height: 64px;
+	object-fit: contain;
+}
+
+.kv-texture-menu-item-label {
+	font-size: 12px;
+	text-align: center;
+	word-break: break-word;
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-texture-menu-item-selected {
+	border-color: var(--vscode-focusBorder);
+	box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.kv-texture-menu-close-button-inline {
+	margin: 12px auto 0;
+	padding: 6px 16px;
+	border-radius: 4px;
+	border: 1px solid var(--vscode-button-border, var(--vscode-focusBorder));
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	cursor: pointer;
+}
+
+.kv-texture-menu-close-button-inline:hover {
+	filter: brightness(1.08);
+}
+
+.kv-texture-menu-hero-list {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 320px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+.kv-texture-menu-hero-button {
+	appearance: none;
+	border: 1px solid transparent;
+	background: transparent;
+	padding: 2px;
+	border-radius: 50%;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.kv-texture-menu-hero-button img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: 50%;
+}
+
+.kv-texture-menu-hero-button:hover {
+	transform: translateY(-2px);
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-texture-menu-hero-active {
+	border-color: var(--vscode-focusBorder);
+	box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.kv-texture-menu-hero-reset {
+	width: auto;
+	height: auto;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+}

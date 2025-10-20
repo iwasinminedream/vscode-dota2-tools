@@ -23,6 +23,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 	private readonly extensionImagesRoot: string;
 	private readonly columnOptionConfig: KvEditorColumnOptionMap;
+	private readonly textureMenuCache = new Map<string, TextureMenuRawIcon[]>();
+	private heroFilterCache: TextureMenuHeroCache[] | undefined;
 
 	public async resolveCustomTextEditor(
 		document: vscode.TextDocument,
@@ -75,6 +77,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					const messageText = error instanceof Error ? error.message : String(error);
 					vscode.window.showErrorMessage(messageText);
 				});
+			}
+			if (message.type === 'requestTextureMenu') {
+				const requestPayload: TextureMenuRequestMessage | undefined = message.payload;
+				if (!requestPayload || typeof requestPayload.requestId !== 'string') {
+					return;
+				}
+				void this.handleTextureMenuRequest(document, webviewPanel.webview, requestPayload);
 			}
 		});
 
@@ -236,6 +245,266 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			resolved[column] = { options, multiple, separator };
 		}
 		return resolved;
+	}
+
+	private async handleTextureMenuRequest(
+		document: vscode.TextDocument,
+		webview: vscode.Webview,
+		request: TextureMenuRequestMessage,
+	): Promise<void> {
+		try {
+			const settings = readKvEditorSettings();
+			const entry = settings ? findKvEntryForUri(document.uri, settings) : undefined;
+			const folderType = request.folderType ?? this.detectFolderType(document.uri);
+			const response = await this.buildTextureMenuResponse(webview, folderType, entry, document.uri.fsPath);
+			webview.postMessage({
+				type: 'textureMenuData',
+				payload: {
+					requestId: request.requestId,
+					...response,
+				},
+			});
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			webview.postMessage({
+				type: 'textureMenuError',
+				payload: {
+					requestId: request.requestId,
+					error: message,
+				},
+			});
+		}
+	}
+
+	private detectFolderType(uri: vscode.Uri): KvFolderType {
+		const settings = readKvEditorSettings();
+		const entry = settings ? findKvEntryForUri(uri, settings) : undefined;
+		return entry?.type ?? 'custom';
+	}
+
+	private async buildTextureMenuResponse(
+		webview: vscode.Webview,
+		folderType: KvFolderType,
+		entry: KvEditorEntry | undefined,
+		documentPath?: string,
+	): Promise<TextureMenuResponsePayload> {
+		const addonImagesRoot = this.resolveAddonImagesRoot(documentPath ?? entry?.resolvedPath ?? '', entry);
+		const extensionSpellRoots = [path.join(this.extensionImagesRoot, 'spellicons')];
+		const extensionItemRoots = [path.join(this.extensionImagesRoot, 'items')];
+		const addonSpellRoots = addonImagesRoot ? [path.join(addonImagesRoot, 'spellicons')] : [];
+		const addonItemRoots = addonImagesRoot ? [path.join(addonImagesRoot, 'items')] : [];
+		const extensionSpellIcons = await this.collectIconsForRoots(extensionSpellRoots, 'spell', 'extension', webview);
+		const extensionItemIcons = await this.collectIconsForRoots(extensionItemRoots, 'item', 'extension', webview);
+		const addonSpellIcons = await this.collectIconsForRoots(addonSpellRoots, 'spell', 'addon', webview);
+		const addonItemIcons = await this.collectIconsForRoots(addonItemRoots, 'item', 'addon', webview);
+		const allIcons = [...extensionSpellIcons, ...extensionItemIcons, ...addonSpellIcons, ...addonItemIcons];
+		const defaultKind = folderType === 'item' ? 'item' : 'spell';
+		const heroFilters = await this.collectHeroFilters(webview);
+		return {
+			folderType,
+			defaultKind,
+			icons: allIcons,
+			heroFilters: heroFilters.length ? heroFilters : undefined,
+		};
+	}
+
+	private async collectIconsForRoots(
+		roots: string[],
+		kind: TextureKind,
+		source: TextureSource,
+		webview: vscode.Webview,
+	): Promise<TextureMenuIcon[]> {
+		const results: TextureMenuIcon[] = [];
+		for (const rawRoot of roots) {
+			if (!rawRoot) {
+				continue;
+			}
+			const normalizedRoot = path.normalize(rawRoot);
+			if (!this.pathExists(normalizedRoot)) {
+				continue;
+			}
+			const cacheKey = `${source}|${kind}|${normalizedRoot}`;
+			let cached = this.textureMenuCache.get(cacheKey);
+			if (!cached) {
+				cached = await this.scanTextureDirectory(normalizedRoot, kind, source);
+				this.textureMenuCache.set(cacheKey, cached);
+			}
+			for (const icon of cached) {
+				results.push({
+					...icon,
+					uri: webview.asWebviewUri(vscode.Uri.file(icon.filePath)).toString(),
+				});
+			}
+		}
+		return results;
+	}
+
+	private async scanTextureDirectory(
+		root: string,
+		kind: TextureKind,
+		source: TextureSource,
+	): Promise<TextureMenuRawIcon[]> {
+		const results: TextureMenuRawIcon[] = [];
+		const stack: Array<{ dir: string; relative: string; depth: number; }> = [{ dir: root, relative: '', depth: 0 }];
+		while (stack.length) {
+			const current = stack.pop()!;
+			let entries: fs.Dirent[];
+			try {
+				entries = await fs.promises.readdir(current.dir, { withFileTypes: true });
+			} catch (error) {
+				continue;
+			}
+			for (const entry of entries) {
+				const fullPath = path.join(current.dir, entry.name);
+				const relativePath = current.relative ? path.join(current.relative, entry.name) : entry.name;
+				if (entry.isDirectory()) {
+					stack.push({ dir: fullPath, relative: relativePath, depth: current.depth + 1 });
+					continue;
+				}
+				if (!this.isSupportedImage(entry.name)) {
+					continue;
+				}
+				const icon = this.buildRawIconData(root, relativePath, fullPath, kind, source);
+				if (icon) {
+					results.push(icon);
+				}
+			}
+		}
+		return results;
+	}
+
+	private isSupportedImage(fileName: string): boolean {
+		return /\.(png|jpg|jpeg|webp)$/i.test(fileName);
+	}
+
+	private buildRawIconData(
+		root: string,
+		relativePathInput: string,
+		fullPath: string,
+		kind: TextureKind,
+		source: TextureSource,
+	): TextureMenuRawIcon | undefined {
+		const normalizedRelative = relativePathInput.replace(/\\/g, '/');
+		const withoutExt = normalizedRelative.replace(/\.[^.]+$/u, '');
+		const trimmedPath = withoutExt.replace(/_png$/i, '');
+		const segments = trimmedPath.split('/').filter(Boolean);
+		if (!segments.length) {
+			return undefined;
+		}
+		const heroSlug = kind === 'spell' ? segments[0].toLowerCase() : undefined;
+		const textureName = trimmedPath.toLowerCase();
+		if (!textureName) {
+			return undefined;
+		}
+		const label = segments[segments.length - 1];
+		const searchParts = new Set<string>();
+		searchParts.add(textureName);
+		searchParts.add(trimmedPath);
+		searchParts.add(withoutExt);
+		searchParts.add(segments.map((segment) => segment.replace(/_/g, ' ')).join(' '));
+		if (heroSlug) {
+			searchParts.add(heroSlug);
+		}
+		const searchKey = Array.from(searchParts)
+			.map((part) => part.replace(/[\\/_]+/g, ' '))
+			.join(' ')
+			.toLowerCase();
+		return {
+			filePath: fullPath,
+			textureName,
+			label,
+			relativePath: normalizedRelative,
+			searchKey,
+			source,
+			kind,
+			hero: heroSlug,
+		};
+	}
+
+	private async collectHeroFilters(webview: vscode.Webview): Promise<TextureMenuHeroDisplay[]> {
+		if (this.heroFilterCache) {
+			return this.heroFilterCache.map((hero) => ({
+				id: hero.id,
+				name: hero.name,
+				searchTerm: hero.searchTerm,
+				uri: webview.asWebviewUri(vscode.Uri.file(hero.filePath)).toString(),
+				attribute: hero.attribute,
+			}));
+		}
+		// prefer icons subfolder for small avatars
+		const iconsSub = path.join(this.extensionImagesRoot, 'heroes_icon', 'icons');
+		const heroesDir = this.pathExists(iconsSub) ? iconsSub : path.join(this.extensionImagesRoot, 'heroes_icon');
+		if (!this.pathExists(heroesDir)) {
+			this.heroFilterCache = [];
+			return [];
+		}
+
+		// build attribute map from resource/npc/npc_heroes.txt
+		const attributeMap: Record<string, string | undefined> = {};
+		try {
+			const heroesTxt = this.context.asAbsolutePath(path.join('resource', 'npc', 'npc_heroes.txt'));
+			if (this.pathExists(heroesTxt)) {
+				const raw = await fs.promises.readFile(heroesTxt, 'utf8');
+				const attrRegex = /"(npc_dota_hero_[a-z0-9_]+)"[\s\S]*?"AttributePrimary"\s+"(DOTA_ATTRIBUTE_[A-Z]+)"/gi;
+				let m: RegExpExecArray | null;
+				while ((m = attrRegex.exec(raw))) {
+					attributeMap[m[1].toLowerCase()] = m[2];
+				}
+			}
+		} catch (e) {
+			// ignore
+		}
+
+		const heroes: TextureMenuHeroCache[] = [];
+		let entries: fs.Dirent[];
+		try {
+			entries = await fs.promises.readdir(heroesDir, { withFileTypes: true });
+		} catch (error) {
+			this.heroFilterCache = [];
+			return [];
+		}
+		for (const entry of entries) {
+			if (!entry.isFile() || !this.isSupportedImage(entry.name)) {
+				continue;
+			}
+			const fullPath = path.join(heroesDir, entry.name);
+			const baseName = entry.name.replace(/\.[^.]+$/u, '');
+			const withoutSuffix = baseName.replace(/_png$/i, '');
+			const slug = withoutSuffix.replace(/^npc_dota_hero_/i, '').replace(/_/g, ' ').trim();
+			const searchTerm = slug || withoutSuffix.replace(/_/g, ' ') || baseName;
+			const label = this.toTitleCase(searchTerm);
+			let heroKey = withoutSuffix.toLowerCase();
+			if (!heroKey.startsWith('npc_dota_hero_')) {
+				heroKey = `npc_dota_hero_${heroKey}`;
+			}
+			heroes.push({
+				id: baseName,
+				name: label,
+				searchTerm,
+				filePath: fullPath,
+				attribute: attributeMap[heroKey],
+			});
+		}
+		heroes.sort((a, b) => a.name.localeCompare(b.name));
+		this.heroFilterCache = heroes;
+		return heroes.map((hero) => ({
+			id: hero.id,
+			name: hero.name,
+			searchTerm: hero.searchTerm,
+			uri: webview.asWebviewUri(vscode.Uri.file(hero.filePath)).toString(),
+			attribute: hero.attribute,
+		}));
+	}
+
+	private toTitleCase(value: string): string {
+		if (!value) {
+			return '';
+		}
+		return value
+			.split(/\s+/)
+			.filter(Boolean)
+			.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+			.join(' ');
 	}
 
 	private parseKv(text: string): ParsedKvTable {
@@ -620,4 +889,49 @@ interface TextureAssetMatch {
 	fullPath: string;
 	kind: TextureKind;
 	source: 'extension' | 'addon';
+}
+
+type TextureSource = 'extension' | 'addon';
+
+interface TextureMenuRequestMessage {
+	requestId: string;
+	folderType?: KvFolderType;
+}
+
+interface TextureMenuResponsePayload {
+	folderType: KvFolderType;
+	defaultKind: TextureKind;
+	icons: TextureMenuIcon[];
+	heroFilters?: TextureMenuHeroDisplay[];
+}
+
+interface TextureMenuRawIcon {
+	filePath: string;
+	textureName: string;
+	label: string;
+	relativePath: string;
+	searchKey: string;
+	source: TextureSource;
+	kind: TextureKind;
+	hero?: string;
+}
+
+interface TextureMenuIcon extends TextureMenuRawIcon {
+	uri: string;
+}
+
+interface TextureMenuHeroCache {
+	id: string;
+	name: string;
+	searchTerm: string;
+	filePath: string;
+	attribute?: string;
+}
+
+interface TextureMenuHeroDisplay {
+	id: string;
+	name: string;
+	searchTerm: string;
+	uri: string;
+	attribute?: string;
 }

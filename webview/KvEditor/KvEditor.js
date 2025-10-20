@@ -37,6 +37,8 @@ let columnOptionConfig = Object.create(null);
 let resizeState = null;
 let openMultiSelectContext = null;
 let pendingMultiSelectReopen = null;
+let textureMenuState = null;
+const pendingTextureMenuRequests = new Map();
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
@@ -1030,6 +1032,26 @@ function renderTable(columns, rows, columnOptions) {
 							img.title = tooltipParts.join(' · ');
 						}
 						preview.appendChild(img);
+						preview.classList.add('kv-cell-preview-button');
+						preview.tabIndex = 0;
+						const openMenu = (event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							openTextureMenu({
+								input,
+								folderType: latestPayload?.folderType ?? 'custom',
+								currentValue: input.value ?? '',
+								preferredKind: previewInfo.kind,
+								rowId: row.id ?? '',
+								column,
+							});
+						};
+						preview.addEventListener('click', openMenu);
+						preview.addEventListener('keydown', (event) => {
+							if (event.key === 'Enter' || event.key === ' ') {
+								openMenu(event);
+							}
+						});
 						wrapper.appendChild(preview);
 						hostElement = wrapper;
 					}
@@ -1119,6 +1141,715 @@ function renderTable(columns, rows, columnOptions) {
 		}
 		pendingMultiSelectReopen = null;
 	}
+
+}
+
+function createTextureMenuRequestId() {
+	return `texture-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function requestTextureMenuData(folderType, requestId) {
+	return new Promise((resolve, reject) => {
+		const timeout = setTimeout(() => {
+			pendingTextureMenuRequests.delete(requestId);
+			reject('加载超时');
+		}, 15000);
+		pendingTextureMenuRequests.set(requestId, { resolve, reject, timeout });
+		vscode.postMessage({
+			type: 'requestTextureMenu',
+			payload: {
+				requestId,
+				folderType,
+			},
+		});
+	});
+}
+
+function handleTextureMenuData(payload) {
+	if (!payload || typeof payload.requestId !== 'string') {
+		return;
+	}
+	const pending = pendingTextureMenuRequests.get(payload.requestId);
+	if (!pending) {
+		return;
+	}
+	clearTimeout(pending.timeout);
+	pendingTextureMenuRequests.delete(payload.requestId);
+	pending.resolve(payload);
+}
+
+function handleTextureMenuError(payload) {
+	if (!payload || typeof payload.requestId !== 'string') {
+		return;
+	}
+	const pending = pendingTextureMenuRequests.get(payload.requestId);
+	if (!pending) {
+		return;
+	}
+	clearTimeout(pending.timeout);
+	pendingTextureMenuRequests.delete(payload.requestId);
+	pending.reject(payload.error || '加载失败');
+}
+
+function openTextureMenu(context) {
+	closeTextureMenu();
+	closeMultiSelectDropdown({ preservePending: true });
+	const requestId = createTextureMenuRequestId();
+	const overlayElements = createTextureMenuOverlaySkeleton();
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			closeTextureMenu();
+		}
+	};
+	document.addEventListener('keydown', keyHandler);
+	document.body.classList.add('kv-texture-menu-open');
+	textureMenuState = {
+		requestId,
+		overlay: overlayElements.overlay,
+		container: overlayElements.container,
+		header: overlayElements.header,
+		body: overlayElements.body,
+		loading: overlayElements.loading,
+		context,
+		keyHandler,
+		selectedKind: null,
+		searchValue: '',
+		data: null,
+		sourceButtons: new Map(),
+		heroWrapper: null,
+		heroFilters: [],
+		activeHeroId: null,
+		searchInput: null,
+		displayMode: 'both',
+		heroFilterBtn: null,
+		heroFilterImg: null,
+		heroDropdown: null,
+		displayModeButton: null,
+		outsideClickHandler: null,
+		heroButtonRefs: new Map(),
+	};
+	requestTextureMenuData(context.folderType, requestId)
+		.then((data) => {
+			if (!textureMenuState || textureMenuState.requestId !== requestId) {
+				return;
+			}
+			populateTextureMenu(data);
+		})
+		.catch((error) => {
+			if (!textureMenuState || textureMenuState.requestId !== requestId) {
+				return;
+			}
+			showTextureMenuError(typeof error === 'string' ? error : '加载失败');
+		});
+}
+
+function closeTextureMenu() {
+	if (!textureMenuState) {
+		return;
+	}
+	if (textureMenuState.overlay && textureMenuState.overlay.parentElement) {
+		textureMenuState.overlay.parentElement.removeChild(textureMenuState.overlay);
+	}
+	if (textureMenuState.keyHandler) {
+		document.removeEventListener('keydown', textureMenuState.keyHandler);
+	}
+	if (textureMenuState.outsideClickHandler) {
+		document.removeEventListener('mousedown', textureMenuState.outsideClickHandler);
+	}
+	const pending = pendingTextureMenuRequests.get(textureMenuState.requestId);
+	if (pending) {
+		clearTimeout(pending.timeout);
+		pendingTextureMenuRequests.delete(textureMenuState.requestId);
+	}
+	document.body.classList.remove('kv-texture-menu-open');
+	textureMenuState = null;
+}
+
+function createTextureMenuOverlaySkeleton() {
+	const overlay = document.createElement('div');
+	overlay.className = 'kv-texture-menu-overlay';
+	const container = document.createElement('div');
+	container.className = 'kv-texture-menu';
+	const header = document.createElement('div');
+	header.className = 'kv-texture-menu-header';
+	const body = document.createElement('div');
+	body.className = 'kv-texture-menu-body';
+	const loading = document.createElement('div');
+	loading.className = 'kv-texture-menu-loading';
+	loading.textContent = '加载图标中…';
+	body.appendChild(loading);
+	container.appendChild(header);
+	container.appendChild(body);
+	container.addEventListener('click', (event) => event.stopPropagation());
+	overlay.addEventListener('click', () => closeTextureMenu());
+	overlay.appendChild(container);
+	document.body.appendChild(overlay);
+	return { overlay, container, header, body, loading };
+}
+
+function populateTextureMenu(data) {
+	if (!textureMenuState) {
+		return;
+	}
+	textureMenuState.data = data;
+	textureMenuState.heroFilters = data.heroFilters || [];
+	textureMenuState.header.innerHTML = '';
+	textureMenuState.body.innerHTML = '';
+	const hasSpellIcons = data.icons.some((icon) => icon.kind === 'spell');
+	const hasItemIcons = data.icons.some((icon) => icon.kind === 'item');
+	let selectedKind = data.defaultKind;
+	if (textureMenuState.context.preferredKind && data.icons.some((icon) => icon.kind === textureMenuState.context.preferredKind)) {
+		selectedKind = textureMenuState.context.preferredKind;
+	}
+	if (!data.icons.some((icon) => icon.kind === selectedKind)) {
+		selectedKind = hasSpellIcons ? 'spell' : hasItemIcons ? 'item' : data.defaultKind;
+	}
+	textureMenuState.selectedKind = selectedKind;
+	textureMenuState.searchValue = textureMenuState.context.currentValue || '';
+	const headerRow = document.createElement('div');
+	headerRow.className = 'kv-texture-menu-search-row';
+	const toggleGroup = document.createElement('div');
+	toggleGroup.className = 'kv-texture-menu-toggle-group';
+	const spellButton = createTextureMenuToggleButton('spell', '技能图标', hasSpellIcons);
+	const itemButton = createTextureMenuToggleButton('item', '物品图标', hasItemIcons);
+	textureMenuState.sourceButtons.set('spell', spellButton);
+	textureMenuState.sourceButtons.set('item', itemButton);
+	toggleGroup.appendChild(spellButton);
+	toggleGroup.appendChild(itemButton);
+	headerRow.appendChild(toggleGroup);
+	const searchWrapper = document.createElement('div');
+	searchWrapper.className = 'kv-texture-menu-search';
+	const searchInput = document.createElement('input');
+	searchInput.type = 'search';
+	searchInput.placeholder = '输入关键字（空格分隔）';
+	searchInput.value = textureMenuState.searchValue;
+	searchInput.addEventListener('input', () => handleTextureMenuSearchChange(searchInput.value));
+	searchWrapper.appendChild(searchInput);
+	headerRow.appendChild(searchWrapper);
+	textureMenuState.searchInput = searchInput;
+	// filter area will contain hero-filter button and display-mode toggle
+	const filterWrapper = document.createElement('div');
+	filterWrapper.className = 'kv-texture-menu-filter';
+	// hero filter button (shows current hero or icon)
+	const heroFilterBtn = document.createElement('button');
+	heroFilterBtn.type = 'button';
+	heroFilterBtn.className = 'kv-texture-menu-hero-filter-btn';
+	heroFilterBtn.title = '英雄筛选';
+	// small img inside
+	const heroFilterImg = document.createElement('img');
+	heroFilterImg.className = 'kv-texture-menu-hero-filter-img';
+	heroFilterImg.alt = '英雄';
+	heroFilterBtn.appendChild(heroFilterImg);
+	filterWrapper.appendChild(heroFilterBtn);
+
+	// display mode toggle (icon only vs icon+label)
+	const displayModeBtn = document.createElement('button');
+	displayModeBtn.type = 'button';
+	displayModeBtn.className = 'kv-texture-menu-displaymode-btn';
+	displayModeBtn.title = '切换显示模式';
+	filterWrapper.appendChild(displayModeBtn);
+
+	// dropdown panel container (hidden by default)
+	const heroDropdown = document.createElement('div');
+	heroDropdown.className = 'kv-texture-menu-hero-dropdown';
+	heroDropdown.hidden = true;
+	filterWrapper.appendChild(heroDropdown);
+
+	headerRow.appendChild(filterWrapper);
+	textureMenuState.heroWrapper = heroDropdown;
+	textureMenuState.displayMode = textureMenuState.displayMode || 'both';
+	textureMenuState.heroFilterBtn = heroFilterBtn;
+	textureMenuState.heroFilterImg = heroFilterImg;
+	textureMenuState.heroDropdown = heroDropdown;
+	textureMenuState.displayModeButton = displayModeBtn;
+
+	const outsideClickHandler = (event) => {
+		if (!textureMenuState || !textureMenuState.heroDropdown || !textureMenuState.heroFilterBtn) {
+			return;
+		}
+		if (!filterWrapper.contains(event.target)) {
+			textureMenuState.heroDropdown.hidden = true;
+		}
+	};
+	document.addEventListener('mousedown', outsideClickHandler);
+	textureMenuState.outsideClickHandler = outsideClickHandler;
+
+	// interactions
+	heroFilterBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		if (heroFilterBtn.disabled) {
+			return;
+		}
+		if (textureMenuState && textureMenuState.selectedKind !== 'spell') {
+			// only enabled for abilities
+			return;
+		}
+		if (heroDropdown.hidden) {
+			heroDropdown.hidden = false;
+		} else {
+			heroDropdown.hidden = true;
+		}
+	});
+	displayModeBtn.addEventListener('click', () => {
+		if (!textureMenuState) return;
+		textureMenuState.displayMode = textureMenuState.displayMode === 'icon' ? 'both' : 'icon';
+		updateDisplayModeButton();
+		renderTextureMenuGrid();
+	});
+	updateDisplayModeButton();
+	textureMenuState.header.appendChild(headerRow);
+	buildHeroFilterButtons();
+	updateTextureMenuToggleState();
+	renderTextureMenuGrid();
+	if (textureMenuState.searchInput) {
+		textureMenuState.searchInput.focus();
+		if (textureMenuState.searchInput.value) {
+			textureMenuState.searchInput.select();
+		}
+	}
+}
+
+function createTextureMenuToggleButton(kind, label, available) {
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = 'kv-texture-menu-toggle';
+	button.textContent = label;
+	button.dataset.kind = kind;
+	if (!available) {
+		button.disabled = true;
+		button.classList.add('kv-texture-menu-toggle-disabled');
+	}
+	button.addEventListener('click', () => {
+		if (button.disabled) {
+			return;
+		}
+		setTextureMenuKind(kind);
+	});
+	return button;
+}
+
+function setTextureMenuKind(kind) {
+	if (!textureMenuState || textureMenuState.selectedKind === kind) {
+		return;
+	}
+	textureMenuState.selectedKind = kind;
+	if (kind !== 'spell') {
+		textureMenuState.activeHeroId = null;
+	}
+	updateTextureMenuToggleState();
+	applyTextureMenuHeroVisibility();
+	renderTextureMenuGrid();
+}
+
+function updateTextureMenuToggleState() {
+	if (!textureMenuState) {
+		return;
+	}
+	for (const [kind, button] of textureMenuState.sourceButtons.entries()) {
+		if (kind === textureMenuState.selectedKind) {
+			button.classList.add('kv-texture-menu-toggle-active');
+		} else {
+			button.classList.remove('kv-texture-menu-toggle-active');
+		}
+	}
+	applyTextureMenuHeroVisibility();
+}
+
+function buildHeroFilterButtons(heroFilters) {
+	if (!textureMenuState || !textureMenuState.heroWrapper) {
+		return;
+	}
+	const dropdown = textureMenuState.heroWrapper;
+	dropdown.innerHTML = '';
+	textureMenuState.heroButtonRefs = new Map();
+	const effectiveHeroes = heroFilters || textureMenuState.heroFilters;
+	if (!effectiveHeroes || !effectiveHeroes.length) {
+		dropdown.hidden = true;
+		return;
+	}
+	const groups = {
+		DOTA_ATTRIBUTE_STRENGTH: [],
+		DOTA_ATTRIBUTE_AGILITY: [],
+		DOTA_ATTRIBUTE_INTELLECT: [],
+		DOTA_ATTRIBUTE_ALL: [],
+		OTHER: [],
+	};
+	for (const hero of effectiveHeroes) {
+		const attr = hero.attribute || 'OTHER';
+		if (attr && groups[attr]) {
+			groups[attr].push(hero);
+		} else if (attr && attr.startsWith('DOTA_ATTRIBUTE_')) {
+			groups.OTHER.push(hero);
+		} else {
+			groups.OTHER.push(hero);
+		}
+	}
+	const clearBtn = document.createElement('button');
+	clearBtn.type = 'button';
+	clearBtn.className = 'kv-texture-menu-hero-clear';
+	clearBtn.textContent = '全部';
+	clearBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		selectHeroFilter();
+		dropdown.hidden = true;
+	});
+	dropdown.appendChild(clearBtn);
+	textureMenuState.heroButtonRefs.set('__all__', clearBtn);
+
+	const makeSection = (title, list) => {
+		if (!list.length) return;
+		const sec = document.createElement('div');
+		sec.className = 'kv-texture-menu-hero-section';
+		const h = document.createElement('div');
+		h.className = 'kv-texture-menu-hero-section-title';
+		h.textContent = title;
+		sec.appendChild(h);
+		const wrap = document.createElement('div');
+		wrap.className = 'kv-texture-menu-hero-grid';
+		for (const hero of list) {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'kv-texture-menu-hero-select';
+			btn.title = hero.name;
+			const img = document.createElement('img');
+			img.src = hero.uri;
+			img.alt = hero.name;
+			btn.appendChild(img);
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				selectHeroFilter(hero);
+				dropdown.hidden = true;
+			});
+			wrap.appendChild(btn);
+			textureMenuState.heroButtonRefs.set(hero.id, btn);
+		}
+		sec.appendChild(wrap);
+		dropdown.appendChild(sec);
+	};
+	makeSection('力量', groups.DOTA_ATTRIBUTE_STRENGTH);
+	makeSection('敏捷', groups.DOTA_ATTRIBUTE_AGILITY);
+	makeSection('智力', groups.DOTA_ATTRIBUTE_INTELLECT);
+	makeSection('全才', groups.DOTA_ATTRIBUTE_ALL);
+	makeSection('其他', groups.OTHER);
+	dropdown.hidden = textureMenuState.selectedKind !== 'spell';
+	updateHeroFilterButtonImage();
+	updateHeroFilterSelection();
+}
+
+function applyTextureMenuHeroVisibility() {
+	if (!textureMenuState || !textureMenuState.heroWrapper) {
+		return;
+	}
+	const hasHeroes = Boolean(textureMenuState.heroFilters && textureMenuState.heroFilters.length);
+	const shouldEnable = textureMenuState.selectedKind === 'spell' && hasHeroes;
+	textureMenuState.heroWrapper.hidden = !shouldEnable;
+	if (textureMenuState.heroFilterBtn) {
+		textureMenuState.heroFilterBtn.disabled = !shouldEnable;
+		textureMenuState.heroFilterBtn.classList.toggle('kv-texture-menu-hero-filter-disabled', !shouldEnable);
+	}
+	if (textureMenuState.heroDropdown) {
+		textureMenuState.heroDropdown.hidden = true;
+	}
+	if (!shouldEnable) {
+		textureMenuState.activeHeroId = null;
+		updateHeroFilterSelection();
+		updateHeroFilterButtonImage();
+	}
+}
+
+function selectHeroFilter(hero) {
+	if (!textureMenuState) {
+		return;
+	}
+	textureMenuState.activeHeroId = hero ? hero.id : null;
+	const value = hero ? hero.searchTerm : '';
+	textureMenuState.searchValue = value;
+	if (textureMenuState.searchInput) {
+		textureMenuState.searchInput.value = value;
+		textureMenuState.searchInput.focus();
+		if (value) {
+			textureMenuState.searchInput.select();
+		}
+	}
+	updateHeroFilterSelection();
+	updateHeroFilterButtonImage();
+	renderTextureMenuGrid();
+}
+
+function updateHeroFilterSelection() {
+	if (!textureMenuState) {
+		return;
+	}
+	if (!textureMenuState.heroButtonRefs) {
+		return;
+	}
+	for (const [id, button] of textureMenuState.heroButtonRefs.entries()) {
+		if (!(button instanceof HTMLButtonElement)) {
+			continue;
+		}
+		if (id === '__all__') {
+			if (!textureMenuState.activeHeroId) {
+				button.classList.add('kv-texture-menu-hero-clear-active');
+			} else {
+				button.classList.remove('kv-texture-menu-hero-clear-active');
+			}
+			continue;
+		}
+		if (id === textureMenuState.activeHeroId) {
+			button.classList.add('kv-texture-menu-hero-select-active');
+		} else {
+			button.classList.remove('kv-texture-menu-hero-select-active');
+		}
+	}
+}
+
+function findHeroFilterById(id) {
+	if (!textureMenuState || !id) {
+		return undefined;
+	}
+	return (textureMenuState.heroFilters || []).find((hero) => hero.id === id);
+}
+
+function getDefaultHeroForButton() {
+	if (!textureMenuState) {
+		return undefined;
+	}
+	const heroes = textureMenuState.heroFilters || [];
+	if (!heroes.length) {
+		return undefined;
+	}
+	const defaultHero = heroes.find((hero) => /npc_dota_hero_default/i.test(hero.id));
+	return defaultHero || heroes[0];
+}
+
+function updateHeroFilterButtonImage() {
+	if (!textureMenuState || !textureMenuState.heroFilterImg) {
+		return;
+	}
+	let hero = textureMenuState.activeHeroId ? findHeroFilterById(textureMenuState.activeHeroId) : undefined;
+	if (!hero) {
+		hero = getDefaultHeroForButton();
+	}
+	if (hero) {
+		textureMenuState.heroFilterImg.src = hero.uri;
+		textureMenuState.heroFilterImg.alt = hero.name;
+		if (textureMenuState.heroFilterBtn) {
+			textureMenuState.heroFilterBtn.title = textureMenuState.activeHeroId ? `当前筛选: ${hero.name}` : '英雄筛选';
+		}
+	} else {
+		textureMenuState.heroFilterImg.removeAttribute('src');
+		textureMenuState.heroFilterImg.alt = '';
+		if (textureMenuState.heroFilterBtn) {
+			textureMenuState.heroFilterBtn.title = '英雄筛选';
+		}
+	}
+}
+
+function updateDisplayModeButton() {
+	if (!textureMenuState || !textureMenuState.displayModeButton) {
+		return;
+	}
+	const button = textureMenuState.displayModeButton;
+	button.innerHTML = '';
+	const icon = document.createElement('span');
+	const iconOnly = textureMenuState.displayMode === 'icon';
+	icon.className = `codicon ${iconOnly ? 'codicon-symbol-color' : 'codicon-symbol-text'}`;
+	button.appendChild(icon);
+	button.setAttribute('aria-label', iconOnly ? '切换为图文模式' : '切换为纯图模式');
+	button.title = iconOnly ? '切换为图文模式' : '切换为纯图模式';
+	button.classList.toggle('kv-texture-menu-displaymode-icononly', iconOnly);
+}
+
+function handleTextureMenuSearchChange(value) {
+	if (!textureMenuState) {
+		return;
+	}
+	textureMenuState.searchValue = value;
+	if (!value) {
+		textureMenuState.activeHeroId = null;
+	} else if (textureMenuState.activeHeroId) {
+		const hero = (textureMenuState.heroFilters || []).find((item) => item.id === textureMenuState.activeHeroId);
+		if (!hero || hero.searchTerm !== value) {
+			textureMenuState.activeHeroId = null;
+		}
+	}
+	updateHeroFilterSelection();
+	updateHeroFilterButtonImage();
+	renderTextureMenuGrid();
+}
+
+function filterTextureMenuIcons() {
+	if (!textureMenuState || !textureMenuState.data) {
+		return [];
+	}
+	const icons = textureMenuState.data.icons.filter((icon) => icon.kind === textureMenuState.selectedKind);
+	const rawSearch = (textureMenuState.searchValue || '').toLowerCase();
+	const keywords = rawSearch
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+	if (!keywords.length) {
+		return icons;
+	}
+	return icons.filter((icon) => keywords.every((keyword) => matchesTextureMenuKeyword(icon, keyword)));
+}
+
+function matchesTextureMenuKeyword(icon, keyword) {
+	if (!keyword) {
+		return true;
+	}
+	const searchKey = (icon.searchKey || '').toLowerCase();
+	const relativePathLower = getIconRelativePathLower(icon);
+	if (relativePathLower.includes(keyword)) {
+		return true;
+	}
+	const textureNameLower = getIconTextureNameLower(icon);
+	if (textureNameLower.includes(keyword)) {
+		return true;
+	}
+	const variants = new Set();
+	variants.add(keyword);
+	const underscoreNormalized = keyword.includes('_') ? keyword.replace(/_/g, ' ') : keyword;
+	variants.add(underscoreNormalized);
+	const fullyNormalized = underscoreNormalized.replace(/[\\/]+/g, ' ');
+	variants.add(fullyNormalized);
+	const slashOnlyNormalized = keyword.replace(/[\\/]+/g, ' ');
+	variants.add(slashOnlyNormalized);
+	for (const variant of variants) {
+		const normalized = variant.trim();
+		if (!normalized) {
+			continue;
+		}
+		if (searchKey.includes(normalized)) {
+			return true;
+		}
+		if (textureNameLower.includes(normalized)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function getIconRelativePathLower(icon) {
+	if (!icon) {
+		return '';
+	}
+	if (!icon._relativePathLower) {
+		icon._relativePathLower = (icon.relativePath || '').toLowerCase();
+	}
+	return icon._relativePathLower;
+}
+
+function getIconTextureNameLower(icon) {
+	if (!icon) {
+		return '';
+	}
+	if (!icon._textureNameLower) {
+		icon._textureNameLower = (icon.textureName || '').toLowerCase();
+	}
+	return icon._textureNameLower;
+}
+
+function renderTextureMenuGrid() {
+	if (!textureMenuState) {
+		return;
+	}
+	const body = textureMenuState.body;
+	body.innerHTML = '';
+	const filteredIcons = filterTextureMenuIcons();
+	if (!filteredIcons.length) {
+		const empty = document.createElement('div');
+		empty.className = 'kv-texture-menu-empty';
+		empty.textContent = '未找到匹配的图标。';
+		body.appendChild(empty);
+		return;
+	}
+	const groups = [
+		{ source: 'extension', title: '插件图标' },
+		{ source: 'addon', title: '项目图标' },
+	];
+	const currentValue = (textureMenuState.context.input.value || '').toLowerCase();
+	const showLabel = textureMenuState.displayMode !== 'icon';
+	for (const group of groups) {
+		const icons = filteredIcons.filter((icon) => icon.source === group.source);
+		if (!icons.length) {
+			continue;
+		}
+		const section = document.createElement('div');
+		section.className = 'kv-texture-menu-section';
+		const title = document.createElement('div');
+		title.className = 'kv-texture-menu-section-title';
+		title.textContent = group.title;
+		section.appendChild(title);
+		const grid = document.createElement('div');
+		grid.className = 'kv-texture-menu-grid kv-texture-menu-grid-tight';
+		for (const icon of icons) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'kv-texture-menu-item';
+			button.dataset.texture = icon.textureName;
+			const img = document.createElement('img');
+			img.src = icon.uri;
+			img.alt = icon.label || icon.textureName;
+			button.appendChild(img);
+			if (showLabel) {
+				const caption = document.createElement('span');
+				caption.className = 'kv-texture-menu-item-label';
+				caption.textContent = icon.label || icon.textureName;
+				button.appendChild(caption);
+			} else {
+				button.classList.add('kv-texture-menu-item-icononly');
+				button.setAttribute('aria-label', icon.label || icon.textureName);
+			}
+			button.title = `${icon.textureName}\n${icon.relativePath}`;
+			if (icon.textureName.toLowerCase() === currentValue) {
+				button.classList.add('kv-texture-menu-item-selected');
+			}
+			button.addEventListener('click', () => handleTextureSelection(icon));
+			grid.appendChild(button);
+		}
+		section.appendChild(grid);
+		body.appendChild(section);
+	}
+}
+
+function handleTextureSelection(icon) {
+	if (!textureMenuState) {
+		return;
+	}
+	const input = textureMenuState.context.input;
+	const newValue = icon.textureName;
+	const currentValue = readElementValue(input, undefined);
+	if (currentValue === newValue) {
+		closeTextureMenu();
+		return;
+	}
+	setElementValue(input, newValue, undefined);
+	handleElementChange(input, undefined);
+	if (selectedCell && selectedCell.element === input && formulaValueInput) {
+		formulaValueInput.value = newValue;
+	}
+	closeTextureMenu();
+}
+
+function showTextureMenuError(message) {
+	if (!textureMenuState) {
+		return;
+	}
+	textureMenuState.header.innerHTML = '';
+	textureMenuState.body.innerHTML = '';
+	const errorBox = document.createElement('div');
+	errorBox.className = 'kv-texture-menu-error';
+	errorBox.textContent = message || '加载失败';
+	textureMenuState.body.appendChild(errorBox);
+	const closeButton = document.createElement('button');
+	closeButton.type = 'button';
+	closeButton.className = 'kv-texture-menu-close-button-inline';
+	closeButton.textContent = '关闭';
+	closeButton.addEventListener('click', () => closeTextureMenu());
+	textureMenuState.body.appendChild(closeButton);
 }
 
 // 根据扩展端消息刷新整体界面
@@ -1177,10 +1908,23 @@ function formatFolderType(folderType) {
 	return FOLDER_TYPE_LABELS[folderType] || folderType;
 }
 
-window.addEventListener('message', event => {
+window.addEventListener('message', (event) => {
 	const message = event.data;
-	if (message?.type === 'update') {
-		render(message.payload);
+	if (!message || typeof message.type !== 'string') {
+		return;
+	}
+	switch (message.type) {
+		case 'update':
+			render(message.payload);
+			break;
+		case 'textureMenuData':
+			handleTextureMenuData(message.payload);
+			break;
+		case 'textureMenuError':
+			handleTextureMenuError(message.payload);
+			break;
+		default:
+			break;
 	}
 });
 
