@@ -119,6 +119,7 @@ body {
 .kv-table td {
 	vertical-align: middle;
 	position: relative;
+	--kv-cell-base-height: 32px;
 }
 
 .kv-table th {
@@ -347,6 +348,49 @@ body {
 .kv-cell-selected {
 	background: rgba(37, 150, 190, 0.15);
 	box-shadow: inset 0 0 0 2px var(--vscode-focusBorder);
+}
+
+.kv-cell-inline {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.kv-cell-inline-input {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.kv-cell-preview {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: var(--kv-cell-base-height);
+	min-width: var(--kv-cell-base-height);
+	max-width: calc(var(--kv-cell-base-height) * 1.5);
+	padding: 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-sizing: border-box;
+}
+
+.kv-cell-preview[data-type="item"] {
+	min-width: calc(var(--kv-cell-base-height) * 0.9);
+	max-width: calc(var(--kv-cell-base-height) * 1.8);
+}
+
+
+.kv-cell-preview img {
+	display: block;
+	height: var(--kv-cell-base-height);
+	width: auto;
+}
+
+.kv-cell-preview[data-type="spell"] img {
+	width: var(--kv-cell-base-height);
 }
 
 .kv-column-header {

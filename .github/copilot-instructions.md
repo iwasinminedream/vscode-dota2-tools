@@ -1,3 +1,55 @@
+# VS Code Dota2 Tools – Copilot Instructions (repository-specific)
+
+## Big picture (what initializes what)
+- `src/extension.ts` is the entry: it builds the status bar & output channel, calls `init(...)`, then creates the `FeiShu` service. `init` can be re-run (watch workspace-folder changes) so all module inits must be idempotent.
+- `src/init.ts` owns the module list and lifecycle. Each module exposes a `*Init` that should register commands/providers and return fast; they must obey `dota2-tools.A1.module_list` and call `showStatusBarMessage`/`refreshStatusBarMessage` for progress.
+- Code is organized by responsibility: `src/module/` (services & lifecycle), `src/command/` (command handlers), `src/TreeDataProvider/` (trees), `src/Completions/` (language completions), `src/CustomTextEditorProvider/` (custom editors), and `src/utils/` (shared helpers).
+
+## Important patterns & conventions
+- Singletons: use exported getters (e.g. `getLuaApiTree`, `getLuaCompletion`, `getDotaApiNoteClass`, `FeiShu`) — they cache state and must be refreshed via their provided callbacks after mutations.
+- Event handling: prefer `EventManager` in `src/Class/event.ts` instead of raw VS Code subscriptions. Listeners should early-return unless `event.affectsConfiguration(...)` matches the namespace.
+- Watchers: file watchers live under `src/listener/`. Respect `dota2-tools.A3.listener` and always call `stopWatch()` before restarting to avoid duplicate `node-watch` handles.
+- Path resolution: settings support placeholders (`${game}`, `${content}`, `${workspace}`); use `getPathConfiguration` or helpers like `eachExcelConfig` to resolve them correctly.
+- Webviews: always use `utils/getWebviewContent` to load HTML (it rewrites URIs and injects assets). Place webview assets under `webview/<feature>/`.
+
+## Data flows & integration points
+- Dota API notes: `Class/DotaApiNote` loads `resource/api_note*.json` (and remote/data downloaded in `api_note_download.json`) and drives completions & tree providers. After mutating note data, call the class callbacks so dependent caches update.
+- Excel → KV: commands like `cmdExcel2KV` and helpers `abilityCSV2KV` / `unitCSV2KV` handle CSV → KV conversion. Use `eachExcelConfig` to apply folder substitutions and validation.
+- Localization: use `getPathConfiguration('dota2-tools.A5.localization_path')` and run `combineLocalization(language)` per folder. The localization pipeline expects the repo's folder layout.
+- Feishu / cloud sheet: `module/sheet_cloud.ts` polls Feishu (default 5s). Route requests through `FeiShu.request` to reuse token refresh and error handling.
+
+## Quick developer workflows
+- Install deps: `npm install`.
+- Development build/watch: `npm run watch` (also available as VS Code task `npm: watch`).
+- Tests (watch): `npm run watch-tests` (VS Code task `npm: watch-tests`).
+- Production compile: `npm run compile` → produces `dist/extension.js`.
+- Release/patch: `node publish_patch.js` (wraps `vsce publish patch`). Ensure `vsce` is installed and `package.json` version rules satisfied.
+
+## Files and places to check when changing behavior
+- Module lifecycle and startup: `src/init.ts`, `src/extension.ts`.
+- Command implementations: `src/command/` and their `*Init` registration in `init.ts`.
+- Shared helpers: `src/utils/` (notable: `getPathConfiguration`, `getWebviewContent`, `writeKeyValue`, CSV → KV helpers).
+- Trees & providers: `src/TreeDataProvider/`, `src/Completions/`, `src/CustomTextEditorProvider/`.
+- Resources driving content: `resource/` (api notes, items, abilities), `webview/` (static webview assets), and `kv/` (abilities/units).
+
+## Code-style & pitfalls discovered in repo
+- String localization: always use `localize(...)` / `reverseLocalize` and add keys to `package.nls*.json`.
+- TypeScript declarations: extend `src/declarations/common.d.ts` for new config shapes — missing declarations break `tsc`.
+- KV serialization: use `writeKeyValue` and CSV helpers to produce valid KV (special cases for `AbilitySpecial` / `AbilityValues`).
+- Resource edits: when changing files under `resource/` or `webview/`, rerun the appropriate init (for example `apiNoteInit` or `cssApiInit`) or provide a refresh command so runtime caches pick up changes.
+
+## Small examples (where to look)
+- Module init pattern: see `src/init.ts` and any `*Init` in `src/module/` (they call `context.subscriptions.push(...)` and use `showStatusBarMessage`).
+- Webview loading: `webview/common/getWebviewContent` (rewrites resource URIs and injects assets).
+- Feishu usage: `src/module/sheet_cloud.ts` and `src/Class/FeiShu` (use `FeiShu.request(...)`).
+
+## When you change things — checklist for a PR
+- Update/add `package.nls*.json` keys for new UI strings.
+- Update `src/declarations/common.d.ts` for new setting shapes.
+- If you added resources under `resource/` or `webview/`, call the relevant init or add a refresh command so runtime caches pick up changes.
+- Run `npm run watch` (or compile) and run the tests/watchers to ensure no type/runtime regressions.
+
+If any section is unclear or you want me to expand examples (init functions, typical command implementation, or the FeiShu flow), tell me which area and I will iterate.
 # VS Code Dota2 Tools – Copilot Instructions
 
 ## Big Picture

@@ -753,27 +753,28 @@
 			{
 				"title": "%dota2-tools.kv_editor_setting%",
 				"properties": {
-					"dota2-tools.A10.kv_editor.rootPath": {
+					"dota2-tools.A10.kv_editor.paths": {
 						"scope": "resource",
-						"type": "string",
-						"default": "${workspace}/kv",
-						"description": "%dota2-tools.kv_editor.rootPath.description%"
-					},
-					"dota2-tools.A10.kv_editor.type": {
-						"scope": "resource",
-						"type": "string",
-						"enum": [
-							"abilities",
-							"units",
-							"custom"
-						],
-						"enumDescriptions": [
-							"%dota2-tools.kv_editor.type.abilities%",
-							"%dota2-tools.kv_editor.type.units%",
-							"%dota2-tools.kv_editor.type.custom%"
-						],
-						"default": "custom",
-						"description": "%dota2-tools.kv_editor.type.description%"
+						"type": "object",
+						"default": {
+							"${workspace}/kv": "custom"
+						},
+						"markdownDescription": "%dota2-tools.kv_editor.paths.description%",
+						"additionalProperties": {
+							"type": "string",
+							"enum": [
+								"ability",
+								"item",
+								"unit",
+								"custom"
+							],
+							"enumDescriptions": [
+								"%dota2-tools.kv_editor.type.ability%",
+								"%dota2-tools.kv_editor.type.item%",
+								"%dota2-tools.kv_editor.type.unit%",
+								"%dota2-tools.kv_editor.type.custom%"
+							]
+						}
 					}
 				}
 			},

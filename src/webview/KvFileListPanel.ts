@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { KvEditorSettings } from '../module/kvEditorConfig';
+import { findKvEntryForUri, KvEditorSettings, KvFolderType } from '../module/kvEditorConfig';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2 } from '../utils/kvUtils';
 import { localize } from '../utils/localize';
@@ -18,7 +18,7 @@ interface KvFileListItem {
 interface KvFileListPayload {
 	folderPath: string;
 	rootPath: string;
-	folderType: KvEditorSettings['folderType'];
+	folderType: KvFolderType;
 	files: KvFileListItem[];
 }
 
@@ -91,17 +91,20 @@ export class KvFileListPanel implements vscode.Disposable {
 	}
 
 	private async pushData() {
+		const entry = this.currentSettings ? findKvEntryForUri(vscode.Uri.file(this.currentFolder), this.currentSettings) : undefined;
+		const rootPath = entry?.resolvedPath ?? this.currentFolder;
+		const folderType = entry?.type ?? 'custom';
 		const payload: KvFileListPayload = {
 			folderPath: this.currentFolder,
-			rootPath: this.currentSettings.rootPath,
-			folderType: this.currentSettings.folderType,
-			files: await this.collectFileInfo(this.currentFolder, this.currentSettings)
+			rootPath,
+			folderType,
+			files: await this.collectFileInfo(this.currentFolder, rootPath, folderType)
 		};
 		this.panel.title = this.getTitle(this.currentFolder);
 		this.panel.webview.postMessage({ type: 'update', payload });
 	}
 
-	private async collectFileInfo(folderPath: string, settings: KvEditorSettings): Promise<KvFileListItem[]> {
+	private async collectFileInfo(folderPath: string, rootPath: string, folderType: KvFolderType): Promise<KvFileListItem[]> {
 		let dirents: fs.Dirent[] = [];
 		try {
 			dirents = await fs.promises.readdir(folderPath, { withFileTypes: true });
@@ -114,11 +117,11 @@ export class KvFileListPanel implements vscode.Disposable {
 			const fullPath = path.join(folderPath, file.name);
 			try {
 				const stat = await fs.promises.stat(fullPath);
-				const summary = await this.createSummary(fullPath, settings.folderType);
+				const summary = await this.createSummary(fullPath, folderType);
 				items.push({
 					name: file.name,
 					fullPath,
-					relativePath: path.relative(settings.rootPath, fullPath),
+					relativePath: path.relative(rootPath, fullPath),
 					size: stat.size,
 					mtime: stat.mtimeMs,
 					summary
@@ -136,7 +139,7 @@ export class KvFileListPanel implements vscode.Disposable {
 		return lower.endsWith('.kv') || lower.endsWith('.txt');
 	}
 
-	private async createSummary(filePath: string, folderType: KvEditorSettings['folderType']): Promise<string[]> {
+	private async createSummary(filePath: string, folderType: KvFolderType): Promise<string[]> {
 		try {
 			const content = await fs.promises.readFile(filePath, 'utf-8');
 			const kvData = readKeyValue2(content);
@@ -146,10 +149,10 @@ export class KvFileListPanel implements vscode.Disposable {
 			}
 			const block = kvData[header];
 			const keys = Object.keys(block);
-			if (folderType === 'abilities') {
+			if (folderType === 'ability') {
 				return keys.slice(0, 3).map((key) => this.composeAbilitySummary(key, block[key]));
 			}
-			if (folderType === 'units') {
+			if (folderType === 'unit') {
 				return keys.slice(0, 3).map((key) => this.composeUnitSummary(key, block[key]));
 			}
 			return keys.slice(0, 3);

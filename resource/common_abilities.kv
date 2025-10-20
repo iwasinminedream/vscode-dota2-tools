@@ -1,0 +1,287 @@
+"KeyValue"
+{
+	"fish_hook"
+	{
+		"Note"									"渔网"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/fish_hook"
+		"AbilityTextureName"					"meepo_earthbind"
+		"MaxLevel"								"5"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityCooldown"						"0.5"
+		"AbilityValues"
+		{
+			"damage"							"3 4 5 6 7"
+			"distance"							"3000"
+			"speed"								"1000"
+			"radius"							"100 120 140 160 180"
+		}
+	}
+	"fish_rocket"
+	{
+		"Note"									"鱼雷"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/fish_rocket"
+		"AbilityTextureName"					"sniper_assassinate"
+		"MaxLevel"								"5"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityCooldown"						"3"
+		"AbilityValues"
+		{
+			"damage"							"10 20 30 40 50"
+			"count"								"1 1 1 1 2"
+			"speed"								"2500"
+			"duration"							"1.5"
+		}
+	}
+	"fish_boom"
+	{
+		"Note"									"炸弹"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/fish_boom"
+		"AbilityTextureName"					"techies_stasis_trap"
+		"MaxLevel"								"5"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityCooldown"						"6 5 4 3 3"
+		"AbilityValues"
+		{
+			"damage"							"12 24 36 48 60"
+			"radius"							"200"
+			"count"								"3 3 3 3 4"
+			"duration"							"1"
+		}
+	}
+	"fish_pulse"
+	{
+		"Note"									"脉冲"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/fish_pulse"
+		"AbilityTextureName"					"tinker_laser"
+		"MaxLevel"								"5"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityCooldown"						"5"
+		"AbilityValues"
+		{
+			"damage"							"6 12 18 24 30"
+			"distance"							"4000"
+			"width"								"75"
+		}
+	}
+	"toggle_fish"
+	{
+		"Note"									"钓鱼"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/toggle_fish"
+		"AbilityTextureName"					"lion_voodoo_fish_green"
+		"MaxLevel"								"1"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE"
+		"AbilityCooldown"						"1"
+	}
+	"tempest_double_magnetic_field"
+	{
+		"Note"									"磁场"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/tempest_double_magnetic_field"
+		"AbilityTextureName"					"arc_warden_magnetic_field"
+		"MaxLevel"								"2"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityCastAnimation"					"ACT_DOTA_AW_MAGNETIC_FIELD"
+		"AbilityCastPoint"						"0.3"
+		"AbilityCooldown"						"10"
+		"AbilityValues"
+		{
+			"duration"							"5"
+			"attackspeed"						"30 60"
+			"radius"							"450"
+			"evade"								"20"
+		}
+	}
+	"tempest_double_flux"
+	{
+		"Note"									"乱流"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/tempest_double_flux"
+		"AbilityTextureName"					"arc_warden_flux"
+		"MaxLevel"								"2"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_HP_REMOVAL"
+		"AbilityValues"
+		{
+			"damage"
+			{
+				"value"							"0"
+				"_primary"						"2.5 5"
+			}
+			"count"								"9"
+			"radius"							"900"
+			"damage_factor"						"2.5 5"
+		}
+	}
+	"athena_ability_1"
+	{
+		"Note"									"冥界副本雅典娜-AOE光柱"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/athena_ability_1"
+		"AbilityTextureName"					"lina/lina_ti7_immortal/lina_lightstrike_array_gold"
+		"MaxLevel"								"1"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HEROES_AND_CREEPS"
+		"AbilityUnitDamageType"					"DAMAGE_TYPE_MAGICAL"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityValues"
+		{
+			"init_cd"							"30"
+			"damage"
+			{
+				"value"							"0"
+				"_attack_damage"				"100"
+			}
+			"radius"							"600"
+		}
+	}
+	"athena_ability_2"
+	{
+		"Note"									"冥界副本雅典娜-无敌回血法阵"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/athena_ability_2"
+		"AbilityTextureName"					"skywrath_mage_ancient_seal_alt2"
+		"MaxLevel"								"1"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+		"AbilityUnitTargetType"					"DOTA_UNIT_TARGET_HERO"
+		"AbilityCooldown"						"40"
+		"AbilityValues"
+		{
+			"init_cd"							"30"
+			"duration"							"40"
+			"buff_duration"						"3"
+			"heal_ps"							"20"
+			"count_per_hero"					"1"
+			"radius"							"900"
+			"ring_radius"						"150"
+		}
+	}
+	"athena_ability_3"
+	{
+		"Note"									"冥界副本雅典娜-0秒复活英雄"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/common/athena_ability_3"
+		"AbilityTextureName"					"skywrath_mage_shield_of_the_scion_alt2"
+		"MaxLevel"								"1"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitTargetTeam"					"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+		"AbilityCastRange"						"900"
+		"AbilityCooldown"						"30"
+		"AbilityValues"
+		{
+			"limit"								"1"
+			"duration"							"3"
+		}
+	}
+	"courier_600201"
+	{
+		"Note"									"碧玉之赏"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/courier/courier_600201"
+		"AbilityTextureName"					"action_lock_green_cycle"
+		"MaxLevel"								"1"
+		"CustomAbilityType"						"COURIER"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_RUNE_TARGET"
+		"AbilityValues"
+		{
+			"cooldown"							"60"
+		}
+	}
+	"courier_600301"
+	{
+		"Note"									"寻宝"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/courier/courier_600301"
+		"AbilityTextureName"					"chest_05"
+		"MaxLevel"								"1"
+		"CustomAbilityType"						"COURIER"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityCooldown"						"240"
+	}
+	"courier_600451"
+	{
+		"Note"									"挖宝"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/courier/courier_600451"
+		"AbilityTextureName"					"courier_600451"
+		"MaxLevel"								"1"
+		"CustomAbilityType"						"COURIER"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityCooldown"						"120"
+	}
+	"courier_600452"
+	{
+		"Note"									"好好学习"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/courier/courier_600452"
+		"AbilityTextureName"					"courier_600452"
+		"MaxLevel"								"1"
+		"CustomAbilityType"						"COURIER"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityCooldown"						"60"
+		"AbilityValues"
+		{
+			"value"								"0.1"
+			"exp"								"4385700"
+			"current_exp"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+			"current_count"
+			{
+				"value"							"0"
+				"dynamic_value"					"1"
+			}
+		}
+	}
+	"courier_600401"
+	{
+		"Note"									"圣诞树"
+		"BaseClass"								"ability_lua"
+		"ScriptFile"							"abilities/courier/courier_600401"
+		"AbilityTextureName"					"treant_eyes_in_the_forest"
+		"MaxLevel"								"1"
+		"CustomAbilityType"						"COURIER"
+		"OnlyShowNowLevelValue"					"1"
+		"AbilityBehavior"						"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityValues"
+		{
+			"interval"							"60"
+			"round"								"4"
+			"all_min"							"100 200 300 400 500 600"
+			"all_max"							"100 200 300 400 500 600"
+			"gold_min"							"100 200 300 400 500 600"
+			"gold_max"							"100 200 300 400 500 600"
+			"score_min"							"100 200 300 400 500 600"
+			"score_max"							"100 200 300 400 500 600"
+			"crystal_min"						"100 200 300 400 500 600"
+			"crystal_max"						"100 200 300 400 500 600"
+		}
+	}
+}

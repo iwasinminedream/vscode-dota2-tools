@@ -8,8 +8,42 @@
 				"value": "ability_datadriven"
 			}
 		],
+		"overrides": {
+			"item": {
+				"options": [
+					{
+						"value": "item_lua"
+					},
+					{
+						"value": "item_datadriven"
+					}
+				]
+			}
+		},
 		"multiple": false,
 		"separator": ","
+	},
+	"AbilityType": {
+		"options": [
+			{
+				"value": "DOTA_ABILITY_TYPE_BASIC",
+				"label": "基础技能类型"
+			},
+			{
+				"value": "DOTA_ABILITY_TYPE_ULTIMATE",
+				"label": "终极技能类型"
+			},
+			{
+				"value": "DOTA_ABILITY_TYPE_ATTRIBUTES",
+				"label": "天赋技能类型"
+			},
+			{
+				"value": "DOTA_ABILITY_TYPE_HIDDEN",
+				"label": "隐藏技能，无效，使用DOTA_ABILITY_BEHAVIOR中的DOTA_ABILITY_BEHAVIOR_HIDDEN"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
 	},
 	"AbilityBehavior": {
 		"options": [
@@ -18,91 +52,118 @@
 				"label": "隐藏"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_PASSIVE"
+				"value": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
+				"label": "被动"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+				"value": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
+				"label": "无目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
+				"value": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
+				"label": "单位目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_POINT"
+				"value": "DOTA_ABILITY_BEHAVIOR_POINT",
+				"label": "点目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_AOE"
+				"value": "DOTA_ABILITY_BEHAVIOR_AOE",
+				"label": "AOE"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE"
+				"value": "DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE",
+				"label": "无法学习"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_CHANNELLED"
+				"value": "DOTA_ABILITY_BEHAVIOR_CHANNELLED",
+				"label": "持续施法"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_ITEM"
+				"value": "DOTA_ABILITY_BEHAVIOR_ITEM",
+				"label": "物品"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_TOGGLE"
+				"value": "DOTA_ABILITY_BEHAVIOR_TOGGLE",
+				"label": "切换"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_DIRECTIONAL"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
+				"value": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
+				"label": "立即施法"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_AUTOCAST"
+				"value": "DOTA_ABILITY_BEHAVIOR_AUTOCAST",
+				"label": "自动施法"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET"
+				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET",
+				"label": "可选单位目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_POINT"
+				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_POINT",
+				"label": "可选点目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_NO_TARGET"
+				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_NO_TARGET",
+				"label": "可选无目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_AURA"
+				"value": "DOTA_ABILITY_BEHAVIOR_AURA",
+				"label": "光环"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_ATTACK"
+				"value": "DOTA_ABILITY_BEHAVIOR_ATTACK",
+				"label": "法球"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_DONT_RESUME_MOVEMENT"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES"
+				"value": "DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
+				"label": "缠绕禁用"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_UNRESTRICTED"
+				"value": "DOTA_ABILITY_BEHAVIOR_UNRESTRICTED",
+				"label": "无限制"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_PSEUDO_QUEUE"
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_PSEUDO_QUEUE",
+				"label": "忽略伪队列"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL"
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
+				"label": "忽略持续施法"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT"
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT",
+				"label": "不打断移动"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_DONT_ALERT_TARGET"
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_ALERT_TARGET",
+				"label": "不提示目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK"
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
+				"label": "不恢复攻击"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_NORMAL_WHEN_STOLEN"
+				"value": "DOTA_ABILITY_BEHAVIOR_NORMAL_WHEN_STOLEN",
+				"label": "被偷时正常"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING",
+				"label": "无视后摇"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_RUNE_TARGET"
+				"value": "DOTA_ABILITY_BEHAVIOR_RUNE_TARGET",
+				"label": "神符目标"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_CHANNEL"
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_CHANNEL",
+				"label": "不打断持续施法"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_VECTOR_TARGETING"
@@ -123,13 +184,16 @@
 				"value": "DOTA_ABILITY_BEHAVIOR_FREE_DRAW_TARGETING"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_INVISIBLE"
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_INVISIBLE",
+				"label": "无视隐身"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_MUTED"
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_MUTED",
+				"label": "无视锁闭"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_SILENCE"
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_SILENCE",
+				"label": "无视沉默"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_INNATE_UI"
@@ -138,7 +202,8 @@
 				"value": "DOTA_ABILITY_BEHAVIOR_IS_FAKE_ITEM"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_NONE"
+				"value": "DOTA_ABILITY_BEHAVIOR_NONE",
+				"label": "无"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_OVERSHOOT"
@@ -164,5 +229,1036 @@
 		],
 		"multiple": true,
 		"separator": "|"
+	},
+	"AbilityUnitTargetTeam": {
+		"options": [
+			{
+				"value": "DOTA_UNIT_TARGET_TEAM_ENEMY",
+				"label": "敌方队伍"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
+				"label": "友方队伍"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_TEAM_BOTH",
+				"label": "双方队伍"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_TEAM_CUSTOM",
+				"label": "自定义"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_TEAM_NONE",
+				"label": "没有队伍"
+			}
+		],
+		"multiple": true,
+		"separator": "|"
+	},
+	"AbilityUnitTargetType": {
+		"options": [
+			{
+				"value": "DOTA_UNIT_TARGET_HERO",
+				"label": "英雄目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_CREEP",
+				"label": "普通单位目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_BUILDING",
+				"label": "以防御塔为目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_COURIER",
+				"label": "信使目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_BASIC",
+				"label": "信使目标+普通单位目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_HEROES_AND_CREEPS",
+				"label": "信使目标+普通单位目标+英雄目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_NONE",
+				"label": "没有目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_OTHER"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_ALL"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_TREE",
+				"label": "以树为目标"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_CUSTOM"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_SELF"
+			}
+		],
+		"multiple": true,
+		"separator": "|"
+	},
+	"AbilityUnitTargetFlags": {
+		"options": [
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NONE",
+				"label": "没有标记"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_RANGED_ONLY",
+				"label": "只有远程"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_MELEE_ONLY",
+				"label": "只有近战"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_DEAD",
+				"label": "死亡单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES",
+				"label": "魔法免疫的敌人"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_MAGIC_IMMUNE_ALLIES",
+				"label": "没有魔法免疫的单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_INVULNERABLE",
+				"label": "无敌"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_FOW_VISIBLE",
+				"label": "迷雾可见"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NO_INVIS",
+				"label": "没有隐身单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_CAN_BE_SEEN"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_ANCIENTS",
+				"label": "没有远古单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_PLAYER_CONTROLLED",
+				"label": "玩家控制的单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_DOMINATED",
+				"label": "没有被支配的单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_SUMMONED",
+				"label": "没有召唤物"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_ILLUSIONS",
+				"label": "没有幻象"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_ATTACK_IMMUNE",
+				"label": "没有攻击免疫单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_MANA_ONLY",
+				"label": "拥有魔法"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_CHECK_DISABLE_HELP",
+				"label": "检查是否禁用帮助"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_CREEP_HERO",
+				"label": "没有英雄级普通单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_OUT_OF_WORLD",
+				"label": "不在游戏中的单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_NOT_NIGHTMARED",
+				"label": "没有噩梦状态单位"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_PREFER_ENEMIES"
+			},
+			{
+				"value": "DOTA_UNIT_TARGET_FLAG_RESPECT_OBSTRUCTIONS"
+			}
+		],
+		"multiple": true,
+		"separator": "|"
+	},
+	"AbilityUnitDamageType": {
+		"options": [
+			{
+				"value": "DAMAGE_TYPE_PHYSICAL",
+				"label": "物理伤害"
+			},
+			{
+				"value": "DAMAGE_TYPE_MAGICAL",
+				"label": "魔法伤害"
+			},
+			{
+				"value": "DAMAGE_TYPE_PURE",
+				"label": "纯粹伤害"
+			},
+			{
+				"value": "DAMAGE_TYPE_ALL",
+				"label": "全部类型"
+			},
+			{
+				"value": "DAMAGE_TYPE_HP_REMOVAL",
+				"label": "生命移除"
+			},
+			{
+				"value": "DAMAGE_TYPE_ABILITY_DEFINED"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"AbilityCastAnimation": {
+		"options": [
+			{
+				"value": "ACT_DOTA_IDLE"
+			},
+			{
+				"value": "ACT_DOTA_IDLE_RARE"
+			},
+			{
+				"value": "ACT_DOTA_RUN"
+			},
+			{
+				"value": "ACT_DOTA_ATTACK"
+			},
+			{
+				"value": "ACT_DOTA_ATTACK2"
+			},
+			{
+				"value": "ACT_DOTA_ATTACK_EVENT"
+			},
+			{
+				"value": "ACT_DOTA_DIE"
+			},
+			{
+				"value": "ACT_DOTA_FLINCH"
+			},
+			{
+				"value": "ACT_DOTA_FLAIL"
+			},
+			{
+				"value": "ACT_DOTA_DISABLED"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_1"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_2"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_3"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_4"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_5"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_6"
+			},
+			{
+				"value": "ACT_DOTA_OVERRIDE_ABILITY_1"
+			},
+			{
+				"value": "ACT_DOTA_OVERRIDE_ABILITY_2"
+			},
+			{
+				"value": "ACT_DOTA_OVERRIDE_ABILITY_3"
+			},
+			{
+				"value": "ACT_DOTA_OVERRIDE_ABILITY_4"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_1"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_2"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_3"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_4"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_5"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_6"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_END_ABILITY_1"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_END_ABILITY_2"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_END_ABILITY_3"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_END_ABILITY_4"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_END_ABILITY_5"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_END_ABILITY_6"
+			},
+			{
+				"value": "ACT_DOTA_CONSTANT_LAYER"
+			},
+			{
+				"value": "ACT_DOTA_CAPTURE"
+			},
+			{
+				"value": "ACT_DOTA_SPAWN"
+			},
+			{
+				"value": "ACT_DOTA_KILLTAUNT"
+			},
+			{
+				"value": "ACT_DOTA_TAUNT"
+			},
+			{
+				"value": "ACT_DOTA_THIRST"
+			},
+			{
+				"value": "ACT_DOTA_CAST_DRAGONBREATH"
+			},
+			{
+				"value": "ACT_DOTA_ECHO_SLAM"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_1_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_2_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_3_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_4_END"
+			},
+			{
+				"value": "ACT_MIRANA_LEAP_END"
+			},
+			{
+				"value": "ACT_WAVEFORM_START"
+			},
+			{
+				"value": "ACT_WAVEFORM_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_ROT"
+			},
+			{
+				"value": "ACT_DOTA_DIE_SPECIAL"
+			},
+			{
+				"value": "ACT_DOTA_RATTLETRAP_BATTERYASSAULT"
+			},
+			{
+				"value": "ACT_DOTA_RATTLETRAP_POWERCOGS"
+			},
+			{
+				"value": "ACT_DOTA_RATTLETRAP_HOOKSHOT_START"
+			},
+			{
+				"value": "ACT_DOTA_RATTLETRAP_HOOKSHOT_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_RATTLETRAP_HOOKSHOT_END"
+			},
+			{
+				"value": "ACT_STORM_SPIRIT_OVERLOAD_RUN_OVERRIDE"
+			},
+			{
+				"value": "ACT_DOTA_TINKER_REARM1"
+			},
+			{
+				"value": "ACT_DOTA_TINKER_REARM2"
+			},
+			{
+				"value": "ACT_DOTA_TINKER_REARM3"
+			},
+			{
+				"value": "ACT_TINY_AVALANCHE"
+			},
+			{
+				"value": "ACT_TINY_TOSS"
+			},
+			{
+				"value": "ACT_TINY_GROWL"
+			},
+			{
+				"value": "ACT_DOTA_WEAVERBUG_ATTACH"
+			},
+			{
+				"value": "ACT_DOTA_CAST_WILD_AXES_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_LIFE_BREAK_START"
+			},
+			{
+				"value": "ACT_DOTA_CAST_LIFE_BREAK_END"
+			},
+			{
+				"value": "ACT_DOTA_NIGHTSTALKER_TRANSITION"
+			},
+			{
+				"value": "ACT_DOTA_LIFESTEALER_RAGE"
+			},
+			{
+				"value": "ACT_DOTA_LIFESTEALER_OPEN_WOUNDS"
+			},
+			{
+				"value": "ACT_DOTA_SAND_KING_BURROW_IN"
+			},
+			{
+				"value": "ACT_DOTA_SAND_KING_BURROW_OUT"
+			},
+			{
+				"value": "ACT_DOTA_EARTHSHAKER_TOTEM_ATTACK"
+			},
+			{
+				"value": "ACT_DOTA_WHEEL_LAYER"
+			},
+			{
+				"value": "ACT_DOTA_ALCHEMIST_CHEMICAL_RAGE_START"
+			},
+			{
+				"value": "ACT_DOTA_ALCHEMIST_CONCOCTION"
+			},
+			{
+				"value": "ACT_DOTA_JAKIRO_LIQUIDFIRE_START"
+			},
+			{
+				"value": "ACT_DOTA_JAKIRO_LIQUIDFIRE_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_LIFESTEALER_INFEST"
+			},
+			{
+				"value": "ACT_DOTA_LIFESTEALER_INFEST_END"
+			},
+			{
+				"value": "ACT_DOTA_LASSO_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_ALCHEMIST_CONCOCTION_THROW"
+			},
+			{
+				"value": "ACT_DOTA_ALCHEMIST_CHEMICAL_RAGE_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_COLD_SNAP"
+			},
+			{
+				"value": "ACT_DOTA_CAST_GHOST_WALK"
+			},
+			{
+				"value": "ACT_DOTA_CAST_TORNADO"
+			},
+			{
+				"value": "ACT_DOTA_CAST_EMP"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ALACRITY"
+			},
+			{
+				"value": "ACT_DOTA_CAST_CHAOS_METEOR"
+			},
+			{
+				"value": "ACT_DOTA_CAST_SUN_STRIKE"
+			},
+			{
+				"value": "ACT_DOTA_CAST_FORGE_SPIRIT"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ICE_WALL"
+			},
+			{
+				"value": "ACT_DOTA_CAST_DEAFENING_BLAST"
+			},
+			{
+				"value": "ACT_DOTA_VICTORY"
+			},
+			{
+				"value": "ACT_DOTA_DEFEAT"
+			},
+			{
+				"value": "ACT_DOTA_SPIRIT_BREAKER_CHARGE_POSE"
+			},
+			{
+				"value": "ACT_DOTA_SPIRIT_BREAKER_CHARGE_END"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_END"
+			},
+			{
+				"value": "ACT_DOTA_CAST_REFRACTION"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_7"
+			},
+			{
+				"value": "ACT_DOTA_CANCEL_SIREN_SONG"
+			},
+			{
+				"value": "ACT_DOTA_CHANNEL_ABILITY_7"
+			},
+			{
+				"value": "ACT_DOTA_LOADOUT"
+			},
+			{
+				"value": "ACT_DOTA_FORCESTAFF_END"
+			},
+			{
+				"value": "ACT_DOTA_POOF_END"
+			},
+			{
+				"value": "ACT_DOTA_SLARK_POUNCE"
+			},
+			{
+				"value": "ACT_DOTA_MAGNUS_SKEWER_START"
+			},
+			{
+				"value": "ACT_DOTA_MAGNUS_SKEWER_END"
+			},
+			{
+				"value": "ACT_DOTA_MEDUSA_STONE_GAZE"
+			},
+			{
+				"value": "ACT_DOTA_RELAX_START"
+			},
+			{
+				"value": "ACT_DOTA_RELAX_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_RELAX_END"
+			},
+			{
+				"value": "ACT_DOTA_CENTAUR_STAMPEDE"
+			},
+			{
+				"value": "ACT_DOTA_BELLYACHE_START"
+			},
+			{
+				"value": "ACT_DOTA_BELLYACHE_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_BELLYACHE_END"
+			},
+			{
+				"value": "ACT_DOTA_ROQUELAIRE_LAND"
+			},
+			{
+				"value": "ACT_DOTA_ROQUELAIRE_LAND_IDLE"
+			},
+			{
+				"value": "ACT_DOTA_GREEVIL_CAST"
+			},
+			{
+				"value": "ACT_DOTA_GREEVIL_OVERRIDE_ABILITY"
+			},
+			{
+				"value": "ACT_DOTA_GREEVIL_HOOK_START"
+			},
+			{
+				"value": "ACT_DOTA_GREEVIL_HOOK_END"
+			},
+			{
+				"value": "ACT_DOTA_GREEVIL_BLINK_BONE"
+			},
+			{
+				"value": "ACT_DOTA_IDLE_SLEEPING"
+			},
+			{
+				"value": "ACT_DOTA_INTRO"
+			},
+			{
+				"value": "ACT_DOTA_GESTURE_POINT"
+			},
+			{
+				"value": "ACT_DOTA_GESTURE_ACCENT"
+			},
+			{
+				"value": "ACT_DOTA_SLEEPING_END"
+			},
+			{
+				"value": "ACT_DOTA_AMBUSH"
+			},
+			{
+				"value": "ACT_DOTA_ITEM_LOOK"
+			},
+			{
+				"value": "ACT_DOTA_STARTLE"
+			},
+			{
+				"value": "ACT_DOTA_FRUSTRATION"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_REACT"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_END_REACT"
+			},
+			{
+				"value": "ACT_DOTA_SHRUG"
+			},
+			{
+				"value": "ACT_DOTA_RELAX_LOOP_END"
+			},
+			{
+				"value": "ACT_DOTA_PRESENT_ITEM"
+			},
+			{
+				"value": "ACT_DOTA_IDLE_IMPATIENT"
+			},
+			{
+				"value": "ACT_DOTA_SHARPEN_WEAPON"
+			},
+			{
+				"value": "ACT_DOTA_SHARPEN_WEAPON_OUT"
+			},
+			{
+				"value": "ACT_DOTA_IDLE_SLEEPING_END"
+			},
+			{
+				"value": "ACT_DOTA_BRIDGE_DESTROY"
+			},
+			{
+				"value": "ACT_DOTA_TAUNT_SNIPER"
+			},
+			{
+				"value": "ACT_DOTA_DEATH_BY_SNIPER"
+			},
+			{
+				"value": "ACT_DOTA_LOOK_AROUND"
+			},
+			{
+				"value": "ACT_DOTA_CAGED_CREEP_RAGE"
+			},
+			{
+				"value": "ACT_DOTA_CAGED_CREEP_RAGE_OUT"
+			},
+			{
+				"value": "ACT_DOTA_CAGED_CREEP_SMASH"
+			},
+			{
+				"value": "ACT_DOTA_CAGED_CREEP_SMASH_OUT"
+			},
+			{
+				"value": "ACT_DOTA_IDLE_IMPATIENT_SWORD_TAP"
+			},
+			{
+				"value": "ACT_DOTA_INTRO_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_BRIDGE_THREAT"
+			},
+			{
+				"value": "ACT_DOTA_DAGON"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_2_ES_ROLL_START"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_2_ES_ROLL"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_2_ES_ROLL_END"
+			},
+			{
+				"value": "ACT_DOTA_NIAN_PIN_START"
+			},
+			{
+				"value": "ACT_DOTA_NIAN_PIN_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_NIAN_PIN_END"
+			},
+			{
+				"value": "ACT_DOTA_LEAP_STUN"
+			},
+			{
+				"value": "ACT_DOTA_LEAP_SWIPE"
+			},
+			{
+				"value": "ACT_DOTA_NIAN_INTRO_LEAP"
+			},
+			{
+				"value": "ACT_DOTA_AREA_DENY"
+			},
+			{
+				"value": "ACT_DOTA_NIAN_PIN_TO_STUN"
+			},
+			{
+				"value": "ACT_DOTA_RAZE_1"
+			},
+			{
+				"value": "ACT_DOTA_RAZE_2"
+			},
+			{
+				"value": "ACT_DOTA_RAZE_3"
+			},
+			{
+				"value": "ACT_DOTA_UNDYING_DECAY"
+			},
+			{
+				"value": "ACT_DOTA_UNDYING_SOUL_RIP"
+			},
+			{
+				"value": "ACT_DOTA_UNDYING_TOMBSTONE"
+			},
+			{
+				"value": "ACT_DOTA_WHIRLING_AXES_RANGED"
+			},
+			{
+				"value": "ACT_DOTA_SHALLOW_GRAVE"
+			},
+			{
+				"value": "ACT_DOTA_COLD_FEET"
+			},
+			{
+				"value": "ACT_DOTA_ICE_VORTEX"
+			},
+			{
+				"value": "ACT_DOTA_CHILLING_TOUCH"
+			},
+			{
+				"value": "ACT_DOTA_ENFEEBLE"
+			},
+			{
+				"value": "ACT_DOTA_FATAL_BONDS"
+			},
+			{
+				"value": "ACT_DOTA_MIDNIGHT_PULSE"
+			},
+			{
+				"value": "ACT_DOTA_ANCESTRAL_SPIRIT"
+			},
+			{
+				"value": "ACT_DOTA_THUNDER_STRIKE"
+			},
+			{
+				"value": "ACT_DOTA_KINETIC_FIELD"
+			},
+			{
+				"value": "ACT_DOTA_STATIC_STORM"
+			},
+			{
+				"value": "ACT_DOTA_MINI_TAUNT"
+			},
+			{
+				"value": "ACT_DOTA_ARCTIC_BURN_END"
+			},
+			{
+				"value": "ACT_DOTA_LOADOUT_RARE"
+			},
+			{
+				"value": "ACT_DOTA_SWIM"
+			},
+			{
+				"value": "ACT_DOTA_FLEE"
+			},
+			{
+				"value": "ACT_DOTA_TROT"
+			},
+			{
+				"value": "ACT_DOTA_SHAKE"
+			},
+			{
+				"value": "ACT_DOTA_SWIM_IDLE"
+			},
+			{
+				"value": "ACT_DOTA_WAIT_IDLE"
+			},
+			{
+				"value": "ACT_DOTA_GREET"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_COOP_START"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_COOP_WAIT"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_COOP_END"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_COOP_EXIT"
+			},
+			{
+				"value": "ACT_DOTA_SHOPKEEPER_PET_INTERACT"
+			},
+			{
+				"value": "ACT_DOTA_ITEM_PICKUP"
+			},
+			{
+				"value": "ACT_DOTA_ITEM_DROP"
+			},
+			{
+				"value": "ACT_DOTA_CAPTURE_PET"
+			},
+			{
+				"value": "ACT_DOTA_PET_WARD_OBSERVER"
+			},
+			{
+				"value": "ACT_DOTA_PET_WARD_SENTRY"
+			},
+			{
+				"value": "ACT_DOTA_PET_LEVEL"
+			},
+			{
+				"value": "ACT_DOTA_CAST_BURROW_END"
+			},
+			{
+				"value": "ACT_DOTA_LIFESTEALER_ASSIMILATE"
+			},
+			{
+				"value": "ACT_DOTA_LIFESTEALER_EJECT"
+			},
+			{
+				"value": "ACT_DOTA_ATTACK_EVENT_BASH"
+			},
+			{
+				"value": "ACT_DOTA_CAPTURE_RARE"
+			},
+			{
+				"value": "ACT_DOTA_AW_MAGNETIC_FIELD"
+			},
+			{
+				"value": "ACT_DOTA_CAST_GHOST_SHIP"
+			},
+			{
+				"value": "ACT_DOTA_FXANIM"
+			},
+			{
+				"value": "ACT_DOTA_VICTORY_START"
+			},
+			{
+				"value": "ACT_DOTA_DEFEAT_START"
+			},
+			{
+				"value": "ACT_DOTA_DP_SPIRIT_SIPHON"
+			},
+			{
+				"value": "ACT_DOTA_TRICKS_END"
+			},
+			{
+				"value": "ACT_DOTA_ES_STONE_CALLER"
+			},
+			{
+				"value": "ACT_DOTA_MK_STRIKE"
+			},
+			{
+				"value": "ACT_DOTA_VERSUS"
+			},
+			{
+				"value": "ACT_DOTA_CAPTURE_CARD"
+			},
+			{
+				"value": "ACT_DOTA_MK_SPRING_SOAR"
+			},
+			{
+				"value": "ACT_DOTA_MK_SPRING_END"
+			},
+			{
+				"value": "ACT_DOTA_MK_TREE_SOAR"
+			},
+			{
+				"value": "ACT_DOTA_MK_TREE_END"
+			},
+			{
+				"value": "ACT_DOTA_MK_FUR_ARMY"
+			},
+			{
+				"value": "ACT_DOTA_MK_SPRING_CAST"
+			},
+			{
+				"value": "ACT_DOTA_NECRO_GHOST_SHROUD"
+			},
+			{
+				"value": "ACT_DOTA_OVERRIDE_ARCANA"
+			},
+			{
+				"value": "ACT_DOTA_SLIDE"
+			},
+			{
+				"value": "ACT_DOTA_SLIDE_LOOP"
+			},
+			{
+				"value": "ACT_DOTA_GENERIC_CHANNEL_1"
+			},
+			{
+				"value": "ACT_DOTA_GS_SOUL_CHAIN"
+			},
+			{
+				"value": "ACT_DOTA_GS_INK_CREATURE"
+			},
+			{
+				"value": "ACT_DOTA_TRANSITION"
+			},
+			{
+				"value": "ACT_DOTA_BLINK_DAGGER"
+			},
+			{
+				"value": "ACT_DOTA_BLINK_DAGGER_END"
+			},
+			{
+				"value": "ACT_DOTA_CUSTOM_TOWER_ATTACK"
+			},
+			{
+				"value": "ACT_DOTA_CUSTOM_TOWER_IDLE"
+			},
+			{
+				"value": "ACT_DOTA_CUSTOM_TOWER_DIE"
+			},
+			{
+				"value": "ACT_DOTA_CAST_COLD_SNAP_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_GHOST_WALK_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_TORNADO_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_EMP_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ALACRITY_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_CHAOS_METEOR_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_SUN_STRIKE_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_FORGE_SPIRIT_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ICE_WALL_ORB"
+			},
+			{
+				"value": "ACT_DOTA_CAST_DEAFENING_BLAST_ORB"
+			},
+			{
+				"value": "ACT_DOTA_NOTICE"
+			},
+			{
+				"value": "ACT_DOTA_CAST_ABILITY_2_ALLY"
+			},
+			{
+				"value": "ACT_DOTA_SHUFFLE_L"
+			},
+			{
+				"value": "ACT_DOTA_SHUFFLE_R"
+			},
+			{
+				"value": "ACT_DOTA_OVERRIDE_LOADOUT"
+			},
+			{
+				"value": "ACT_DOTA_TAUNT_SPECIAL"
+			},
+			{
+				"value": "ACT_DOTA_TELEPORT_START"
+			},
+			{
+				"value": "ACT_DOTA_GENERIC_CHANNEL_1_START"
+			},
+			{
+				"value": "ACT_DOTA_CUSTOM_TOWER_IDLE_RARE"
+			},
+			{
+				"value": "ACT_DOTA_CUSTOM_TOWER_TAUNT"
+			},
+			{
+				"value": "ACT_DOTA_CUSTOM_TOWER_HIGH_FIVE"
+			},
+			{
+				"value": "ACT_DOTA_ATTACK_SPECIAL"
+			},
+			{
+				"value": "ACT_DOTA_TRANSITION_IDLE"
+			},
+			{
+				"value": "ACT_DOTA_PIERCE_THE_VEIL"
+			},
+			{
+				"value": "ACT_DOTA_RUN_RARE"
+			},
+			{
+				"value": "ACT_DOTA_VIPER_DIVE"
+			},
+			{
+				"value": "ACT_DOTA_VIPER_DIVE_END"
+			},
+			{
+				"value": "ACT_DOTA_MK_STRIKE_END"
+			},
+			{
+				"value": "ACT_DOTA_SHADOW_VAULT"
+			},
+			{
+				"value": "ACT_DOTA_KEZ_KATANA_ULT_START"
+			},
+			{
+				"value": "ACT_DOTA_KEZ_KATANA_ULT_CHAIN_A"
+			},
+			{
+				"value": "ACT_DOTA_KEZ_KATANA_ULT_CHAIN_B"
+			},
+			{
+				"value": "ACT_DOTA_KEZ_KATANA_ULT_END"
+			},
+			{
+				"value": "ACT_DOTA_KEZ_KATANA_IMPALE"
+			},
+			{
+				"value": "ACT_DOTA_KEZ_KATANA_IMPALE_FAST"
+			},
+			{
+				"value": "ACT_DOTA_UNICYCLE"
+			},
+			{
+				"value": "ACT_DOTA_UNICYCLE_END"
+			},
+			{
+				"value": "ACT_DOTA_MVP_SCREEN"
+			}
+		],
+		"multiple": false,
+		"separator": ","
 	}
 }

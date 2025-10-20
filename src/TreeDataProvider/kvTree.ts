@@ -2,7 +2,12 @@ import * as fs from 'fs';
 import watch from 'node-watch';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { ensureRootExists, KvEditorSettings, readKvEditorSettings } from '../module/kvEditorConfig';
+import {
+	hasExistingEntry,
+	KvEditorEntry,
+	KvEditorSettings,
+	readKvEditorSettings,
+} from '../module/kvEditorConfig';
 import { localize } from '../utils/localize';
 
 type KvTreeItemType = 'folder' | 'file' | 'placeholder';
@@ -33,7 +38,7 @@ export class KvTreeItem extends vscode.TreeItem {
 }
 
 export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>, vscode.Disposable {
-	private watcher: ReturnType<typeof watch> | undefined;
+	private watchers: ReturnType<typeof watch>[] = [];
 	private _settings: KvEditorSettings | undefined;
 	private readonly _onDidChangeTreeData = new vscode.EventEmitter<KvTreeItem | void>();
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -70,15 +75,18 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 		if (!this._settings) {
 			return [this.createPlaceholderItem(localize('kvEditor.configureFolder'))];
 		}
-		if (!ensureRootExists(this._settings)) {
+		if (!hasExistingEntry(this._settings)) {
 			return [this.createPlaceholderItem(localize('kvEditor.folderMissing'))];
 		}
 
-		const targetDir = element?.fsPath ?? this._settings.rootPath;
-		if (!targetDir) {
+		if (!element) {
+			return this.buildRootItems(this._settings);
+		}
+
+		if (element.itemType !== 'folder' || !element.fsPath) {
 			return [];
 		}
-		return this.readDirectory(targetDir);
+		return this.readDirectory(element.fsPath);
 	}
 
 	private async readDirectory(dir: string): Promise<KvTreeItem[]> {
@@ -130,22 +138,74 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 		});
 	}
 
+	private buildRootItems(settings: KvEditorSettings): KvTreeItem[] {
+		const items: KvTreeItem[] = [];
+		for (const entry of settings.entries) {
+			if (!entry.exists) {
+				continue;
+			}
+			items.push(this.createEntryItem(entry));
+		}
+		if (!items.length) {
+			return [this.createPlaceholderItem(localize('kvEditor.folderMissing'))];
+		}
+		items.sort((a, b) => this.getLabelText(a).localeCompare(this.getLabelText(b)));
+		return items;
+	}
+
+	private createEntryItem(entry: KvEditorEntry): KvTreeItem {
+		const label = path.basename(entry.resolvedPath) || entry.resolvedPath;
+		const collapsible = entry.isDirectory ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
+		const command = entry.isDirectory
+			? undefined
+			: {
+				command: 'dota2tools.kvEditor.openFile',
+				title: 'Open KV',
+				arguments: [vscode.Uri.file(entry.resolvedPath)],
+			};
+		const item = new KvTreeItem(entry.isDirectory ? 'folder' : 'file', entry.resolvedPath, label, collapsible, command);
+		const tooltipParts = [entry.resolvedPath];
+		if (entry.rawPath !== entry.resolvedPath) {
+			tooltipParts.push(`配置: ${entry.rawPath}`);
+		}
+		item.tooltip = tooltipParts.join('\n');
+		item.description = entry.type;
+		return item;
+	}
+
 	private registerWatcher() {
 		this.disposeWatcher();
-		if (!this._settings || !ensureRootExists(this._settings)) {
+		if (!this._settings) {
 			return;
 		}
-		try {
-			this.watcher = watch(this._settings.rootPath, { recursive: true }, () => this.refresh());
-		} catch (error) {
-			// ignore watcher failures
+		const watchers: ReturnType<typeof watch>[] = [];
+		const seen = new Set<string>();
+		for (const entry of this._settings.entries) {
+			if (!entry.exists || !entry.isDirectory) {
+				continue;
+			}
+			const key = entry.resolvedPath.toLowerCase();
+			if (seen.has(key)) {
+				continue;
+			}
+			seen.add(key);
+			try {
+				watchers.push(watch(entry.resolvedPath, { recursive: true }, () => this.refresh()));
+			} catch (error) {
+				// ignore watcher failures
+			}
 		}
+		this.watchers = watchers;
 	}
 
 	private disposeWatcher() {
-		if (this.watcher) {
-			this.watcher.close();
-			this.watcher = undefined;
+		for (const watcher of this.watchers) {
+			try {
+				watcher.close();
+			} catch (error) {
+				// ignore
+			}
 		}
+		this.watchers = [];
 	}
 }

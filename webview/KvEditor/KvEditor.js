@@ -17,6 +17,13 @@ const COLUMN_MIN_WIDTH = 100;
 const ROW_NUMBER_COLUMN_KEY = '__rowNumber';
 const ROW_NUMBER_MIN_WIDTH = 56;
 
+const FOLDER_TYPE_LABELS = {
+	ability: '技能',
+	item: '物品',
+	unit: '单位',
+	custom: '自定义'
+};
+
 let latestPayload = undefined;
 let activeCell = undefined;
 const columnWidths = Object.create(null);
@@ -809,6 +816,7 @@ function renderTable(columns, rows, columnOptions) {
 	}
 	closeMultiSelectDropdown({ preservePending });
 	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...columns];
+	const texturePreviewMap = latestPayload?.texturePreviews ?? Object.create(null);
 	const table = document.createElement('table');
 	const colgroup = document.createElement('colgroup');
 	const columnLabels = new Map();
@@ -999,6 +1007,32 @@ function renderTable(columns, rows, columnOptions) {
 					setElementValue(input, value, undefined);
 					input.dataset.initialValue = input.value ?? '';
 					input.title = input.value;
+					const previewInfo = column === 'AbilityTextureName' && row.id ? texturePreviewMap[row.id] : undefined;
+					let hostElement = input;
+					if (previewInfo && previewInfo.uri) {
+						const wrapper = document.createElement('div');
+						wrapper.className = 'kv-cell-inline';
+						input.classList.add('kv-cell-inline-input');
+						wrapper.appendChild(input);
+						const preview = document.createElement('div');
+						preview.className = 'kv-cell-preview';
+						preview.dataset.type = previewInfo.kind === 'item' ? 'item' : 'spell';
+						preview.dataset.source = previewInfo.source || '';
+						const img = document.createElement('img');
+						img.src = previewInfo.uri;
+						img.alt = `${row.id ?? ''} icon`;
+						img.draggable = false;
+						if (previewInfo.fileName) {
+							const tooltipParts = [previewInfo.fileName];
+							if (previewInfo.source) {
+								tooltipParts.push(previewInfo.source === 'addon' ? '项目资源' : '插件资源');
+							}
+							img.title = tooltipParts.join(' · ');
+						}
+						preview.appendChild(img);
+						wrapper.appendChild(preview);
+						hostElement = wrapper;
+					}
 					const updateSelection = () => {
 						selectCell(td, {
 							column,
@@ -1040,7 +1074,7 @@ function renderTable(columns, rows, columnOptions) {
 							input.blur();
 						}
 					});
-					td.appendChild(input);
+					td.appendChild(hostElement);
 					td.addEventListener('click', (event) => {
 						if (event.target instanceof HTMLInputElement) {
 							return;
@@ -1095,7 +1129,7 @@ function render(payload) {
 	latestPayload = payload;
 	const metaParts = [];
 	if (payload.folderType) {
-		metaParts.push(`路径类型: ${payload.folderType}`);
+		metaParts.push(`路径类型: ${formatFolderType(payload.folderType)}`);
 	}
 	if (payload.header) {
 		metaParts.push(`根键: ${payload.header}`);
@@ -1134,6 +1168,13 @@ function render(payload) {
 		emptySection.textContent = '';
 	}
 	setSectionVisibility({ showTable: true, showEmpty: false, showError: false });
+}
+
+function formatFolderType(folderType) {
+	if (!folderType) {
+		return '未知';
+	}
+	return FOLDER_TYPE_LABELS[folderType] || folderType;
 }
 
 window.addEventListener('message', event => {
