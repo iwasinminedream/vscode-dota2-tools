@@ -14,6 +14,10 @@
 	"AbilityBehavior": {
 		"options": [
 			{
+				"value": "DOTA_ABILITY_BEHAVIOR_HIDDEN",
+				"label": "隐藏"
+			},
+			{
 				"value": "DOTA_ABILITY_BEHAVIOR_PASSIVE"
 			},
 			{
@@ -26,25 +30,136 @@
 				"value": "DOTA_ABILITY_BEHAVIOR_POINT"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
-			},
-			{
-				"value": "DOTA_ABILITY_BEHAVIOR_TOGGLE"
+				"value": "DOTA_ABILITY_BEHAVIOR_AOE"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_UNRESTRICTED"
+				"value": "DOTA_ABILITY_BEHAVIOR_CHANNELLED"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_CHANNELLED"
+				"value": "DOTA_ABILITY_BEHAVIOR_ITEM"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_TOGGLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DIRECTIONAL"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
 			},
 			{
 				"value": "DOTA_ABILITY_BEHAVIOR_AUTOCAST"
 			},
 			{
-				"value": "DOTA_ABILITY_BEHAVIOR_AOE"
+				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_POINT"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_OPTIONAL_NO_TARGET"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_AURA"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_ATTACK"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_RESUME_MOVEMENT"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_UNRESTRICTED"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_PSEUDO_QUEUE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_ALERT_TARGET"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_NORMAL_WHEN_STOLEN"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_RUNE_TARGET"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_CHANNEL"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_VECTOR_TARGETING"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_AFFECTED_BY_MUTE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_ALT_CASTABLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_CAN_SELF_CAST"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_FREE_DRAW_TARGETING"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_INVISIBLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_MUTED"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IGNORE_SILENCE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_INNATE_UI"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_IS_FAKE_ITEM"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_NONE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_OVERSHOOT"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_SHOW_IN_GUIDES"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_SKIP_FOR_KEYBINDS"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_UNLOCKED_BY_EFFECT_INDEX"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_UNSWAPPABLE"
+			},
+			{
+				"value": "DOTA_ABILITY_BEHAVIOR_LAST_RESORT_POINT"
 			}
 		],
 		"multiple": true,

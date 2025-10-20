@@ -288,15 +288,16 @@ function updateMultiSelectOverlaySelection() {
 	if (!openMultiSelectContext) {
 		return;
 	}
-	const { overlay, select, fieldConfig } = openMultiSelectContext;
+	const { select, fieldConfig, entries } = openMultiSelectContext;
 	const selectedSet = new Set(splitMultiValue(readElementValue(select, fieldConfig), fieldConfig));
-	const optionNodes = overlay.querySelectorAll('.kv-multiselect-option');
-	optionNodes.forEach((node) => {
-		const value = node.dataset.value ?? '';
-		if (selectedSet.has(value)) {
-			node.classList.add('kv-multiselect-option-checked');
+	(entries || []).forEach((entry) => {
+		if (!entry || !entry.element) {
+			return;
+		}
+		if (selectedSet.has(entry.option.value)) {
+			entry.element.classList.add('kv-quickpick-item-checked');
 		} else {
-			node.classList.remove('kv-multiselect-option-checked');
+			entry.element.classList.remove('kv-quickpick-item-checked');
 		}
 	});
 }
@@ -328,6 +329,9 @@ function toggleMultiSelectOption(value) {
 		handleElementChange(select, fieldConfig);
 		updateSelectDisplay(select, display, fieldConfig);
 		updateMultiSelectOverlaySelection();
+		if (openMultiSelectContext && openMultiSelectContext.focusSearch) {
+			openMultiSelectContext.focusSearch();
+		}
 	} else {
 		setElementValue(select, value, fieldConfig);
 		handleElementChange(select, fieldConfig);
@@ -342,10 +346,18 @@ function closeMultiSelectDropdown(options) {
 		return;
 	}
 	const preservePending = Boolean(options?.preservePending);
-	const { overlay, outsideHandler, keyHandler, scrollHandler, resizeHandler } = openMultiSelectContext;
+	const { overlay, outsideHandler, keyHandler, scrollHandler, resizeHandler, searchInput, searchHandlers } = openMultiSelectContext;
 	overlay.remove();
 	document.removeEventListener('mousedown', outsideHandler, true);
 	document.removeEventListener('keydown', keyHandler);
+	if (searchInput && searchHandlers) {
+		if (searchHandlers.input) {
+			searchInput.removeEventListener('input', searchHandlers.input);
+		}
+		if (searchHandlers.keydown) {
+			searchInput.removeEventListener('keydown', searchHandlers.keydown);
+		}
+	}
 	if (tableSection) {
 		tableSection.removeEventListener('scroll', scrollHandler);
 	}
@@ -371,30 +383,66 @@ function openMultiSelectDropdown(context) {
 		closeMultiSelectDropdown();
 	}
 	const overlay = document.createElement('div');
-	overlay.className = 'kv-multiselect-overlay';
-	const optionContainer = document.createElement('div');
-	context.fieldConfig.options?.forEach((option) => {
-		const optionEl = document.createElement('div');
-		optionEl.className = 'kv-multiselect-option';
-		optionEl.dataset.value = option.value;
-		const labelSpan = document.createElement('span');
-		labelSpan.textContent = option.label;
-		const checkSpan = document.createElement('span');
-		checkSpan.className = 'kv-multiselect-option-check';
-		checkSpan.textContent = '✔';
-		optionEl.appendChild(labelSpan);
-		optionEl.appendChild(checkSpan);
-		optionEl.addEventListener('mousedown', (event) => {
+	overlay.className = 'kv-quickpick';
+	const searchWrapper = document.createElement('div');
+	searchWrapper.className = 'kv-quickpick-search-wrapper';
+	const searchInput = document.createElement('input');
+	searchInput.type = 'search';
+	searchInput.className = 'kv-quickpick-search';
+	const placeholderName = context.columnName ? ` ${context.columnName}` : '';
+	searchInput.placeholder = `搜索${placeholderName}`.trim() || '搜索';
+	searchWrapper.appendChild(searchInput);
+	overlay.appendChild(searchWrapper);
+	const list = document.createElement('div');
+	list.className = 'kv-quickpick-list';
+	overlay.appendChild(list);
+	const emptyIndicator = document.createElement('div');
+	emptyIndicator.className = 'kv-quickpick-empty';
+	emptyIndicator.textContent = '无匹配结果';
+	emptyIndicator.hidden = true;
+	overlay.appendChild(emptyIndicator);
+	tableSection.appendChild(overlay);
+	const entries = [];
+	(context.fieldConfig.options ?? []).forEach((option) => {
+		const item = document.createElement('div');
+		item.className = 'kv-quickpick-item';
+		item.dataset.value = option.value;
+		const textWrapper = document.createElement('div');
+		textWrapper.className = 'kv-quickpick-text';
+		const hasCustomLabel = option.label && option.label !== option.value;
+		const primaryText = option.description || (hasCustomLabel ? option.label : option.value);
+		const showDetail = primaryText !== option.value;
+		const labelEl = document.createElement('div');
+		labelEl.className = 'kv-quickpick-label';
+		labelEl.textContent = primaryText;
+		textWrapper.appendChild(labelEl);
+		if (showDetail) {
+			const detailEl = document.createElement('div');
+			detailEl.className = 'kv-quickpick-detail';
+			detailEl.textContent = option.value;
+			textWrapper.appendChild(detailEl);
+		}
+		item.appendChild(textWrapper);
+		const checkEl = document.createElement('div');
+		checkEl.className = 'kv-quickpick-check';
+		checkEl.textContent = '✔';
+		item.appendChild(checkEl);
+		item.addEventListener('mousedown', (event) => {
 			event.preventDefault();
 		});
-		optionEl.addEventListener('click', (event) => {
+		item.addEventListener('click', (event) => {
 			event.preventDefault();
 			toggleMultiSelectOption(option.value);
 		});
-		optionContainer.appendChild(optionEl);
+		const entry = {
+			option,
+			element: item,
+			matches: true,
+			searchText: `${option.value} ${option.label || ''} ${option.description || ''}`.toLowerCase(),
+		};
+		entries.push(entry);
+		list.appendChild(item);
 	});
-	overlay.appendChild(optionContainer);
-	tableSection.appendChild(overlay);
 	const reposition = () => {
 		const tableRect = tableSection.getBoundingClientRect();
 		const cellRect = context.td.getBoundingClientRect();
@@ -402,7 +450,8 @@ function openMultiSelectDropdown(context) {
 		const left = cellRect.left - tableRect.left + tableSection.scrollLeft;
 		overlay.style.top = `${top}px`;
 		overlay.style.left = `${left}px`;
-		overlay.style.minWidth = `${cellRect.width}px`;
+		const minWidth = Math.max(cellRect.width, 220);
+		overlay.style.minWidth = `${minWidth}px`;
 	};
 	const outsideHandler = (event) => {
 		if (!overlay.contains(event.target) && !context.td.contains(event.target)) {
@@ -417,12 +466,7 @@ function openMultiSelectDropdown(context) {
 	};
 	const scrollHandler = () => reposition();
 	const resizeHandler = () => reposition();
-	document.addEventListener('mousedown', outsideHandler, true);
-	document.addEventListener('keydown', keyHandler);
-	tableSection.addEventListener('scroll', scrollHandler);
-	window.addEventListener('resize', resizeHandler);
-	reposition();
-	openMultiSelectContext = {
+	const state = {
 		overlay,
 		select: context.select,
 		display: context.display,
@@ -433,9 +477,143 @@ function openMultiSelectDropdown(context) {
 		outsideHandler,
 		keyHandler,
 		scrollHandler,
-		resizeHandler
+		resizeHandler,
+		searchInput,
+		searchHandlers: {},
+		entries,
+		visibleEntries: [],
+		activeIndex: -1,
+		emptyIndicator,
+		focusSearch: () => {
+			if (document.activeElement !== searchInput) {
+				searchInput.focus({ preventScroll: true });
+			}
+		},
+		setActiveIndex: (index) => { },
+		moveActive: (delta) => { },
+		getActiveEntry: () => undefined,
+		setActiveEntry: () => { },
+		applyFilter: () => { },
 	};
+	state.setActiveIndex = (index) => {
+		(state.entries || []).forEach((entry) => {
+			if (entry?.element) {
+				entry.element.classList.remove('kv-quickpick-item-active');
+			}
+		});
+		const visible = state.visibleEntries || [];
+		if (!visible.length || index === undefined || index === null || index < 0) {
+			state.activeIndex = -1;
+			return;
+		}
+		const normalized = (index % visible.length + visible.length) % visible.length;
+		state.activeIndex = normalized;
+		const activeEntry = visible[normalized];
+		if (activeEntry && activeEntry.element) {
+			activeEntry.element.classList.add('kv-quickpick-item-active');
+			activeEntry.element.scrollIntoView({ block: 'nearest' });
+		}
+	};
+	state.setActiveEntry = (target) => {
+		const visible = state.visibleEntries || [];
+		const idx = visible.indexOf(target);
+		if (idx >= 0) {
+			state.setActiveIndex(idx);
+		}
+	};
+	state.moveActive = (delta) => {
+		const visible = state.visibleEntries || [];
+		if (!visible.length) {
+			state.setActiveIndex(-1);
+			return;
+		}
+		const nextIndex = state.activeIndex === -1 ? 0 : state.activeIndex + delta;
+		state.setActiveIndex(nextIndex);
+	};
+	state.getActiveEntry = () => {
+		const visible = state.visibleEntries || [];
+		if (state.activeIndex < 0 || state.activeIndex >= visible.length) {
+			return undefined;
+		}
+		return visible[state.activeIndex];
+	};
+	state.applyFilter = (term) => {
+		const keyword = (term || '').trim().toLowerCase();
+		state.visibleEntries = [];
+		(state.entries || []).forEach((entry) => {
+			if (!entry || !entry.element) {
+				return;
+			}
+			const matches = !keyword || entry.searchText.includes(keyword);
+			entry.matches = matches;
+			if (matches) {
+				entry.element.hidden = false;
+				state.visibleEntries.push(entry);
+			} else {
+				entry.element.hidden = true;
+			}
+		});
+		state.emptyIndicator.hidden = state.visibleEntries.length > 0;
+		if (!state.visibleEntries.length) {
+			state.setActiveIndex(-1);
+			return;
+		}
+		const active = state.getActiveEntry();
+		if (active && state.visibleEntries.includes(active)) {
+			state.setActiveEntry(active);
+		} else {
+			state.setActiveIndex(0);
+		}
+	};
+	const entryLookup = new Map(entries.map((entry) => [entry.option.value, entry]));
+	entries.forEach((entry) => {
+		entry.element.addEventListener('mouseenter', () => {
+			state.setActiveEntry(entry);
+		});
+	});
+	const onSearchInput = () => {
+		state.applyFilter(searchInput.value ?? '');
+	};
+	const onSearchKeyDown = (event) => {
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			state.moveActive(1);
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			state.moveActive(-1);
+		} else if (event.key === 'Enter') {
+			event.preventDefault();
+			const activeEntry = state.getActiveEntry();
+			if (activeEntry) {
+				toggleMultiSelectOption(activeEntry.option.value);
+			}
+		}
+	};
+	searchInput.addEventListener('input', onSearchInput);
+	searchInput.addEventListener('keydown', onSearchKeyDown);
+	state.searchHandlers = { input: onSearchInput, keydown: onSearchKeyDown };
+	document.addEventListener('mousedown', outsideHandler, true);
+	document.addEventListener('keydown', keyHandler);
+	tableSection.addEventListener('scroll', scrollHandler);
+	window.addEventListener('resize', resizeHandler);
+	reposition();
+	openMultiSelectContext = state;
 	updateMultiSelectOverlaySelection();
+	state.applyFilter('');
+	const currentRawValue = readElementValue(context.select, context.fieldConfig);
+	const currentValues = isMultiSelect ? splitMultiValue(currentRawValue, context.fieldConfig) : (currentRawValue ? [currentRawValue] : []);
+	if (currentValues.length) {
+		for (const val of currentValues) {
+			const found = entryLookup.get(val);
+			if (found) {
+				state.setActiveEntry(found);
+				break;
+			}
+		}
+	} else {
+		state.setActiveIndex(0);
+	}
+	state.focusSearch();
 }
 
 // 计算列的最小宽度
@@ -782,7 +960,7 @@ function renderTable(columns, rows, columnOptions) {
 						});
 						td.addEventListener('dblclick', () => {
 							updateSelection();
-							openMultiSelectDropdown({ td, select, display, fieldConfig });
+							openMultiSelectDropdown({ td, select, display, fieldConfig, columnName });
 						});
 					} else {
 						const updateSelection = () => {
@@ -810,7 +988,7 @@ function renderTable(columns, rows, columnOptions) {
 						});
 						td.addEventListener('dblclick', () => {
 							updateSelection();
-							openMultiSelectDropdown({ td, select, display, fieldConfig });
+							openMultiSelectDropdown({ td, select, display, fieldConfig, columnName });
 						});
 					}
 				} else {
@@ -902,7 +1080,8 @@ function renderTable(columns, rows, columnOptions) {
 		const select = td?.querySelector('select');
 		const display = td?.querySelector('.kv-select-display');
 		if (td && select && display && fieldConfig?.multiple) {
-			openMultiSelectDropdown({ td, select, display, fieldConfig });
+			const columnName = columnLabels.get(column) ?? column;
+			openMultiSelectDropdown({ td, select, display, fieldConfig, columnName });
 		}
 		pendingMultiSelectReopen = null;
 	}

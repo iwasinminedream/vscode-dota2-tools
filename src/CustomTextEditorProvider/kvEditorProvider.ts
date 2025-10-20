@@ -125,10 +125,15 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 							return undefined;
 						}
 						const rawLabel = (optionEntry as Record<string, unknown>).label;
-						return {
+						const rawDescription = (optionEntry as Record<string, unknown>).description;
+						const option: KvEditorColumnOption = {
 							value: rawValue,
 							label: typeof rawLabel === 'string' && rawLabel.length > 0 ? rawLabel : rawValue,
 						};
+						if (typeof rawDescription === 'string' && rawDescription.length > 0) {
+							option.description = rawDescription;
+						}
+						return option;
 					})
 					.filter((entry): entry is KvEditorColumnOption => Boolean(entry));
 				if (!options.length) {
@@ -257,6 +262,7 @@ interface KvEditorEditMessage {
 interface KvEditorColumnOption {
 	value: string;
 	label: string;
+	description?: string;
 }
 
 interface KvEditorColumnOptionConfig {
