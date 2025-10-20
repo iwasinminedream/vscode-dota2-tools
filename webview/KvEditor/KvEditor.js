@@ -819,6 +819,7 @@ function renderTable(columns, rows, columnOptions) {
 	closeMultiSelectDropdown({ preservePending });
 	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...columns];
 	const texturePreviewMap = latestPayload?.texturePreviews ?? Object.create(null);
+	const scriptSupport = latestPayload?.scriptSupport || { applicable: false, baseReady: false, useTypescript: false };
 	const table = document.createElement('table');
 	const colgroup = document.createElement('colgroup');
 	const columnLabels = new Map();
@@ -1010,12 +1011,22 @@ function renderTable(columns, rows, columnOptions) {
 					input.dataset.initialValue = input.value ?? '';
 					input.title = input.value;
 					const previewInfo = column === 'AbilityTextureName' && row.id ? texturePreviewMap[row.id] : undefined;
+					const isScriptColumn = column === 'ScriptFile';
+					const enableScriptAction = isScriptColumn && Boolean(scriptSupport?.applicable);
+					let inlineWrapper = null;
 					let hostElement = input;
+					const ensureInlineWrapper = () => {
+						if (!inlineWrapper) {
+							inlineWrapper = document.createElement('div');
+							inlineWrapper.className = 'kv-cell-inline';
+							input.classList.add('kv-cell-inline-input');
+							inlineWrapper.appendChild(input);
+							hostElement = inlineWrapper;
+						}
+						return inlineWrapper;
+					};
 					if (previewInfo && previewInfo.uri) {
-						const wrapper = document.createElement('div');
-						wrapper.className = 'kv-cell-inline';
-						input.classList.add('kv-cell-inline-input');
-						wrapper.appendChild(input);
+						const wrapper = ensureInlineWrapper();
 						const preview = document.createElement('div');
 						preview.className = 'kv-cell-preview';
 						preview.dataset.type = previewInfo.kind === 'item' ? 'item' : 'spell';
@@ -1053,7 +1064,50 @@ function renderTable(columns, rows, columnOptions) {
 							}
 						});
 						wrapper.appendChild(preview);
-						hostElement = wrapper;
+					}
+					let scriptButton = null;
+					let updateScriptButtonState;
+					if (enableScriptAction) {
+						const wrapper = ensureInlineWrapper();
+						const button = document.createElement('button');
+						button.type = 'button';
+						button.className = 'kv-cell-action kv-cell-action-script';
+						const icon = document.createElement('span');
+						icon.className = 'codicon codicon-go-to-file';
+						button.appendChild(icon);
+						const extensionLabel = scriptSupport.useTypescript ? '.ts' : '.lua';
+						button.addEventListener('click', (event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							requestOpenScriptFile(input.value ?? '');
+						});
+						button.addEventListener('keydown', (event) => {
+							if (event.key === 'Enter' || event.key === ' ') {
+								event.preventDefault();
+								event.stopPropagation();
+								requestOpenScriptFile(input.value ?? '');
+							}
+						});
+						wrapper.appendChild(button);
+						scriptButton = button;
+						updateScriptButtonState = () => {
+							if (!scriptButton) {
+								return;
+							}
+							const hasValue = Boolean((input.value || '').trim());
+							if (!scriptSupport.baseReady) {
+								scriptButton.disabled = true;
+								scriptButton.title = '未配置脚本目录';
+							} else if (!hasValue) {
+								scriptButton.disabled = true;
+								scriptButton.title = '请输入脚本路径';
+							} else {
+								scriptButton.disabled = false;
+								scriptButton.title = `打开脚本文件 (${extensionLabel})`;
+							}
+						};
+						updateScriptButtonState();
+						input.addEventListener('input', updateScriptButtonState);
 					}
 					const updateSelection = () => {
 						selectCell(td, {
@@ -1078,6 +1132,9 @@ function renderTable(columns, rows, columnOptions) {
 					});
 					input.addEventListener('change', () => {
 						handleElementChange(input, undefined);
+						if (updateScriptButtonState) {
+							updateScriptButtonState();
+						}
 					});
 					input.addEventListener('mousedown', (event) => {
 						if (event.detail === 1) {
@@ -1162,6 +1219,20 @@ function requestTextureMenuData(folderType, requestId) {
 				folderType,
 			},
 		});
+	});
+}
+
+function requestOpenScriptFile(scriptPath) {
+	const value = (scriptPath || '').trim();
+	if (!value) {
+		return;
+	}
+	vscode.postMessage({
+		type: 'openScriptFile',
+		payload: {
+			scriptPath: value,
+			folderType: latestPayload?.folderType ?? 'custom',
+		},
 	});
 }
 

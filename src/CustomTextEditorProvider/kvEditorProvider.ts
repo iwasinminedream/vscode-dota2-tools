@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { getGameDir } from '../module/addonInfo';
+import { getContentDir, getGameDir } from '../module/addonInfo';
 import { findKvEntryForUri, KvEditorEntry, KvFolderType, readKvEditorSettings } from '../module/kvEditorConfig';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2, writeKeyValue } from '../utils/kvUtils';
@@ -84,6 +84,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					return;
 				}
 				void this.handleTextureMenuRequest(document, webviewPanel.webview, requestPayload);
+				return;
+			}
+			if (message.type === 'openScriptFile') {
+				const requestPayload: OpenScriptFileMessage | undefined = message.payload;
+				void this.handleOpenScriptFile(document, requestPayload);
 			}
 		});
 
@@ -109,6 +114,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			error: parsed.error,
 			columnOptions: this.getResolvedColumnOptions(folderType),
 			texturePreviews: this.buildTexturePreviews(document, parsed.rows, webview, entry),
+			scriptSupport: this.buildScriptSupport(folderType),
 		};
 	}
 
@@ -245,6 +251,17 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			resolved[column] = { options, multiple, separator };
 		}
 		return resolved;
+	}
+
+	private buildScriptSupport(folderType: KvFolderType): KvEditorScriptSupport {
+		const useTypescript = Boolean(vscode.workspace.getConfiguration().get('dota2-tools.A6.Kv to lua generate typescript'));
+		const baseDir = useTypescript ? getContentDir() : getGameDir();
+		const applicable = folderType === 'ability' || folderType === 'item';
+		return {
+			applicable,
+			baseReady: applicable ? Boolean(baseDir) : false,
+			useTypescript,
+		};
 	}
 
 	private async handleTextureMenuRequest(
@@ -819,6 +836,54 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private async handleOpenScriptFile(
+		document: vscode.TextDocument,
+		payload: OpenScriptFileMessage | undefined,
+	): Promise<void> {
+		if (!payload) {
+			return;
+		}
+		const rawScriptPath = typeof payload.scriptPath === 'string' ? payload.scriptPath.trim() : '';
+		if (!rawScriptPath) {
+			void vscode.window.showInformationMessage('当前单元格没有脚本路径。');
+			return;
+		}
+		const folderType = payload.folderType ?? this.detectFolderType(document.uri);
+		if (folderType !== 'ability' && folderType !== 'item') {
+			void vscode.window.showWarningMessage('当前 KV 类型不支持脚本跳转。');
+			return;
+		}
+		const useTypescript = Boolean(vscode.workspace.getConfiguration().get('dota2-tools.A6.Kv to lua generate typescript'));
+		const baseDir = useTypescript ? getContentDir() : getGameDir();
+		if (!baseDir) {
+			void vscode.window.showWarningMessage('未配置 Dota 2 目录，无法定位脚本文件。');
+			return;
+		}
+		const extension = useTypescript ? '.ts' : '.lua';
+		let normalized = rawScriptPath.replace(/\\/g, '/').trim();
+		if (!normalized) {
+			void vscode.window.showWarningMessage('无法解析脚本路径。');
+			return;
+		}
+		normalized = normalized.replace(/^scripts\/vscripts\//i, '');
+		normalized = normalized.replace(/^vscripts\//i, '');
+		normalized = normalized.replace(/\.(lua|ts)$/i, '');
+		const candidatePath = path.join(baseDir, 'scripts', 'vscripts', `${normalized}${extension}`);
+		try {
+			await fs.promises.access(candidatePath, fs.constants.F_OK);
+		} catch (error) {
+			void vscode.window.showWarningMessage(`未找到脚本文件：${candidatePath}`);
+			return;
+		}
+		try {
+			const scriptDocument = await vscode.workspace.openTextDocument(candidatePath);
+			await vscode.window.showTextDocument(scriptDocument, { preview: false });
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			void vscode.window.showErrorMessage(`无法打开脚本文件：${message}`);
+		}
+	}
+
 }
 
 interface KvEditorPayload {
@@ -830,6 +895,7 @@ interface KvEditorPayload {
 	error?: string;
 	columnOptions: KvEditorColumnOptionResolvedMap;
 	texturePreviews: Record<string, TexturePreviewPayload>;
+	scriptSupport: KvEditorScriptSupport;
 }
 
 interface ParsedKvTable {
@@ -876,6 +942,12 @@ interface TexturePreviewPayload {
 	kind: TextureKind;
 	source: 'extension' | 'addon';
 	fileName: string;
+}
+
+interface KvEditorScriptSupport {
+	applicable: boolean;
+	baseReady: boolean;
+	useTypescript: boolean;
 }
 
 type TextureKind = 'spell' | 'item';
@@ -934,4 +1006,9 @@ interface TextureMenuHeroDisplay {
 	searchTerm: string;
 	uri: string;
 	attribute?: string;
+}
+
+interface OpenScriptFileMessage {
+	scriptPath: string;
+	folderType?: KvFolderType;
 }

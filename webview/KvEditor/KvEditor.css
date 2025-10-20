@@ -393,6 +393,35 @@ body {
 	width: var(--kv-cell-base-height);
 }
 
+.kv-cell-action {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: var(--kv-cell-base-height);
+	width: var(--kv-cell-base-height);
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-editor-foreground);
+	cursor: pointer;
+}
+
+.kv-cell-action:hover:not(:disabled) {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-cell-action:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.kv-cell-action .codicon {
+	font-size: 16px;
+	line-height: 1;
+}
+
 .kv-column-header {
 	display: flex;
 	flex-direction: column;
