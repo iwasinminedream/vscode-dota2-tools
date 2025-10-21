@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { getContentDir, getGameDir } from './addonInfo';
 
-export type KvFolderType = 'ability' | 'item' | 'unit' | 'custom';
 
 export interface KvEditorSettings {
 	entries: KvEditorEntry[];
@@ -16,6 +15,8 @@ export interface KvEditorEntry {
 	exists: boolean;
 	isDirectory: boolean;
 }
+
+export type KvFolderType = 'ability' | 'item' | 'unit' | 'custom';
 
 const CONFIG_KEY = 'dota2-tools.A10.kv_editor.paths';
 const SUPPORTED_TYPES = new Set<KvFolderType>(['ability', 'item', 'unit', 'custom']);
