@@ -666,6 +666,7 @@ body.kv-texture-menu-open {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	color: var(--vscode-icon-foreground, var(--vscode-editor-foreground));
 }
 
 .kv-texture-menu-displaymode-btn:hover {
