@@ -539,17 +539,28 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				.map(([id, value]) => {
 					const entry = value as Record<string, unknown>;
 					const rowValues: Record<string, string> = {};
+					let abilityValues: AbilityValueRow[] | undefined;
 					for (const [key, field] of Object.entries(entry)) {
-						if (field && typeof field === 'object') {
-							// nested blocks (e.g. AbilityValues) are intentionally skipped until dedicated UI exists
+						if (key === 'AbilityValues' && this.isPlainObject(field)) {
+							if (!columnOrder.includes(key)) {
+								columnOrder.push(key);
+							}
+							abilityValues = this.parseAbilityValuesField(field as Record<string, unknown>);
+							rowValues[key] = '';
+							continue;
+						}
+						if (this.isPlainObject(field)) {
+							// other nested blocks are skipped for now
 							continue;
 						}
 						if (!columnOrder.includes(key)) {
 							columnOrder.push(key);
 						}
-						rowValues[key] = field === undefined || field === null ? '' : String(field);
+						rowValues[key] = this.coerceKvScalar(field);
 					}
-					return { id, values: rowValues };
+					return abilityValues && abilityValues.length
+						? { id, values: rowValues, abilityValues }
+						: { id, values: rowValues };
 				});
 
 			const columns = ['id', ...columnOrder];
@@ -564,9 +575,61 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private isPlainObject(value: unknown): value is Record<string, unknown> {
+		return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+	}
+
+	private coerceKvScalar(value: unknown): string {
+		if (value === undefined || value === null) {
+			return '';
+		}
+		if (typeof value === 'string') {
+			return value;
+		}
+		if (typeof value === 'number' || typeof value === 'boolean') {
+			return String(value);
+		}
+		return String(value);
+	}
+
+	private parseAbilityValuesField(field: Record<string, unknown>): AbilityValueRow[] {
+		const rows: AbilityValueRow[] = [];
+		for (const [entryKey, entryValue] of Object.entries(field)) {
+			if (this.isPlainObject(entryValue)) {
+				const block = entryValue as Record<string, unknown>;
+				const baseValue = this.coerceKvScalar(block.value);
+				rows.push({
+					entryKey,
+					key: entryKey,
+					value: baseValue,
+					isModifier: false,
+				});
+				for (const [modifierKey, modifierValue] of Object.entries(block)) {
+					if (modifierKey === 'value') {
+						continue;
+					}
+					rows.push({
+						entryKey,
+						key: modifierKey,
+						value: this.coerceKvScalar(modifierValue),
+						isModifier: true,
+					});
+				}
+				continue;
+			}
+			rows.push({
+				entryKey,
+				key: entryKey,
+				value: this.coerceKvScalar(entryValue),
+				isModifier: false,
+			});
+		}
+		return rows;
+	}
+
 	private buildTexturePreviews(
 		document: vscode.TextDocument,
-		rows: Array<{ id: string; values: Record<string, string>; }> = [],
+		rows: ParsedKvRow[] = [],
 		webview: vscode.Webview,
 		entry: KvEditorEntry | undefined,
 	): Record<string, TexturePreviewPayload> {
@@ -891,7 +954,7 @@ interface KvEditorPayload {
 	folderType: KvFolderType;
 	header: string;
 	columns: string[];
-	rows: Array<{ id: string; values: Record<string, string>; }>;
+	rows: ParsedKvRow[];
 	error?: string;
 	columnOptions: KvEditorColumnOptionResolvedMap;
 	texturePreviews: Record<string, TexturePreviewPayload>;
@@ -901,8 +964,21 @@ interface KvEditorPayload {
 interface ParsedKvTable {
 	header: string;
 	columns: string[];
-	rows: Array<{ id: string; values: Record<string, string>; }>;
+	rows: ParsedKvRow[];
 	error?: string;
+}
+
+interface ParsedKvRow {
+	id: string;
+	values: Record<string, string>;
+	abilityValues?: AbilityValueRow[];
+}
+
+interface AbilityValueRow {
+	entryKey: string;
+	key: string;
+	value: string;
+	isModifier: boolean;
 }
 
 interface KvEditorEditMessage {

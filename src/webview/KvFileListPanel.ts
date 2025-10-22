@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { findKvEntryForUri, KvEditorSettings, KvFolderType } from '../module/kvEditorConfig';
+import { findKvEntryForUri, KvEditorSettings } from '../module/kvEditorConfig';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2 } from '../utils/kvUtils';
 import { localize } from '../utils/localize';
@@ -14,7 +14,7 @@ interface KvFileListItem {
 	mtime: number;
 	summary: string[];
 }
-
+type KvFolderType = 'ability' | 'item' | 'unit' | 'custom';
 interface KvFileListPayload {
 	folderPath: string;
 	rootPath: string;

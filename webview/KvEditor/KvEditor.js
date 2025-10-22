@@ -627,7 +627,13 @@ function openMultiSelectDropdown(context) {
 
 // 计算列的最小宽度
 function getMinColumnWidth(column) {
-	return column === ROW_NUMBER_COLUMN_KEY ? ROW_NUMBER_MIN_WIDTH : COLUMN_MIN_WIDTH;
+	if (column === ROW_NUMBER_COLUMN_KEY) {
+		return ROW_NUMBER_MIN_WIDTH;
+	}
+	if (column === 'AbilityValues') {
+		return Math.max(COLUMN_MIN_WIDTH, 160);
+	}
+	return COLUMN_MIN_WIDTH;
 }
 
 // 获取列的当前宽度（含初次估算）
@@ -640,7 +646,9 @@ function getColumnWidth(column, headerText) {
 		return columnWidths[column];
 	}
 	const labelLength = Math.max((headerText ?? '').length, 4);
-	const estimated = Math.max(COLUMN_MIN_WIDTH, labelLength * 12);
+	const estimated = column === 'AbilityValues'
+		? Math.max(COLUMN_MIN_WIDTH, 220)
+		: Math.max(COLUMN_MIN_WIDTH, labelLength * 12);
 	columnWidths[column] = estimated;
 	return estimated;
 }
@@ -774,14 +782,18 @@ function restoreSelection(columnLabels, columnLetters, columnOptions) {
 	const rowIndex = Number(td.dataset.rowIndex ?? '0');
 	const columnName = columnLabels.get(selectedCellKey.column) ?? selectedCellKey.column;
 	const columnLetter = columnLetters.get(selectedCellKey.column) ?? selectedCellKey.column;
-	const editable = selectedCellKey.column !== ROW_NUMBER_COLUMN_KEY && selectedCellKey.column !== 'id';
+	const editable = selectedCellKey.column !== ROW_NUMBER_COLUMN_KEY && selectedCellKey.column !== 'id' && selectedCellKey.column !== 'AbilityValues';
 	const fieldConfig = columnOptions[selectedCellKey.column];
 	const usesDropdown = Boolean(fieldConfig?.options?.length);
 	let element = null;
 	if (editable) {
 		element = usesDropdown ? td.querySelector('select') : td.querySelector('input');
 	}
-	const value = editable ? readElementValue(element, fieldConfig) : (td.textContent ?? '');
+	const value = selectedCellKey.column === 'AbilityValues'
+		? (td.dataset.displayValue ?? td.textContent ?? '')
+		: editable
+			? readElementValue(element, fieldConfig)
+			: (td.textContent ?? '');
 	const rowId = td.dataset.rowId ?? '';
 	selectCell(td, {
 		column: selectedCellKey.column,
@@ -918,7 +930,76 @@ function renderTable(columns, rows, columnOptions) {
 				});
 			} else {
 				const value = row.values?.[column] ?? '';
-				if (usesDropdown) {
+				if (column === 'AbilityValues') {
+					td.classList.add('kv-ability-values-cell');
+					td.tabIndex = 0;
+					const abilityRows = Array.isArray(row.abilityValues) ? row.abilityValues : [];
+					const hasAbilityField = row.values && Object.prototype.hasOwnProperty.call(row.values, column);
+					if (abilityRows.length) {
+						const innerTable = document.createElement('table');
+						innerTable.className = 'kv-ability-values-table';
+						let lastEntryKey = null;
+						abilityRows.forEach((abilityRow) => {
+							const tableRow = document.createElement('tr');
+							tableRow.className = 'kv-ability-values-row';
+							if (abilityRow.entryKey !== lastEntryKey) {
+								tableRow.classList.add('kv-ability-values-group-start');
+								lastEntryKey = abilityRow.entryKey;
+							}
+							if (abilityRow.isModifier) {
+								tableRow.classList.add('kv-ability-values-row-modifier');
+							} else {
+								tableRow.classList.add('kv-ability-values-row-base');
+							}
+							const keyCell = document.createElement('th');
+							keyCell.textContent = abilityRow.key;
+							keyCell.title = abilityRow.key;
+							const valueCell = document.createElement('td');
+							valueCell.textContent = abilityRow.value;
+							valueCell.title = abilityRow.value;
+							tableRow.appendChild(keyCell);
+							tableRow.appendChild(valueCell);
+							innerTable.appendChild(tableRow);
+						});
+						td.appendChild(innerTable);
+					} else if (hasAbilityField) {
+						const placeholder = document.createElement('div');
+						placeholder.className = 'kv-ability-values-empty';
+						placeholder.textContent = '无条目';
+						td.appendChild(placeholder);
+					} else {
+						td.classList.add('kv-ability-values-cell-empty');
+						td.textContent = '—';
+					}
+					const displayValue = abilityRows.length
+						? abilityRows.map((abilityRow) => `${abilityRow.key}: ${abilityRow.value}`).join('\n')
+						: hasAbilityField
+							? '无条目'
+							: '—';
+					td.dataset.displayValue = displayValue;
+					const setSelection = () => {
+						selectCell(td, {
+							column,
+							columnLetter,
+							columnName,
+							rowId: row.id ?? '',
+							rowIndex,
+							editable: false,
+							element: null,
+							fieldConfig: undefined,
+							usesDropdown: false,
+							value: displayValue,
+						});
+					};
+					td.addEventListener('click', setSelection);
+					td.addEventListener('focus', setSelection);
+					td.addEventListener('keydown', (event) => {
+						if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault();
+							setSelection();
+						}
+					});
+				} else if (usesDropdown) {
 					const select = document.createElement('select');
 					select.dataset.id = row.id ?? '';
 					select.dataset.key = column;

@@ -393,6 +393,59 @@ body {
 	width: var(--kv-cell-base-height);
 }
 
+.kv-ability-values-cell {
+	padding: 4px 8px;
+	vertical-align: top;
+}
+
+.kv-ability-values-cell:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 2px;
+}
+
+.kv-ability-values-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: inherit;
+}
+
+.kv-ability-values-table th,
+.kv-ability-values-table td {
+	padding: 2px 6px;
+	font-size: 12px;
+	text-align: left;
+	vertical-align: middle;
+	border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.kv-ability-values-table tr:last-child th,
+.kv-ability-values-table tr:last-child td {
+	border-bottom: none;
+}
+
+.kv-ability-values-group-start th,
+.kv-ability-values-group-start td {
+	border-top: 1px solid var(--vscode-panel-border);
+}
+
+.kv-ability-values-row-base th {
+	font-weight: 600;
+}
+
+.kv-ability-values-row-modifier th,
+.kv-ability-values-row-modifier td {
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-ability-values-empty {
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-ability-values-cell-empty {
+	color: var(--vscode-descriptionForeground);
+}
+
 .kv-cell-action {
 	flex: 0 0 auto;
 	display: inline-flex;
