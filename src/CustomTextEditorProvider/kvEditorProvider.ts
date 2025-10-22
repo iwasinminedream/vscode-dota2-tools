@@ -78,6 +78,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					vscode.window.showErrorMessage(messageText);
 				});
 			}
+			if (message.type === 'reorderRows') {
+				const reorderMessage: KvEditorReorderMessage | undefined = message.payload;
+				this.handleReorderRows(document, reorderMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+			}
 			if (message.type === 'requestTextureMenu') {
 				const requestPayload: TextureMenuRequestMessage | undefined = message.payload;
 				if (!requestPayload || typeof requestPayload.requestId !== 'string') {
@@ -947,6 +954,95 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private async handleReorderRows(document: vscode.TextDocument, payload: KvEditorReorderMessage | undefined): Promise<void> {
+		if (!payload) {
+			return;
+		}
+		const sourceId = typeof payload.sourceId === 'string' ? payload.sourceId : '';
+		const sourceIndex = typeof payload.sourceIndex === 'number' ? payload.sourceIndex : -1;
+		const targetIndex = typeof payload.targetIndex === 'number' ? payload.targetIndex : -1;
+		if (!sourceId || sourceIndex < 0 || targetIndex < 0 || !Number.isInteger(sourceIndex) || !Number.isInteger(targetIndex)) {
+			return;
+		}
+		if (sourceIndex === targetIndex) {
+			return;
+		}
+		const originalText = document.getText();
+		const kvObject = readKeyValue2(originalText ?? '');
+		const header = Object.keys(kvObject)[0];
+		if (!header) {
+			throw new Error('无法解析 KV 根节点，未执行排序。');
+		}
+		const blockRaw = kvObject[header];
+		if (!blockRaw || typeof blockRaw !== 'object') {
+			throw new Error('当前 KV 结构不支持行排序。');
+		}
+		const block = blockRaw as Record<string, unknown>;
+		const entries = Object.entries(block);
+		if (!entries.length) {
+			return;
+		}
+		const rowEntryIndices: number[] = [];
+		const rowEntries: Array<[string, unknown]> = [];
+		entries.forEach((entry, index) => {
+			const [, value] = entry;
+			if (this.isPlainObject(value)) {
+				rowEntryIndices.push(index);
+				rowEntries.push(entry);
+			}
+		});
+		if (!rowEntries.length) {
+			return;
+		}
+		const actualSourceIndex = rowEntries.findIndex(([key]) => key === sourceId);
+		if (actualSourceIndex === -1) {
+			return;
+		}
+		const totalRows = rowEntries.length;
+		let finalTargetIndex = Math.max(0, Math.min(targetIndex, totalRows - 1));
+		if (finalTargetIndex === actualSourceIndex) {
+			return;
+		}
+		const removed = rowEntries.splice(actualSourceIndex, 1);
+		if (!removed.length) {
+			return;
+		}
+		const movedEntry = removed[0];
+		const insertionIndex = Math.min(finalTargetIndex, rowEntries.length);
+		rowEntries.splice(insertionIndex, 0, movedEntry);
+		const reorderedBlock: Record<string, unknown> = {};
+		const rowIndexSet = new Set(rowEntryIndices);
+		let rowPointer = 0;
+		entries.forEach((entry, index) => {
+			if (rowIndexSet.has(index)) {
+				const nextRow = rowEntries[rowPointer++];
+				if (nextRow) {
+					reorderedBlock[nextRow[0]] = nextRow[1];
+				} else {
+					reorderedBlock[entry[0]] = entry[1];
+				}
+			} else {
+				reorderedBlock[entry[0]] = entry[1];
+			}
+		});
+		kvObject[header] = reorderedBlock;
+		const newContent = writeKeyValue(kvObject);
+		const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+		const edit = new vscode.WorkspaceEdit();
+		edit.replace(document.uri, fullRange, newContent);
+		const applied = await vscode.workspace.applyEdit(edit);
+		if (!applied) {
+			throw new Error('写入 KV 文本失败。');
+		}
+		const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+		if (autoSaveMode && autoSaveMode !== 'off') {
+			const saved = await document.save();
+			if (!saved) {
+				throw new Error('保存 KV 文件失败。');
+			}
+		}
+	}
+
 }
 
 interface KvEditorPayload {
@@ -985,6 +1081,12 @@ interface KvEditorEditMessage {
 	id: string;
 	key: string;
 	value: string;
+}
+
+interface KvEditorReorderMessage {
+	sourceId: string;
+	sourceIndex: number;
+	targetIndex: number;
 }
 
 interface KvEditorColumnOption {
