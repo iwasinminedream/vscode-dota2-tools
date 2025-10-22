@@ -71,6 +71,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 				return;
 			}
+			if (message.type === 'editAbilityValues') {
+				const abilityEditMessage: KvEditorAbilityValuesEditMessage | undefined = message.payload;
+				this.handleAbilityValuesEditMessage(document, abilityEditMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'edit') {
 				const editMessage: KvEditorEditMessage | undefined = message.payload;
 				this.handleEditMessage(document, editMessage).catch((error: unknown) => {
@@ -539,7 +547,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				.map(([id, value]) => {
 					const entry = value as Record<string, unknown>;
 					const rowValues: Record<string, string> = {};
-					let abilityValues: AbilityValueRow[] | undefined;
+					let abilityValues: AbilityValuesEntry[] | undefined;
 					for (const [key, field] of Object.entries(entry)) {
 						if (key === 'AbilityValues' && this.isPlainObject(field)) {
 							if (!columnOrder.includes(key)) {
@@ -592,39 +600,40 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		return String(value);
 	}
 
-	private parseAbilityValuesField(field: Record<string, unknown>): AbilityValueRow[] {
-		const rows: AbilityValueRow[] = [];
+	private parseAbilityValuesField(field: Record<string, unknown>): AbilityValuesEntry[] {
+		const entries: AbilityValuesEntry[] = [];
 		for (const [entryKey, entryValue] of Object.entries(field)) {
 			if (this.isPlainObject(entryValue)) {
 				const block = entryValue as Record<string, unknown>;
 				const baseValue = this.coerceKvScalar(block.value);
-				rows.push({
-					entryKey,
-					key: entryKey,
-					value: baseValue,
-					isModifier: false,
-				});
+				const modifiers: AbilityValuesModifier[] = [];
 				for (const [modifierKey, modifierValue] of Object.entries(block)) {
 					if (modifierKey === 'value') {
 						continue;
 					}
-					rows.push({
-						entryKey,
+					modifiers.push({
 						key: modifierKey,
 						value: this.coerceKvScalar(modifierValue),
-						isModifier: true,
 					});
 				}
+				entries.push({
+					key: entryKey,
+					originalKey: entryKey,
+					value: baseValue,
+					type: 'object',
+					modifiers,
+				});
 				continue;
 			}
-			rows.push({
-				entryKey,
+			entries.push({
 				key: entryKey,
+				originalKey: entryKey,
 				value: this.coerceKvScalar(entryValue),
-				isModifier: false,
+				type: 'scalar',
+				modifiers: [],
 			});
 		}
-		return rows;
+		return entries;
 	}
 
 	private buildTexturePreviews(
@@ -856,6 +865,122 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private async handleAbilityValuesEditMessage(
+		document: vscode.TextDocument,
+		message?: KvEditorAbilityValuesEditMessage,
+	): Promise<void> {
+		if (!message || typeof message.id !== 'string' || !message.id) {
+			return;
+		}
+		const normalizedEntries = (Array.isArray(message.entries) ? message.entries : [])
+			.map((entry) => this.normalizeAbilityValuesEditEntry(entry))
+			.filter((entry): entry is AbilityValuesEntry => Boolean(entry));
+		const originalText = document.getText();
+		const kvObject = readKeyValue2(originalText ?? '');
+		const header = Object.keys(kvObject)[0];
+		if (!header) {
+			throw new Error('无法解析 KV 根节点，修改未保存。');
+		}
+		const block = kvObject[header];
+		if (!block || typeof block !== 'object') {
+			throw new Error('当前 KV 结构不支持 AbilityValues 编辑。');
+		}
+		const row = (block as Record<string, unknown>)[message.id];
+		if (!row || typeof row !== 'object') {
+			throw new Error(`未找到条目 "${message.id}"，修改未保存。`);
+		}
+		const record = row as Record<string, unknown>;
+		if (!normalizedEntries.length) {
+			delete record.AbilityValues;
+		} else {
+			const abilityBlock: Record<string, unknown> = {};
+			for (const entry of normalizedEntries) {
+				const key = entry.key;
+				if (!key) {
+					continue;
+				}
+				if (entry.type === 'scalar' && (!entry.modifiers || !entry.modifiers.length)) {
+					abilityBlock[key] = entry.value ?? '';
+					continue;
+				}
+				const blockValue: Record<string, string> = {};
+				blockValue.value = entry.value ?? '';
+				for (const modifier of entry.modifiers ?? []) {
+					if (!modifier.key) {
+						continue;
+					}
+					blockValue[modifier.key] = modifier.value ?? '';
+				}
+				abilityBlock[key] = blockValue;
+			}
+			if (Object.keys(abilityBlock).length) {
+				record.AbilityValues = abilityBlock;
+			} else {
+				delete record.AbilityValues;
+			}
+		}
+		const newContent = writeKeyValue(kvObject);
+		const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+		const edit = new vscode.WorkspaceEdit();
+		edit.replace(document.uri, fullRange, newContent);
+		const applied = await vscode.workspace.applyEdit(edit);
+		if (!applied) {
+			throw new Error('写入 KV 文本失败。');
+		}
+		const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+		if (autoSaveMode && autoSaveMode !== 'off') {
+			const saved = await document.save();
+			if (!saved) {
+				throw new Error('保存 KV 文件失败。');
+			}
+		}
+	}
+
+	private normalizeAbilityValuesEditEntry(entry: AbilityValuesEditEntry | undefined): AbilityValuesEntry | undefined {
+		if (!entry || typeof entry.key !== 'string') {
+			return undefined;
+		}
+		const key = entry.key.trim();
+		if (!key) {
+			return undefined;
+		}
+		const rawValue = entry.value;
+		const normalizedValue = typeof rawValue === 'string' ? rawValue.trim() : this.coerceKvScalar(rawValue);
+		const modifiersRaw = Array.isArray(entry.modifiers) ? entry.modifiers : [];
+		const modifiers: AbilityValuesModifier[] = modifiersRaw
+			.map((modifier) => {
+				if (!modifier || typeof modifier.key !== 'string') {
+					return undefined;
+				}
+				const modifierKey = modifier.key.trim();
+				if (!modifierKey) {
+					return undefined;
+				}
+				const modifierValueRaw = modifier.value;
+				const modifierValue = typeof modifierValueRaw === 'string'
+					? modifierValueRaw.trim()
+					: this.coerceKvScalar(modifierValueRaw);
+				return {
+					key: modifierKey,
+					value: modifierValue,
+				};
+			})
+			.filter((modifier): modifier is AbilityValuesModifier => Boolean(modifier));
+		const normalizedType: AbilityValuesEntryType = entry.type === 'scalar' && modifiers.length === 0
+			? 'scalar'
+			: 'object';
+		const originalKey = typeof entry.originalKey === 'string' && entry.originalKey.trim().length
+			? entry.originalKey.trim()
+			: key;
+		return {
+			key,
+			originalKey,
+			value: normalizedValue,
+			type: normalizedType,
+			modifiers,
+		};
+	}
+
 	private async handleEditMessage(document: vscode.TextDocument, message?: KvEditorEditMessage): Promise<void> {
 		if (!message || !message.id || !message.key || message.key === 'id') {
 			return;
@@ -971,20 +1096,41 @@ interface ParsedKvTable {
 interface ParsedKvRow {
 	id: string;
 	values: Record<string, string>;
-	abilityValues?: AbilityValueRow[];
+	abilityValues?: AbilityValuesEntry[];
 }
 
-interface AbilityValueRow {
-	entryKey: string;
+type AbilityValuesEntryType = 'object' | 'scalar';
+
+interface AbilityValuesEntry {
+	key: string;
+	originalKey: string;
+	value: string;
+	type: AbilityValuesEntryType;
+	modifiers: AbilityValuesModifier[];
+}
+
+interface AbilityValuesModifier {
 	key: string;
 	value: string;
-	isModifier: boolean;
 }
 
 interface KvEditorEditMessage {
 	id: string;
 	key: string;
 	value: string;
+}
+
+interface KvEditorAbilityValuesEditMessage {
+	id: string;
+	entries: AbilityValuesEditEntry[];
+}
+
+interface AbilityValuesEditEntry {
+	key: string;
+	originalKey?: string;
+	value: string;
+	type: AbilityValuesEntryType;
+	modifiers?: AbilityValuesModifier[];
 }
 
 interface KvEditorColumnOption {

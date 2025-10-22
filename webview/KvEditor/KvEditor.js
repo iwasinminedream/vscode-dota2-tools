@@ -38,6 +38,7 @@ let resizeState = null;
 let openMultiSelectContext = null;
 let pendingMultiSelectReopen = null;
 let textureMenuState = null;
+let abilityValuesEditorState = null;
 const pendingTextureMenuRequests = new Map();
 
 document.addEventListener('mousemove', handleColumnResize);
@@ -933,33 +934,36 @@ function renderTable(columns, rows, columnOptions) {
 				if (column === 'AbilityValues') {
 					td.classList.add('kv-ability-values-cell');
 					td.tabIndex = 0;
-					const abilityRows = Array.isArray(row.abilityValues) ? row.abilityValues : [];
+					const abilityEntries = Array.isArray(row.abilityValues) ? row.abilityValues : [];
 					const hasAbilityField = row.values && Object.prototype.hasOwnProperty.call(row.values, column);
-					if (abilityRows.length) {
+					if (abilityEntries.length) {
 						const innerTable = document.createElement('table');
 						innerTable.className = 'kv-ability-values-table';
-						let lastEntryKey = null;
-						abilityRows.forEach((abilityRow) => {
-							const tableRow = document.createElement('tr');
-							tableRow.className = 'kv-ability-values-row';
-							if (abilityRow.entryKey !== lastEntryKey) {
-								tableRow.classList.add('kv-ability-values-group-start');
-								lastEntryKey = abilityRow.entryKey;
-							}
-							if (abilityRow.isModifier) {
-								tableRow.classList.add('kv-ability-values-row-modifier');
-							} else {
-								tableRow.classList.add('kv-ability-values-row-base');
-							}
-							const keyCell = document.createElement('th');
-							keyCell.textContent = abilityRow.key;
-							keyCell.title = abilityRow.key;
-							const valueCell = document.createElement('td');
-							valueCell.textContent = abilityRow.value;
-							valueCell.title = abilityRow.value;
-							tableRow.appendChild(keyCell);
-							tableRow.appendChild(valueCell);
-							innerTable.appendChild(tableRow);
+						abilityEntries.forEach((entry) => {
+							const baseRow = document.createElement('tr');
+							baseRow.className = 'kv-ability-values-row kv-ability-values-row-base kv-ability-values-group-start';
+							const baseKeyCell = document.createElement('th');
+							baseKeyCell.textContent = entry.key;
+							baseKeyCell.title = entry.key;
+							const baseValueCell = document.createElement('td');
+							baseValueCell.textContent = entry.value;
+							baseValueCell.title = entry.value;
+							baseRow.appendChild(baseKeyCell);
+							baseRow.appendChild(baseValueCell);
+							innerTable.appendChild(baseRow);
+							(entry.modifiers || []).forEach((modifier) => {
+								const modifierRow = document.createElement('tr');
+								modifierRow.className = 'kv-ability-values-row kv-ability-values-row-modifier';
+								const modifierKeyCell = document.createElement('th');
+								modifierKeyCell.textContent = modifier.key;
+								modifierKeyCell.title = modifier.key;
+								const modifierValueCell = document.createElement('td');
+								modifierValueCell.textContent = modifier.value;
+								modifierValueCell.title = modifier.value;
+								modifierRow.appendChild(modifierKeyCell);
+								modifierRow.appendChild(modifierValueCell);
+								innerTable.appendChild(modifierRow);
+							});
 						});
 						td.appendChild(innerTable);
 					} else if (hasAbilityField) {
@@ -971,12 +975,20 @@ function renderTable(columns, rows, columnOptions) {
 						td.classList.add('kv-ability-values-cell-empty');
 						td.textContent = '—';
 					}
-					const displayValue = abilityRows.length
-						? abilityRows.map((abilityRow) => `${abilityRow.key}: ${abilityRow.value}`).join('\n')
+					const displayLines = [];
+					abilityEntries.forEach((entry) => {
+						displayLines.push(`${entry.key}: ${entry.value}`);
+						(entry.modifiers || []).forEach((modifier) => {
+							displayLines.push(`${modifier.key}: ${modifier.value}`);
+						});
+					});
+					const displayValue = displayLines.length
+						? displayLines.join('\n')
 						: hasAbilityField
 							? '无条目'
 							: '—';
 					td.dataset.displayValue = displayValue;
+					td.title = '双击编辑 AbilityValues';
 					const setSelection = () => {
 						selectCell(td, {
 							column,
@@ -997,7 +1009,23 @@ function renderTable(columns, rows, columnOptions) {
 						if (event.key === 'Enter' || event.key === ' ') {
 							event.preventDefault();
 							setSelection();
+							if (event.key === 'Enter' && !event.shiftKey) {
+								openAbilityValuesEditor({
+									rowId: row.id ?? '',
+									column,
+									columnName,
+									entries: abilityEntries,
+								});
+							}
 						}
+					});
+					td.addEventListener('dblclick', () => {
+						openAbilityValuesEditor({
+							rowId: row.id ?? '',
+							column,
+							columnName,
+							entries: abilityEntries,
+						});
 					});
 				} else if (usesDropdown) {
 					const select = document.createElement('select');
@@ -1280,6 +1308,470 @@ function renderTable(columns, rows, columnOptions) {
 		pendingMultiSelectReopen = null;
 	}
 
+}
+
+function cloneAbilityValuesEntries(entries) {
+	if (!Array.isArray(entries)) {
+		return [];
+	}
+	return entries.map((entry) => ({
+		key: typeof entry?.key === 'string' ? entry.key : '',
+		originalKey: typeof entry?.originalKey === 'string' && entry.originalKey.length ? entry.originalKey : (typeof entry?.key === 'string' ? entry.key : ''),
+		value: typeof entry?.value === 'string' ? entry.value : '',
+		type: entry?.type === 'scalar' ? 'scalar' : 'object',
+		initialType: entry?.type === 'scalar' ? 'scalar' : 'object',
+		modifiers: Array.isArray(entry?.modifiers)
+			? entry.modifiers.map((modifier) => ({
+				key: typeof modifier?.key === 'string' ? modifier.key : '',
+				value: typeof modifier?.value === 'string' ? modifier.value : '',
+			}))
+			: [],
+	}));
+}
+
+function createNewAbilityValuesEntry(existingEntries) {
+	const usedKeys = new Set();
+	(existingEntries || []).forEach((entry) => {
+		if (entry && typeof entry.key === 'string') {
+			usedKeys.add(entry.key.trim());
+		}
+	});
+	let counter = (existingEntries?.length ?? 0) + 1;
+	let candidate = '';
+	do {
+		candidate = `NewValue${counter}`;
+		counter += 1;
+	} while (usedKeys.has(candidate));
+	return {
+		key: candidate,
+		originalKey: candidate,
+		value: '',
+		type: 'object',
+		initialType: 'object',
+		modifiers: [],
+	};
+}
+
+function resetAbilityValuesEditorError() {
+	if (!abilityValuesEditorState || !abilityValuesEditorState.errorEl) {
+		return;
+	}
+	abilityValuesEditorState.errorEl.textContent = '';
+	abilityValuesEditorState.errorEl.hidden = true;
+}
+
+function closeAbilityValuesEditor() {
+	if (!abilityValuesEditorState) {
+		return;
+	}
+	const { overlay, keyHandler } = abilityValuesEditorState;
+	if (overlay && overlay.parentElement) {
+		overlay.parentElement.removeChild(overlay);
+	}
+	if (keyHandler) {
+		document.removeEventListener('keydown', keyHandler, true);
+	}
+	document.body.classList.remove('kv-ability-editor-open');
+	abilityValuesEditorState = null;
+}
+
+function openAbilityValuesEditor(context) {
+	if (!context || !context.rowId) {
+		return;
+	}
+	closeMultiSelectDropdown();
+	closeAbilityValuesEditor();
+	const entries = cloneAbilityValuesEntries(context.entries || []);
+	const overlay = document.createElement('div');
+	overlay.className = 'kv-ability-editor-overlay';
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-ability-editor';
+	overlay.appendChild(dialog);
+	const header = document.createElement('div');
+	header.className = 'kv-ability-editor-header';
+	const title = document.createElement('div');
+	title.className = 'kv-ability-editor-title';
+	const titleSegments = [];
+	if (context.columnName) {
+		titleSegments.push(context.columnName);
+	}
+	if (context.rowId) {
+		titleSegments.push(context.rowId);
+	}
+	title.textContent = titleSegments.join(' · ') || 'AbilityValues';
+	header.appendChild(title);
+	const closeButton = document.createElement('button');
+	closeButton.type = 'button';
+	closeButton.className = 'kv-button kv-button-icon kv-ability-editor-close';
+	closeButton.title = '关闭';
+	closeButton.innerHTML = '<span class="codicon codicon-close"></span>';
+	header.appendChild(closeButton);
+	dialog.appendChild(header);
+	const body = document.createElement('div');
+	body.className = 'kv-ability-editor-body';
+	const entriesContainer = document.createElement('div');
+	entriesContainer.className = 'kv-ability-editor-entries';
+	body.appendChild(entriesContainer);
+	dialog.appendChild(body);
+	const footer = document.createElement('div');
+	footer.className = 'kv-ability-editor-footer';
+	const footerLeft = document.createElement('div');
+	footerLeft.className = 'kv-ability-editor-footer-left';
+	const addEntryButton = document.createElement('button');
+	addEntryButton.type = 'button';
+	addEntryButton.className = 'kv-button kv-button-secondary';
+	addEntryButton.dataset.role = 'add-entry';
+	addEntryButton.textContent = '新增条目';
+	footerLeft.appendChild(addEntryButton);
+	footer.appendChild(footerLeft);
+	const footerRight = document.createElement('div');
+	footerRight.className = 'kv-ability-editor-footer-right';
+	const errorEl = document.createElement('div');
+	errorEl.className = 'kv-ability-editor-error';
+	errorEl.hidden = true;
+	footerRight.appendChild(errorEl);
+	const cancelButton = document.createElement('button');
+	cancelButton.type = 'button';
+	cancelButton.className = 'kv-button kv-button-secondary';
+	cancelButton.dataset.role = 'cancel';
+	cancelButton.textContent = '取消';
+	footerRight.appendChild(cancelButton);
+	const saveButton = document.createElement('button');
+	saveButton.type = 'button';
+	saveButton.className = 'kv-button kv-button-primary';
+	saveButton.dataset.role = 'apply';
+	saveButton.textContent = '保存';
+	footerRight.appendChild(saveButton);
+	footer.appendChild(footerRight);
+	dialog.appendChild(footer);
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			closeAbilityValuesEditor();
+		}
+	};
+	const handleOverlayClick = (event) => {
+		if (event.target === overlay) {
+			closeAbilityValuesEditor();
+		}
+	};
+	overlay.addEventListener('click', handleOverlayClick);
+	dialog.addEventListener('click', (event) => event.stopPropagation());
+	closeButton.addEventListener('click', () => closeAbilityValuesEditor());
+	cancelButton.addEventListener('click', () => closeAbilityValuesEditor());
+	saveButton.addEventListener('click', () => submitAbilityValuesEditor());
+	addEntryButton.addEventListener('click', () => {
+		if (!abilityValuesEditorState) {
+			return;
+		}
+		resetAbilityValuesEditorError();
+		const nextEntry = createNewAbilityValuesEntry(abilityValuesEditorState.entries);
+		abilityValuesEditorState.entries.push(nextEntry);
+		renderAbilityValuesEditorEntries();
+		focusAbilityValuesEditorInput('entry-key', abilityValuesEditorState.entries.length - 1);
+	});
+	entriesContainer.addEventListener('input', handleAbilityValuesEditorInput);
+	entriesContainer.addEventListener('click', handleAbilityValuesEditorClick);
+	document.body.appendChild(overlay);
+	document.addEventListener('keydown', keyHandler, true);
+	abilityValuesEditorState = {
+		overlay,
+		dialog,
+		entriesContainer,
+		errorEl,
+		entries,
+		rowId: context.rowId,
+		column: context.column,
+		columnName: context.columnName,
+		keyHandler,
+	};
+	renderAbilityValuesEditorEntries();
+	resetAbilityValuesEditorError();
+	document.body.classList.add('kv-ability-editor-open');
+	if (entries.length) {
+		focusAbilityValuesEditorInput('entry-key', 0);
+	}
+}
+
+function renderAbilityValuesEditorEntries() {
+	if (!abilityValuesEditorState) {
+		return;
+	}
+	const { entriesContainer, entries } = abilityValuesEditorState;
+	entriesContainer.innerHTML = '';
+	if (!entries.length) {
+		const empty = document.createElement('div');
+		empty.className = 'kv-ability-editor-empty';
+		empty.textContent = '暂无 AbilityValues 条目，请添加。';
+		entriesContainer.appendChild(empty);
+		return;
+	}
+	entries.forEach((entry, entryIndex) => {
+		const entryEl = document.createElement('div');
+		entryEl.className = 'kv-ability-editor-entry';
+		entryEl.dataset.entryIndex = String(entryIndex);
+		const mainRow = document.createElement('div');
+		mainRow.className = 'kv-ability-editor-entry-row kv-ability-editor-entry-main-row';
+		const keyInput = document.createElement('input');
+		keyInput.type = 'text';
+		keyInput.className = 'kv-ability-editor-input';
+		keyInput.placeholder = '条目键';
+		keyInput.dataset.role = 'entry-key';
+		keyInput.dataset.entryIndex = String(entryIndex);
+		keyInput.value = entry.key;
+		mainRow.appendChild(keyInput);
+		const valueInput = document.createElement('input');
+		valueInput.type = 'text';
+		valueInput.className = 'kv-ability-editor-input';
+		valueInput.placeholder = '基础值';
+		valueInput.dataset.role = 'entry-value';
+		valueInput.dataset.entryIndex = String(entryIndex);
+		valueInput.value = entry.value;
+		mainRow.appendChild(valueInput);
+		const removeEntryButton = document.createElement('button');
+		removeEntryButton.type = 'button';
+		removeEntryButton.className = 'kv-button kv-button-tertiary kv-ability-editor-remove-entry';
+		removeEntryButton.dataset.role = 'remove-entry';
+		removeEntryButton.dataset.entryIndex = String(entryIndex);
+		removeEntryButton.textContent = '删除条目';
+		mainRow.appendChild(removeEntryButton);
+		entryEl.appendChild(mainRow);
+		const modifiersContainer = document.createElement('div');
+		modifiersContainer.className = 'kv-ability-editor-modifiers';
+		entry.modifiers.forEach((modifier, modifierIndex) => {
+			const modifierRow = document.createElement('div');
+			modifierRow.className = 'kv-ability-editor-modifier';
+			modifierRow.dataset.entryIndex = String(entryIndex);
+			modifierRow.dataset.modifierIndex = String(modifierIndex);
+			const modifierKeyInput = document.createElement('input');
+			modifierKeyInput.type = 'text';
+			modifierKeyInput.className = 'kv-ability-editor-input kv-ability-editor-modifier-key';
+			modifierKeyInput.placeholder = '修饰键';
+			modifierKeyInput.dataset.role = 'modifier-key';
+			modifierKeyInput.dataset.entryIndex = String(entryIndex);
+			modifierKeyInput.dataset.modifierIndex = String(modifierIndex);
+			modifierKeyInput.value = modifier.key;
+			modifierRow.appendChild(modifierKeyInput);
+			const modifierValueInput = document.createElement('input');
+			modifierValueInput.type = 'text';
+			modifierValueInput.className = 'kv-ability-editor-input kv-ability-editor-modifier-value';
+			modifierValueInput.placeholder = '修饰值';
+			modifierValueInput.dataset.role = 'modifier-value';
+			modifierValueInput.dataset.entryIndex = String(entryIndex);
+			modifierValueInput.dataset.modifierIndex = String(modifierIndex);
+			modifierValueInput.value = modifier.value;
+			modifierRow.appendChild(modifierValueInput);
+			const removeModifierButton = document.createElement('button');
+			removeModifierButton.type = 'button';
+			removeModifierButton.className = 'kv-button kv-button-tertiary kv-ability-editor-remove-modifier';
+			removeModifierButton.dataset.role = 'remove-modifier';
+			removeModifierButton.dataset.entryIndex = String(entryIndex);
+			removeModifierButton.dataset.modifierIndex = String(modifierIndex);
+			removeModifierButton.textContent = '删除';
+			modifierRow.appendChild(removeModifierButton);
+			modifiersContainer.appendChild(modifierRow);
+		});
+		entryEl.appendChild(modifiersContainer);
+		const addModifierButton = document.createElement('button');
+		addModifierButton.type = 'button';
+		addModifierButton.className = 'kv-button kv-button-tertiary kv-ability-editor-add-modifier';
+		addModifierButton.dataset.role = 'add-modifier';
+		addModifierButton.dataset.entryIndex = String(entryIndex);
+		addModifierButton.textContent = '新增修饰';
+		entryEl.appendChild(addModifierButton);
+		entriesContainer.appendChild(entryEl);
+	});
+}
+
+function focusAbilityValuesEditorInput(role, entryIndex, modifierIndex) {
+	if (!abilityValuesEditorState) {
+		return;
+	}
+	window.requestAnimationFrame(() => {
+		if (!abilityValuesEditorState) {
+			return;
+		}
+		let selector = '';
+		if (role === 'entry-key') {
+			selector = `.kv-ability-editor-input[data-role="entry-key"][data-entry-index="${entryIndex}"]`;
+		} else if (role === 'entry-value') {
+			selector = `.kv-ability-editor-input[data-role="entry-value"][data-entry-index="${entryIndex}"]`;
+		} else if (role === 'modifier-key') {
+			selector = `.kv-ability-editor-input[data-role="modifier-key"][data-entry-index="${entryIndex}"][data-modifier-index="${modifierIndex}"]`;
+		} else if (role === 'modifier-value') {
+			selector = `.kv-ability-editor-input[data-role="modifier-value"][data-entry-index="${entryIndex}"][data-modifier-index="${modifierIndex}"]`;
+		}
+		if (!selector) {
+			return;
+		}
+		const input = abilityValuesEditorState.entriesContainer.querySelector(selector);
+		if (input instanceof HTMLInputElement) {
+			input.focus({ preventScroll: false });
+			input.select();
+		}
+	});
+}
+
+function handleAbilityValuesEditorInput(event) {
+	if (!abilityValuesEditorState) {
+		return;
+	}
+	const target = event.target;
+	if (!(target instanceof HTMLInputElement)) {
+		return;
+	}
+	const entryIndex = Number(target.dataset.entryIndex);
+	if (!Number.isFinite(entryIndex) || entryIndex < 0 || entryIndex >= abilityValuesEditorState.entries.length) {
+		return;
+	}
+	const role = target.dataset.role;
+	const entry = abilityValuesEditorState.entries[entryIndex];
+	if (!entry) {
+		return;
+	}
+	resetAbilityValuesEditorError();
+	switch (role) {
+		case 'entry-key':
+			entry.key = target.value;
+			break;
+		case 'entry-value':
+			entry.value = target.value;
+			break;
+		case 'modifier-key':
+		case 'modifier-value': {
+			const modifierIndex = Number(target.dataset.modifierIndex);
+			if (!Number.isFinite(modifierIndex) || modifierIndex < 0 || modifierIndex >= entry.modifiers.length) {
+				return;
+			}
+			if (role === 'modifier-key') {
+				entry.modifiers[modifierIndex].key = target.value;
+			} else {
+				entry.modifiers[modifierIndex].value = target.value;
+			}
+			entry.type = 'object';
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+function handleAbilityValuesEditorClick(event) {
+	if (!abilityValuesEditorState) {
+		return;
+	}
+	const target = event.target;
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+	const role = target.dataset.role;
+	if (!role) {
+		return;
+	}
+	const entryIndex = Number(target.dataset.entryIndex);
+	const entry = Number.isFinite(entryIndex) ? abilityValuesEditorState.entries[entryIndex] : undefined;
+	if (role === 'remove-entry') {
+		event.preventDefault();
+		if (entryIndex >= 0 && entryIndex < abilityValuesEditorState.entries.length) {
+			abilityValuesEditorState.entries.splice(entryIndex, 1);
+			renderAbilityValuesEditorEntries();
+			resetAbilityValuesEditorError();
+		}
+		return;
+	}
+	if (role === 'add-modifier' && entry) {
+		event.preventDefault();
+		const modifier = { key: '', value: '' };
+		entry.modifiers.push(modifier);
+		entry.type = 'object';
+		renderAbilityValuesEditorEntries();
+		focusAbilityValuesEditorInput('modifier-key', entryIndex, entry.modifiers.length - 1);
+		resetAbilityValuesEditorError();
+		return;
+	}
+	if (role === 'remove-modifier' && entry) {
+		event.preventDefault();
+		const modifierIndex = Number(target.dataset.modifierIndex);
+		if (!Number.isFinite(modifierIndex) || modifierIndex < 0 || modifierIndex >= entry.modifiers.length) {
+			return;
+		}
+		entry.modifiers.splice(modifierIndex, 1);
+		if (!entry.modifiers.length && entry.initialType === 'scalar') {
+			entry.type = 'scalar';
+		}
+		renderAbilityValuesEditorEntries();
+		resetAbilityValuesEditorError();
+	}
+}
+
+function validateAbilityValuesEntries(entries) {
+	const seenKeys = new Set();
+	for (let i = 0; i < entries.length; i += 1) {
+		const entry = entries[i];
+		const trimmedKey = (entry.key || '').trim();
+		if (!trimmedKey) {
+			return { valid: false, message: `第 ${i + 1} 个条目的键不能为空。` };
+		}
+		if (seenKeys.has(trimmedKey)) {
+			return { valid: false, message: `条目键 "${trimmedKey}" 重复。` };
+		}
+		seenKeys.add(trimmedKey);
+		for (let j = 0; j < entry.modifiers.length; j += 1) {
+			const modifier = entry.modifiers[j];
+			const modifierKey = (modifier.key || '').trim();
+			if (!modifierKey) {
+				return { valid: false, message: `条目 "${trimmedKey}" 的第 ${j + 1} 个修饰键不能为空。` };
+			}
+		}
+	}
+	return { valid: true };
+}
+
+function submitAbilityValuesEditor() {
+	if (!abilityValuesEditorState) {
+		return;
+	}
+	resetAbilityValuesEditorError();
+	const { entries, rowId, errorEl } = abilityValuesEditorState;
+	if (!rowId) {
+		closeAbilityValuesEditor();
+		return;
+	}
+	const validation = validateAbilityValuesEntries(entries);
+	if (!validation.valid) {
+		if (errorEl) {
+			errorEl.textContent = validation.message || '存在未通过校验的内容。';
+			errorEl.hidden = false;
+		}
+		return;
+	}
+	const payloadEntries = entries.map((entry) => {
+		const trimmedKey = (entry.key || '').trim();
+		const trimmedOriginalKey = (entry.originalKey || '').trim() || trimmedKey;
+		const normalizedModifiers = entry.modifiers
+			.map((modifier) => ({
+				key: (modifier.key || '').trim(),
+				value: (modifier.value || '').trim(),
+			}))
+			.filter((modifier) => modifier.key.length > 0);
+		const type = entry.type === 'scalar' && normalizedModifiers.length === 0 ? 'scalar' : 'object';
+		return {
+			key: trimmedKey,
+			originalKey: trimmedOriginalKey,
+			value: (entry.value || '').trim(),
+			type,
+			modifiers: normalizedModifiers,
+		};
+	});
+	vscode.postMessage({
+		type: 'editAbilityValues',
+		payload: {
+			id: rowId,
+			entries: payloadEntries,
+		},
+	});
+	closeAbilityValuesEditor();
 }
 
 function createTextureMenuRequestId() {
