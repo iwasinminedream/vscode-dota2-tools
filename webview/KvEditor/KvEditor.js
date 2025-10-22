@@ -944,8 +944,26 @@ function renderTable(columns, rows, columnOptions) {
 					});
 				});
 			} else if (column === 'id') {
-				td.textContent = row.id ?? '';
+				const idValue = row.id ?? '';
 				td.classList.add('kv-cell-id');
+				td.textContent = '';
+				td.removeAttribute('title');
+				const primary = document.createElement('div');
+				primary.className = 'kv-id-primary';
+				primary.textContent = idValue;
+				td.appendChild(primary);
+				const localizedName = row.localization?.name;
+				if (localizedName) {
+					const secondary = document.createElement('div');
+					secondary.className = 'kv-id-secondary';
+					secondary.textContent = localizedName;
+					secondary.title = localizedName;
+					td.appendChild(secondary);
+				}
+				const localizedDescription = row.localization?.description;
+				if (localizedDescription) {
+					td.title = localizedDescription;
+				}
 				td.addEventListener('click', () => {
 					selectCell(td, {
 						column,
@@ -957,7 +975,7 @@ function renderTable(columns, rows, columnOptions) {
 						element: null,
 						fieldConfig: undefined,
 						usesDropdown: false,
-						value: row.id ?? ''
+						value: idValue
 					});
 				});
 			} else {

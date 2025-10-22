@@ -24,6 +24,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	private readonly extensionImagesRoot: string;
 	private readonly columnOptionConfig: KvEditorColumnOptionMap;
 	private readonly textureMenuCache = new Map<string, TextureMenuRawIcon[]>();
+	private readonly localizationCache = new Map<string, LocalizationCacheEntry>();
 	private heroFilterCache: TextureMenuHeroCache[] | undefined;
 
 	public async resolveCustomTextEditor(
@@ -120,6 +121,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		const entry = settings ? findKvEntryForUri(document.uri, settings) : undefined;
 		const folderType: KvFolderType = entry?.type ?? 'custom';
 		const parsed = this.parseKv(document.getText());
+		this.enrichRowsWithLocalization(parsed.rows, folderType, document.uri.fsPath, entry);
 		return {
 			fileName: path.basename(document.uri.fsPath),
 			folderType,
@@ -709,11 +711,83 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		return undefined;
 	}
+	private resolveAddonLocalizationRoot(documentPath: string, entry: KvEditorEntry | undefined): string | undefined {
+		const candidates = new Set<string>();
+		const localizationFiles = this.getLocalizationFileCandidates();
+		const entryContentRoot = this.deriveAddonContentRoot(entry?.resolvedPath);
+		if (entryContentRoot) {
+			for (const fileName of localizationFiles) {
+				candidates.add(path.join(entryContentRoot, 'resource', fileName));
+				const gameRoot = this.deriveAddonGameRoot(entryContentRoot);
+				if (gameRoot) {
+					candidates.add(path.join(gameRoot, 'resource', fileName));
+				}
+			}
+		}
+		const documentContentRoot = this.deriveAddonContentRoot(documentPath);
+		if (documentContentRoot) {
+			for (const fileName of localizationFiles) {
+				candidates.add(path.join(documentContentRoot, 'resource', fileName));
+				const gameRoot = this.deriveAddonGameRoot(documentContentRoot);
+				if (gameRoot) {
+					candidates.add(path.join(gameRoot, 'resource', fileName));
+				}
+			}
+		}
+		const contentDir = getContentDir();
+		if (contentDir) {
+			for (const fileName of localizationFiles) {
+				candidates.add(path.join(path.normalize(contentDir), 'resource', fileName));
+			}
+		}
+		const gameDir = getGameDir();
+		if (gameDir) {
+			for (const fileName of localizationFiles) {
+				candidates.add(path.join(path.normalize(gameDir), 'resource', fileName));
+			}
+		}
+		for (const candidate of candidates) {
+			if (this.pathExists(candidate)) {
+				return candidate;
+			}
+		}
+		return undefined;
+	}
+
+	private getLocalizationFileCandidates(): string[] {
+		const language = (vscode.env.language ?? '').toLowerCase();
+		const mapping: Record<string, string> = {
+			'zh-cn': 'addon_schinese.txt',
+			'zh-hans': 'addon_schinese.txt',
+			'zh': 'addon_schinese.txt',
+			'en': 'addon_english.txt',
+			'en-us': 'addon_english.txt',
+			'en-gb': 'addon_english.txt',
+			'ru': 'addon_russian.txt',
+			'ru-ru': 'addon_russian.txt',
+		};
+		const candidates: string[] = [];
+		const pushUnique = (value: string | undefined) => {
+			if (value && !candidates.includes(value)) {
+				candidates.push(value);
+			}
+		};
+		pushUnique(mapping[language]);
+		const baseLanguage = language.split('-')[0];
+		if (baseLanguage && baseLanguage !== language) {
+			pushUnique(mapping[baseLanguage]);
+		}
+		pushUnique('addon_schinese.txt');
+		pushUnique('addon_english.txt');
+		pushUnique('addon_russian.txt');
+		return candidates;
+	}
 
 	private deriveAddonContentRoot(targetPath: string | undefined): string | undefined {
 		if (!targetPath) {
 			return undefined;
 		}
+
 		const normalized = path.normalize(targetPath);
 		const forward = normalized.replace(/\\/g, '/');
 		const lower = forward.toLowerCase();
@@ -738,6 +812,174 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		}
 		return undefined;
+	}
+
+	private deriveAddonGameRoot(contentRoot: string | undefined): string | undefined {
+		if (!contentRoot) {
+			return undefined;
+		}
+		const normalized = path.normalize(contentRoot);
+		const segments = normalized.split(path.sep);
+		const contentIndex = segments.findIndex((segment) => segment.toLowerCase() === 'content');
+		if (contentIndex >= 0 && segments.length > contentIndex + 1 && segments[contentIndex + 1].toLowerCase() === 'dota_addons') {
+			segments[contentIndex] = 'game';
+			return segments.join(path.sep);
+		}
+		return undefined;
+	}
+
+	private loadLocalizationTokens(localizationPath: string): LocalizationTokenMap | undefined {
+		try {
+			const stat = fs.statSync(localizationPath);
+			const cached = this.localizationCache.get(localizationPath);
+			if (cached && cached.mtimeMs === stat.mtimeMs) {
+				return cached.tokens;
+			}
+			const raw = fs.readFileSync(localizationPath, 'utf8');
+			const parsed = readKeyValue2(raw ?? '');
+			const tokensSection = (parsed?.lang as Record<string, unknown> | undefined)?.Tokens;
+			if (!tokensSection || typeof tokensSection !== 'object') {
+				return cached?.tokens;
+			}
+			const entries = tokensSection as Record<string, unknown>;
+			const tokens: LocalizationTokenMap = new Map();
+			for (const [key, value] of Object.entries(entries)) {
+				if (typeof value === 'string') {
+					tokens.set(key.toLowerCase(), value);
+				}
+			}
+			this.localizationCache.set(localizationPath, {
+				tokens,
+				mtimeMs: stat.mtimeMs,
+			});
+			return tokens;
+		} catch (error) {
+			console.warn('[kvEditorProvider] Failed to load localization tokens:', error);
+			return this.localizationCache.get(localizationPath)?.tokens;
+		}
+	}
+
+	private findLocalizationToken(tokens: LocalizationTokenMap | undefined, candidateKeys: string[]): string | undefined {
+		if (!tokens || !candidateKeys.length) {
+			return undefined;
+		}
+		for (const key of candidateKeys) {
+			const normalizedKey = typeof key === 'string' ? key.trim().toLowerCase() : '';
+			if (!normalizedKey) {
+				continue;
+			}
+			const value = tokens.get(normalizedKey);
+			if (typeof value === 'string' && value.length > 0) {
+				return value;
+			}
+		}
+		return undefined;
+	}
+
+	private enrichRowsWithLocalization(
+		rows: ParsedKvRow[],
+		folderType: KvFolderType,
+		documentPath: string,
+		entry: KvEditorEntry | undefined,
+	): void {
+		if (!rows.length) {
+			return;
+		}
+		const localizationPath = this.resolveAddonLocalizationRoot(documentPath, entry);
+		if (!localizationPath) {
+			return;
+		}
+		const tokens = this.loadLocalizationTokens(localizationPath);
+		if (!tokens || !tokens.size) {
+			return;
+		}
+		const isAbilityLike = folderType === 'ability' || folderType === 'item';
+		for (const row of rows) {
+			const rowId = typeof row.id === 'string' ? row.id.trim() : '';
+			if (!rowId) {
+				continue;
+			}
+			const localizationInfo: ParsedKvRowLocalization = {};
+			if (isAbilityLike) {
+				const baseKey = `dota_tooltip_ability_${rowId.toLowerCase()}`;
+				const name = this.findLocalizationToken(tokens, [baseKey, rowId, `dota_tooltip_ability_${rowId}`]);
+				if (name) {
+					localizationInfo.name = name;
+				}
+				let description = this.findLocalizationToken(tokens, [
+					`${baseKey}_description`,
+					`${baseKey}_Description`,
+					`dota_tooltip_ability_${rowId}_description`,
+					`dota_tooltip_ability_${rowId}_Description`,
+				]);
+				if (description) {
+					const replacements = this.buildLocalizationReplacementMap(row);
+					description = this.applyLocalizationReplacements(description, replacements);
+					localizationInfo.description = description;
+				}
+			} else {
+				const name = this.findLocalizationToken(tokens, [rowId, rowId.toLowerCase()]);
+				if (name) {
+					localizationInfo.name = name;
+				}
+				const description = this.findLocalizationToken(tokens, [
+					`${rowId}_description`,
+					`${rowId}_Description`,
+				]);
+				if (description) {
+					localizationInfo.description = description;
+				}
+			}
+			if (localizationInfo.name || localizationInfo.description) {
+				row.localization = localizationInfo;
+			}
+		}
+	}
+
+	private buildLocalizationReplacementMap(row: ParsedKvRow): Map<string, string> {
+		const replacements = new Map<string, string>();
+		for (const [key, value] of Object.entries(row.values ?? {})) {
+			const normalizedKey = key.trim().toLowerCase();
+			const normalizedValue = typeof value === 'string' ? value.trim() : '';
+			if (normalizedKey && normalizedValue) {
+				replacements.set(normalizedKey, normalizedValue);
+			}
+		}
+		for (const entry of row.abilityValues ?? []) {
+			const entryValue = (entry.value ?? '').trim();
+			if (entryValue) {
+				const entryKey = entry.key?.trim().toLowerCase();
+				const originalKey = entry.originalKey?.trim().toLowerCase();
+				if (entryKey) {
+					replacements.set(entryKey, entryValue);
+				}
+				if (originalKey && originalKey !== entryKey) {
+					replacements.set(originalKey, entryValue);
+				}
+			}
+			for (const modifier of entry.modifiers ?? []) {
+				const modifierKey = modifier.key?.trim().toLowerCase();
+				const modifierValue = (modifier.value ?? '').trim();
+				if (modifierKey && modifierValue) {
+					replacements.set(modifierKey, modifierValue);
+				}
+			}
+		}
+		return replacements;
+	}
+
+	private applyLocalizationReplacements(input: string, replacements: Map<string, string>): string {
+		if (!input || !replacements.size) {
+			return input;
+		}
+		return input.replace(/%([^%]+)%/g, (match, token) => {
+			const normalizedToken = typeof token === 'string' ? token.trim().toLowerCase() : '';
+			if (!normalizedToken) {
+				return match;
+			}
+			const replacement = replacements.get(normalizedToken);
+			return replacement !== undefined ? replacement : match;
+		});
 	}
 
 	private findTextureAsset(textureName: string, addonImagesRoot: string | undefined, entry: KvEditorEntry | undefined): TextureAssetMatch | undefined {
@@ -1193,6 +1435,12 @@ interface ParsedKvRow {
 	id: string;
 	values: Record<string, string>;
 	abilityValues?: AbilityValuesEntry[];
+	localization?: ParsedKvRowLocalization;
+}
+
+interface ParsedKvRowLocalization {
+	name?: string;
+	description?: string;
 }
 
 type AbilityValuesEntryType = 'object' | 'scalar';
@@ -1228,6 +1476,13 @@ interface AbilityValuesEditEntry {
 	type: AbilityValuesEntryType;
 	modifiers?: AbilityValuesModifier[];
 }
+
+interface LocalizationCacheEntry {
+	tokens: LocalizationTokenMap;
+	mtimeMs: number;
+}
+
+type LocalizationTokenMap = Map<string, string>;
 interface KvEditorReorderMessage {
 	sourceId: string;
 	sourceIndex: number;

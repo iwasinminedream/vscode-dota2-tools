@@ -387,6 +387,24 @@ body {
 	user-select: none;
 }
 
+.kv-cell-id {
+	line-height: 1.3;
+}
+
+.kv-id-primary {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.kv-id-secondary {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
+}
+
 .kv-row-index-label {
 	display: block;
 	padding: 8px 12px;
