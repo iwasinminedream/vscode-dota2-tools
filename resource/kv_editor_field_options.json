@@ -18,6 +18,28 @@
 						"value": "item_datadriven"
 					}
 				]
+			},
+			"unit": {
+				"options": [
+					{
+						"value": "npc_dota_creature"
+					},
+					{
+						"value": "npc_dota_hero"
+					},
+					{
+						"value": "npc_dota_creep"
+					},
+					{
+						"value": "npc_dota_building"
+					},
+					{
+						"value": "npc_dota_base_additive"
+					},
+					{
+						"value": "npc_dota_rotatable_building"
+					}
+				]
 			}
 		},
 		"multiple": false,
@@ -1260,5 +1282,183 @@
 		],
 		"multiple": false,
 		"separator": ","
+	},
+	"MovementCapabilities": {
+		"options": [
+			{
+				"value": "DOTA_UNIT_CAP_MOVE_GROUND",
+				"label": "地面移动"
+			},
+			{
+				"value": "DOTA_UNIT_CAP_MOVE_FLY",
+				"label": "飞行移动"
+			},
+			{
+				"value": "DOTA_UNIT_CAP_MOVE_NONE",
+				"label": "无移动能力"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"AttackCapabilities": {
+		"options": [
+			{
+				"value": "DOTA_UNIT_CAP_MELEE_ATTACK",
+				"label": "近战"
+			},
+			{
+				"value": "DOTA_UNIT_CAP_RANGED_ATTACK",
+				"label": "远程"
+			},
+			{
+				"value": "DOTA_UNIT_CAP_NO_ATTACK",
+				"label": "无"
+			},
+			{
+				"value": "DOTA_UNIT_ATTACK_CAPABILITY_BIT_COUNT"
+			},
+			{
+				"value": "DOTA_UNIT_CAP_RANGED_ATTACK_DIRECTIONAL"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"BoundsHullName": {
+		"options": [
+			{
+				"value": "DOTA_HULL_SIZE_SMALL",
+				"label": "小型8"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_REGULAR",
+				"label": "常规16"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_SIEGE",
+				"label": "攻城车16"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_HERO",
+				"label": "英雄24"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_HUGE",
+				"label": "巨大80"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_BUILDING",
+				"label": "建筑81"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_FILLER",
+				"label": "装饰物96"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_BARRACKS",
+				"label": "兵营144"
+			},
+			{
+				"value": "DOTA_HULL_SIZE_TOWER",
+				"label": "防御塔144"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"CombatClassAttack": {
+		"options": [
+			{
+				"value": "DOTA_COMBAT_CLASS_ATTACK_BASIC",
+				"label": "基础攻击"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_ATTACK_PIERCE",
+				"label": "穿刺攻击"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_ATTACK_SIEGE",
+				"label": "攻城攻击"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_ATTACK_LIGHT",
+				"label": "混乱攻击"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_ATTACK_HERO",
+				"label": "英雄攻击"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"CombatClassDefend": {
+		"options": [
+			{
+				"value": "DOTA_COMBAT_CLASS_DEFEND_SOFT",
+				"label": "无护甲"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_DEFEND_WEAK",
+				"label": "轻型护甲"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_DEFEND_BASIC",
+				"label": "中型护甲"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_DEFEND_STRONG",
+				"label": "重型护甲"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_DEFEND_STRUCTURE",
+				"label": "加强护甲"
+			},
+			{
+				"value": "DOTA_COMBAT_CLASS_DEFEND_HERO",
+				"label": "英雄护甲"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"UnitRelationshipClass": {
+		"options": [
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_ATTACKER",
+				"label": "攻击者"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_BARRACKS",
+				"label": "兵营"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_BUILDING",
+				"label": "建筑"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_COURIER",
+				"label": "信使"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_DEFAULT",
+				"label": "默认"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_HERO",
+				"label": "英雄"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_SIEGE",
+				"label": "攻城"
+			},
+			{
+				"value": "DOTA_NPC_UNIT_RELATIONSHIP_TYPE_WARD",
+				"label": "守卫"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
 	}
 }

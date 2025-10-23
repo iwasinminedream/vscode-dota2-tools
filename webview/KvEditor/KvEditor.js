@@ -42,6 +42,13 @@ let abilityValuesEditorState = null;
 const pendingTextureMenuRequests = new Map();
 let rowDragState = null;
 let clipboardData = null;
+let fillHandleElement = null;
+let fillHandleState = null;
+let fillPreviewCells = [];
+let fillPopupState = null;
+
+const FILL_DEFAULT_STEP = 1;
+const FILL_DEFAULT_RATIO = 2;
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
@@ -94,6 +101,9 @@ function setSectionVisibility({ showTable, showEmpty, showError }) {
 // 清空当前选中单元格及其公式编辑器状态
 function clearSelection() {
 	closeMultiSelectDropdown();
+	closeFillPopup();
+	clearFillPreview();
+	detachFillHandle();
 	if (selectedTd && selectedTd.classList) {
 		selectedTd.classList.remove('kv-cell-selected');
 	}
@@ -122,6 +132,9 @@ function selectCell(td, context) {
 	}
 	if (selectedTd && selectedTd !== td) {
 		selectedTd.classList.remove('kv-cell-selected');
+		closeFillPopup();
+		clearFillPreview();
+		detachFillHandle();
 	}
 	selectedTd = td;
 	td.classList.add('kv-cell-selected');
@@ -159,6 +172,7 @@ function selectCell(td, context) {
 		formulaValueInput.placeholder = disableFormulaInput && context.editable ? '请通过下拉选择' : '';
 		formulaValueInput.value = context.value ?? '';
 	}
+	refreshFillHandle();
 }
 
 function isEditableElement(element) {
@@ -323,6 +337,100 @@ function handleClipboardShortcuts(event) {
 	}
 }
 
+function startFillDrag(event) {
+	if (event.button !== 0) {
+		return;
+	}
+	if (!selectedTd || !selectedCell || !selectedCell.editable) {
+		return;
+	}
+	event.preventDefault();
+	event.stopPropagation();
+	closeFillPopup();
+	clearFillPreview();
+	const rect = selectedTd.getBoundingClientRect();
+	fillHandleState = {
+		startRow: selectedCell.rowIndex,
+		currentRow: selectedCell.rowIndex,
+		column: selectedCell.column,
+		startClientX: event.clientX,
+		startClientY: event.clientY,
+		moved: false,
+	};
+	document.addEventListener('mousemove', handleFillDragMove);
+	document.addEventListener('mouseup', handleFillDragEnd);
+}
+
+function handleFillDragMove(event) {
+	if (!fillHandleState || !selectedTd) {
+		return;
+	}
+	const deltaX = Math.abs(event.clientX - fillHandleState.startClientX);
+	const deltaY = event.clientY - fillHandleState.startClientY;
+	if (!fillHandleState.moved) {
+		if (Math.abs(deltaY) < 4 && deltaX > 6) {
+			return;
+		}
+		if (Math.abs(deltaY) < 2 && Math.abs(deltaX) < 2) {
+			return;
+		}
+		if (deltaX > Math.abs(deltaY)) {
+			return;
+		}
+		fillHandleState.moved = true;
+	}
+	const targetRow = resolveFillTargetRow(event.clientY);
+	if (targetRow === null || targetRow === fillHandleState.currentRow) {
+		return;
+	}
+	fillHandleState.currentRow = targetRow;
+	updateFillPreview();
+}
+
+function resolveFillTargetRow(clientY) {
+	const rows = latestPayload?.rows;
+	if (!Array.isArray(rows) || !selectedTd) {
+		return null;
+	}
+	const tableRect = tableSection?.getBoundingClientRect();
+	if (!tableRect) {
+		return null;
+	}
+	const rowElements = tableSection.querySelectorAll('tbody tr');
+	let closestRow = null;
+	let closestDistance = Number.POSITIVE_INFINITY;
+	rowElements.forEach((row) => {
+		const rect = row.getBoundingClientRect();
+		const mid = rect.top + rect.height / 2;
+		const distance = Math.abs(clientY - mid);
+		if (distance < closestDistance) {
+			closestDistance = distance;
+			const index = Number(row.dataset.rowIndex ?? '-1');
+			if (Number.isFinite(index)) {
+				closestRow = index;
+			}
+		}
+	});
+	if (closestRow === null) {
+		return null;
+	}
+	return closestRow;
+}
+
+function handleFillDragEnd(event) {
+	document.removeEventListener('mousemove', handleFillDragMove);
+	document.removeEventListener('mouseup', handleFillDragEnd);
+	if (!fillHandleState) {
+		return;
+	}
+	if (!fillHandleState.moved) {
+		fillHandleState = null;
+		return;
+	}
+	event.preventDefault();
+	openFillPopup();
+}
+
 // 还原公式栏内容到单元格初始值
 function revertFormulaValue() {
 	if (!selectedCell || !selectedCell.element) {
@@ -401,6 +509,662 @@ function setElementValue(element, value, fieldConfig) {
 	} else {
 		element.value = value ?? '';
 	}
+}
+
+function clearFillPreview() {
+	for (const cell of fillPreviewCells) {
+		if (cell && cell.classList) {
+			cell.classList.remove('kv-cell-fill-preview');
+		}
+	}
+	fillPreviewCells = [];
+}
+
+function detachFillHandle() {
+	if (fillHandleElement && fillHandleElement.parentElement) {
+		fillHandleElement.parentElement.removeChild(fillHandleElement);
+	}
+	fillHandleElement = null;
+}
+
+function refreshFillHandle() {
+	if (!selectedTd || !selectedCell || !selectedCell.editable || selectedCell.dataType !== 'cell' || !selectedCell.element) {
+		detachFillHandle();
+		return;
+	}
+	if (!fillHandleElement) {
+		fillHandleElement = document.createElement('div');
+		fillHandleElement.className = 'kv-cell-fill-handle';
+		fillHandleElement.title = '拖动以快速填充';
+		fillHandleElement.addEventListener('mousedown', (event) => startFillDrag(event));
+	}
+	const host = selectedTd;
+	host.style.position = 'relative';
+	if (fillHandleElement.parentElement !== host) {
+		host.appendChild(fillHandleElement);
+	}
+}
+
+function updateFillPreview() {
+	clearFillPreview();
+	if (!fillHandleState || !selectedCell || !selectedTd) {
+		return;
+	}
+	const startRow = fillHandleState.startRow;
+	const endRow = fillHandleState.currentRow;
+	if (endRow === null || endRow === startRow) {
+		return;
+	}
+	const step = endRow > startRow ? 1 : -1;
+	for (let rowIndex = startRow + step; step > 0 ? rowIndex <= endRow : rowIndex >= endRow; rowIndex += step) {
+		const cell = tableSection?.querySelector(`td[data-column="${fillHandleState.column}"][data-row-index="${rowIndex}"]`);
+		if (cell) {
+			cell.classList.add('kv-cell-fill-preview');
+			fillPreviewCells.push(cell);
+		}
+	}
+}
+
+function computeFillTargetRows(startRow, endRow) {
+	if (!Number.isFinite(startRow) || !Number.isFinite(endRow) || startRow === endRow) {
+		return [];
+	}
+	const step = endRow > startRow ? 1 : -1;
+	const rows = [];
+	for (let rowIndex = startRow + step; step > 0 ? rowIndex <= endRow : rowIndex >= endRow; rowIndex += step) {
+		rows.push(rowIndex);
+	}
+	return rows;
+}
+
+function getEditableCellContext(rowIndex, columnKey) {
+	if (!tableSection) {
+		return null;
+	}
+	const selector = `td[data-column="${columnKey}"][data-row-index="${rowIndex}"]`;
+	const cell = tableSection.querySelector(selector);
+	if (!cell) {
+		return null;
+	}
+	const fieldConfig = columnOptionConfig?.[columnKey];
+	const usesDropdown = Boolean(fieldConfig?.options?.length);
+	const element = cell.querySelector(usesDropdown ? 'select' : 'input');
+	if (!element) {
+		return null;
+	}
+	return {
+		cell,
+		element,
+		fieldConfig,
+		usesDropdown,
+		id: element.dataset.id ?? '',
+		rowId: cell.dataset.rowId ?? '',
+		rowIndex: Number(cell.dataset.rowIndex ?? `${rowIndex}`),
+	};
+}
+
+function isValueAvailableInSelect(selectElement, value) {
+	if (!(selectElement instanceof HTMLSelectElement)) {
+		return true;
+	}
+	return Array.from(selectElement.options).some((option) => option.value === value);
+}
+
+function closeFillPopup(options = {}) {
+	if (!fillPopupState) {
+		fillHandleState = null;
+		return;
+	}
+	const { element, keyHandler, outsideHandler, scrollHandler, resizeHandler } = fillPopupState;
+	if (element && element.parentElement) {
+		element.parentElement.removeChild(element);
+	}
+	if (keyHandler) {
+		document.removeEventListener('keydown', keyHandler, true);
+	}
+	if (outsideHandler) {
+		document.removeEventListener('mousedown', outsideHandler, true);
+	}
+	if (scrollHandler) {
+		tableSection?.removeEventListener('scroll', scrollHandler);
+	}
+	if (resizeHandler) {
+		window.removeEventListener('resize', resizeHandler);
+	}
+	fillPopupState = null;
+	fillHandleState = null;
+	if (options.clearPreview !== false) {
+		clearFillPreview();
+	}
+	refreshFillHandle();
+}
+
+function showFillPopupError(message) {
+	if (!fillPopupState || !fillPopupState.errorElement) {
+		return;
+	}
+	fillPopupState.errorElement.textContent = message ?? '';
+	fillPopupState.errorElement.hidden = !message;
+}
+
+function clearFillPopupError() {
+	showFillPopupError('');
+}
+
+function openFillPopup() {
+	if (!fillHandleState || !selectedCell || !selectedTd) {
+		fillHandleState = null;
+		clearFillPreview();
+		refreshFillHandle();
+		return;
+	}
+	const { startRow, currentRow, column } = fillHandleState;
+	if (!Number.isFinite(startRow) || !Number.isFinite(currentRow) || startRow === currentRow) {
+		fillHandleState = null;
+		clearFillPreview();
+		refreshFillHandle();
+		return;
+	}
+	const targetRows = computeFillTargetRows(startRow, currentRow);
+	if (!targetRows.length) {
+		fillHandleState = null;
+		clearFillPreview();
+		refreshFillHandle();
+		return;
+	}
+	closeFillPopup({ clearPreview: false });
+	const popup = document.createElement('div');
+	popup.className = 'kv-fill-popup';
+	popup.setAttribute('role', 'dialog');
+	popup.setAttribute('aria-label', '填充选项');
+	const title = document.createElement('div');
+	title.className = 'kv-fill-popup-title';
+	const direction = currentRow > startRow ? 1 : -1;
+	title.textContent = `填充 ${direction > 0 ? '向下' : '向上'} ${targetRows.length} 行`;
+	popup.appendChild(title);
+	const form = document.createElement('form');
+	form.className = 'kv-fill-popup-form';
+	const modeList = document.createElement('div');
+	modeList.className = 'kv-fill-popup-modes';
+	const modes = [
+		{ value: 'copy', label: '复制' },
+		{ value: 'arithmetic', label: '等差填充' },
+		{ value: 'geometric', label: '等比填充' },
+		{ value: 'formula', label: '公式填充' }
+	];
+	const modeInputs = [];
+	modes.forEach((mode, index) => {
+		const item = document.createElement('label');
+		item.className = 'kv-fill-popup-mode';
+		const input = document.createElement('input');
+		input.type = 'radio';
+		input.name = 'fill-mode';
+		input.value = mode.value;
+		if (index === 0) {
+			input.checked = true;
+		}
+		const span = document.createElement('span');
+		span.textContent = mode.label;
+		item.appendChild(input);
+		item.appendChild(span);
+		modeList.appendChild(item);
+		modeInputs.push(input);
+	});
+	form.appendChild(modeList);
+	const arithmeticWrapper = document.createElement('div');
+	arithmeticWrapper.className = 'kv-fill-popup-field';
+	arithmeticWrapper.hidden = true;
+	const arithmeticLabel = document.createElement('label');
+	arithmeticLabel.textContent = '步长';
+	const arithmeticInput = document.createElement('input');
+	arithmeticInput.type = 'number';
+	arithmeticInput.value = String(FILL_DEFAULT_STEP);
+	arithmeticInput.step = 'any';
+	arithmeticWrapper.appendChild(arithmeticLabel);
+	arithmeticWrapper.appendChild(arithmeticInput);
+	form.appendChild(arithmeticWrapper);
+	const geometricWrapper = document.createElement('div');
+	geometricWrapper.className = 'kv-fill-popup-field';
+	geometricWrapper.hidden = true;
+	const geometricLabel = document.createElement('label');
+	geometricLabel.textContent = '比率';
+	const geometricInput = document.createElement('input');
+	geometricInput.type = 'number';
+	geometricInput.value = String(FILL_DEFAULT_RATIO);
+	geometricInput.step = 'any';
+	geometricWrapper.appendChild(geometricLabel);
+	geometricWrapper.appendChild(geometricInput);
+	form.appendChild(geometricWrapper);
+	const formulaWrapper = document.createElement('div');
+	formulaWrapper.className = 'kv-fill-popup-field';
+	formulaWrapper.hidden = true;
+	const formulaLabel = document.createElement('label');
+	formulaLabel.textContent = '表达式 (可用: base, baseNumber, offset, rowIndex, rowNumber, direction)';
+	const formulaInput = document.createElement('input');
+	formulaInput.type = 'text';
+	formulaInput.placeholder = '例如: base + offset * 2';
+	formulaWrapper.appendChild(formulaLabel);
+	formulaWrapper.appendChild(formulaInput);
+	form.appendChild(formulaWrapper);
+	const errorEl = document.createElement('div');
+	errorEl.className = 'kv-fill-popup-error';
+	errorEl.hidden = true;
+	form.appendChild(errorEl);
+	const actions = document.createElement('div');
+	actions.className = 'kv-fill-popup-actions';
+	const cancelButton = document.createElement('button');
+	cancelButton.type = 'button';
+	cancelButton.className = 'kv-button kv-button-secondary';
+	cancelButton.textContent = '取消';
+	actions.appendChild(cancelButton);
+	const applyButton = document.createElement('button');
+	applyButton.type = 'submit';
+	applyButton.className = 'kv-button kv-button-primary';
+	applyButton.textContent = '填充';
+	actions.appendChild(applyButton);
+	form.appendChild(actions);
+	popup.appendChild(form);
+	const handleModeVisibility = () => {
+		const currentMode = modeInputs.find((input) => input.checked)?.value ?? 'copy';
+		arithmeticWrapper.hidden = currentMode !== 'arithmetic';
+		geometricWrapper.hidden = currentMode !== 'geometric';
+		formulaWrapper.hidden = currentMode !== 'formula';
+		clearFillPopupError();
+	};
+	modeInputs.forEach((input) => {
+		input.addEventListener('change', handleModeVisibility);
+	});
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+		handleFillApply();
+	});
+	cancelButton.addEventListener('click', () => {
+		closeFillPopup();
+	});
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeFillPopup();
+		} else if (event.key === 'Enter' && event.target instanceof HTMLElement && popup.contains(event.target) && !(event.target instanceof HTMLTextAreaElement)) {
+			event.preventDefault();
+			handleFillApply();
+		}
+	};
+	const outsideHandler = (event) => {
+		if (!popup.contains(event.target)) {
+			closeFillPopup();
+		}
+	};
+	document.addEventListener('keydown', keyHandler, true);
+	document.addEventListener('mousedown', outsideHandler, true);
+	const scrollHandler = () => positionFillPopup();
+	const resizeHandler = () => positionFillPopup();
+	tableSection?.addEventListener('scroll', scrollHandler, { passive: true });
+	window.addEventListener('resize', resizeHandler, { passive: true });
+	document.body.appendChild(popup);
+	fillPopupState = {
+		element: popup,
+		errorElement: errorEl,
+		modeInputs,
+		arithmeticInput,
+		geometricInput,
+		formulaInput,
+		targetRows,
+		column,
+		direction,
+		startRow,
+		endRow: currentRow,
+		keyHandler,
+		outsideHandler,
+		scrollHandler,
+		resizeHandler,
+	};
+	positionFillPopup();
+	requestAnimationFrame(() => positionFillPopup());
+	handleModeVisibility();
+	focusFillPopup(modeInputs, arithmeticInput, formulaInput);
+	fillHandleState = null;
+}
+
+function focusFillPopup(modeInputs, arithmeticInput, formulaInput) {
+	const mode = modeInputs.find((input) => input.checked)?.value ?? 'copy';
+	switch (mode) {
+		case 'arithmetic':
+			arithmeticInput.focus();
+			arithmeticInput.select();
+			break;
+		case 'formula':
+			formulaInput.focus();
+			formulaInput.select();
+			break;
+		default:
+			modeInputs[0]?.focus();
+			break;
+	}
+}
+
+function positionFillPopup() {
+	if (!fillPopupState || !fillPopupState.element) {
+		return;
+	}
+	const { element, targetRows, column, direction } = fillPopupState;
+	const anchorRow = direction > 0 ? targetRows[targetRows.length - 1] : targetRows[0];
+	const anchorSelector = `td[data-column="${column}"][data-row-index="${anchorRow}"]`;
+	const anchorCell = tableSection?.querySelector(anchorSelector) || selectedTd;
+	if (!anchorCell) {
+		return;
+	}
+	const rect = anchorCell.getBoundingClientRect();
+	const popupRect = element.getBoundingClientRect();
+	let top = direction > 0 ? rect.bottom + 4 : rect.top - popupRect.height - 4;
+	let left = rect.right - popupRect.width;
+	const viewportHeight = window.innerHeight;
+	const viewportWidth = window.innerWidth;
+	if (top + popupRect.height > viewportHeight - 8) {
+		top = viewportHeight - popupRect.height - 8;
+	}
+	if (top < 8) {
+		top = 8;
+	}
+	if (left + popupRect.width > viewportWidth - 8) {
+		left = viewportWidth - popupRect.width - 8;
+	}
+	if (left < 8) {
+		left = 8;
+	}
+	element.style.top = `${Math.round(top)}px`;
+	element.style.left = `${Math.round(left)}px`;
+}
+
+function getSelectedFillMode() {
+	if (!fillPopupState?.modeInputs) {
+		return 'copy';
+	}
+	return fillPopupState.modeInputs.find((input) => input.checked)?.value ?? 'copy';
+}
+
+function handleFillApply() {
+	if (!fillPopupState) {
+		return;
+	}
+	const mode = getSelectedFillMode();
+	let result;
+	switch (mode) {
+		case 'copy':
+			result = performCopyFill();
+			break;
+		case 'arithmetic':
+			result = performArithmeticFill();
+			break;
+		case 'geometric':
+			result = performGeometricFill();
+			break;
+		case 'formula':
+			result = performFormulaFill();
+			break;
+		default:
+			result = { success: false, message: '未知填充模式' };
+			break;
+	}
+	if (result?.success) {
+		closeFillPopup();
+	} else if (result?.message) {
+		showFillPopupError(result.message);
+	}
+}
+
+function prepareFillOperation({ allowDropdown }) {
+	if (!fillPopupState || !selectedCell) {
+		return { success: false, message: '当前没有可填充的单元格' };
+	}
+	const columnKey = fillPopupState.column;
+	if (!columnKey) {
+		return { success: false, message: '无法确定填充列' };
+	}
+	const baseValueRaw = selectedCell.element
+		? readElementValue(selectedCell.element, selectedCell.fieldConfig)
+		: (selectedCell.value ?? '');
+	const targetRows = Array.isArray(fillPopupState.targetRows) ? fillPopupState.targetRows.slice() : [];
+	if (!targetRows.length) {
+		return { success: false, message: '请选择需要填充的范围' };
+	}
+	const contexts = [];
+	for (const rowIndex of targetRows) {
+		const context = getEditableCellContext(rowIndex, columnKey);
+		if (!context) {
+			return { success: false, message: '目标区域包含不可编辑的单元格' };
+		}
+		if (context.usesDropdown && !allowDropdown) {
+			return { success: false, message: '该填充模式不支持下拉字段' };
+		}
+		if (!context.id) {
+			return { success: false, message: '目标行缺少唯一标识，无法写入。' };
+		}
+		contexts.push(context);
+	}
+	return {
+		success: true,
+		baseValueRaw,
+		contexts,
+		targetRows,
+		column: columnKey,
+	};
+}
+
+function applyValueToContext(context, value, columnKey, collector) {
+	setElementValue(context.element, value, context.fieldConfig);
+	if (context.usesDropdown) {
+		const display = context.cell.querySelector('.kv-select-display');
+		if (display) {
+			updateSelectDisplay(context.element, display, context.fieldConfig);
+		}
+	}
+	const normalizedValue = readElementValue(context.element, context.fieldConfig);
+	context.element.dataset.initialValue = normalizedValue;
+	context.element.title = normalizedValue;
+	if (!context.usesDropdown && formulaValueInput && selectedCell?.element === context.element) {
+		formulaValueInput.value = normalizedValue;
+	}
+	if (selectedCell && selectedCell.element === context.element) {
+		selectedCell.value = normalizedValue;
+	}
+	updateCachedRowValue(context.rowIndex, columnKey, normalizedValue);
+	if (Array.isArray(collector) && context.id) {
+		collector.push({ id: context.id, key: columnKey, value: normalizedValue });
+	}
+}
+
+function updateCachedRowValue(rowIndex, columnKey, value) {
+	if (!Array.isArray(latestPayload?.rows)) {
+		return;
+	}
+	const row = latestPayload.rows[rowIndex];
+	if (!row) {
+		return;
+	}
+	if (!row.values || typeof row.values !== 'object') {
+		row.values = {};
+	}
+	row.values[columnKey] = value;
+}
+
+function dispatchBulkEdit(edits) {
+	if (!Array.isArray(edits) || !edits.length) {
+		return;
+	}
+	const filtered = edits.filter((edit) => edit && edit.id && edit.key);
+	if (!filtered.length) {
+		return;
+	}
+	vscode.postMessage({
+		type: 'bulkEdit',
+		payload: {
+			edits: filtered.map((edit) => ({
+				id: edit.id,
+				key: edit.key,
+				value: edit.value === undefined || edit.value === null ? '' : String(edit.value),
+			})),
+		},
+	});
+}
+
+function formatNumericValueWithTemplate(value, template) {
+	if (typeof template === 'string' && template.includes('.')) {
+		const decimals = template.split('.')[1]?.length ?? 0;
+		if (decimals > 0) {
+			return value.toFixed(decimals);
+		}
+	}
+	return String(value);
+}
+
+function performCopyFill() {
+	const prepared = prepareFillOperation({ allowDropdown: true });
+	if (!prepared.success) {
+		return prepared;
+	}
+	const { baseValueRaw, contexts, column } = prepared;
+	for (const context of contexts) {
+		if (context.usesDropdown && !isValueAvailableInSelect(context.element, baseValueRaw)) {
+			return { success: false, message: '目标下拉列表中不存在要复制的值' };
+		}
+	}
+	const edits = [];
+	for (const context of contexts) {
+		applyValueToContext(context, baseValueRaw, column, edits);
+	}
+	dispatchBulkEdit(edits);
+	clearFillPreview();
+	return { success: true };
+}
+
+function performArithmeticFill() {
+	if (selectedCell?.usesDropdown) {
+		return { success: false, message: '当前单元格不支持等差填充' };
+	}
+	const prepared = prepareFillOperation({ allowDropdown: false });
+	if (!prepared.success) {
+		return prepared;
+	}
+	const { baseValueRaw, contexts, column } = prepared;
+	const baseNumber = Number(baseValueRaw);
+	if (!Number.isFinite(baseNumber)) {
+		return { success: false, message: '当前单元格的值不是有效的数字' };
+	}
+	const stepInput = fillPopupState?.arithmeticInput;
+	const stepValue = stepInput ? Number(stepInput.value) : NaN;
+	if (!Number.isFinite(stepValue)) {
+		return { success: false, message: '请输入有效的步长' };
+	}
+	const direction = fillPopupState?.direction ?? 1;
+	const edits = [];
+	contexts.forEach((context, index) => {
+		const offset = index + 1;
+		const valueNumber = baseNumber + stepValue * (direction > 0 ? offset : -offset);
+		const newValue = formatNumericValueWithTemplate(valueNumber, baseValueRaw);
+		applyValueToContext(context, newValue, column, edits);
+	});
+	dispatchBulkEdit(edits);
+	clearFillPreview();
+	return { success: true };
+}
+
+function performGeometricFill() {
+	if (selectedCell?.usesDropdown) {
+		return { success: false, message: '当前单元格不支持等比填充' };
+	}
+	const prepared = prepareFillOperation({ allowDropdown: false });
+	if (!prepared.success) {
+		return prepared;
+	}
+	const { baseValueRaw, contexts, column } = prepared;
+	const baseNumber = Number(baseValueRaw);
+	if (!Number.isFinite(baseNumber)) {
+		return { success: false, message: '当前单元格的值不是有效的数字' };
+	}
+	const ratioInput = fillPopupState?.geometricInput;
+	const ratioValue = ratioInput ? Number(ratioInput.value) : NaN;
+	if (!Number.isFinite(ratioValue) || ratioValue === 0) {
+		return { success: false, message: '请输入有效的比率' };
+	}
+	const direction = fillPopupState?.direction ?? 1;
+	const edits = [];
+	contexts.forEach((context, index) => {
+		const offset = index + 1;
+		const factor = Math.pow(ratioValue, offset);
+		const valueNumber = direction > 0 ? baseNumber * factor : baseNumber / factor;
+		const newValue = formatNumericValueWithTemplate(valueNumber, baseValueRaw);
+		applyValueToContext(context, newValue, column, edits);
+	});
+	dispatchBulkEdit(edits);
+	clearFillPreview();
+	return { success: true };
+}
+
+function performFormulaFill() {
+	if (selectedCell?.usesDropdown) {
+		return { success: false, message: '当前单元格不支持公式填充' };
+	}
+	const prepared = prepareFillOperation({ allowDropdown: false });
+	if (!prepared.success) {
+		return prepared;
+	}
+	const { baseValueRaw, contexts, column } = prepared;
+	const expression = (fillPopupState?.formulaInput?.value ?? '').trim();
+	if (!expression) {
+		return { success: false, message: '请输入公式表达式' };
+	}
+	let evaluator;
+	try {
+		evaluator = new Function('base', 'baseNumber', 'offset', 'rowIndex', 'rowNumber', 'direction', 'rowId', 'toNumber', `return (${expression});`);
+	} catch (error) {
+		return { success: false, message: `公式解析失败: ${error.message}` };
+	}
+	const baseNumber = Number(baseValueRaw);
+	const direction = fillPopupState?.direction ?? 1;
+	const edits = [];
+	for (let index = 0; index < contexts.length; index += 1) {
+		const context = contexts[index];
+		const offset = index + 1;
+		const signedOffset = direction > 0 ? offset : -offset;
+		let resultValue;
+		try {
+			resultValue = evaluator(
+				baseValueRaw,
+				numberOrNull(baseNumber),
+				signedOffset,
+				context.rowIndex,
+				context.rowIndex + 1,
+				direction,
+				context.rowId,
+				(value) => Number(value)
+			);
+		} catch (error) {
+			return { success: false, message: `公式执行失败: ${error.message}` };
+		}
+		const finalValue = formatFormulaResult(resultValue, baseValueRaw);
+		applyValueToContext(context, finalValue, column, edits);
+	}
+	dispatchBulkEdit(edits);
+	clearFillPreview();
+	return { success: true };
+}
+
+function numberOrNull(value) {
+	return Number.isFinite(value) ? value : null;
+}
+
+function formatFormulaResult(result, template) {
+	if (result === undefined || result === null) {
+		return '';
+	}
+	if (typeof result === 'number') {
+		if (Number.isFinite(result)) {
+			return formatNumericValueWithTemplate(result, template);
+		}
+		return String(result);
+	}
+	return String(result);
 }
 
 // 处理单元格数据变动并通知扩展端
