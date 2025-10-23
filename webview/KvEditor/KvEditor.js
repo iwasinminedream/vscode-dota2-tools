@@ -24,6 +24,14 @@ const FOLDER_TYPE_LABELS = {
 	custom: '自定义'
 };
 
+const FORMULA_TOOLTIP_HELP = [
+	'公式示例:',
+	'1. baseNumber + offset → 生成 1,2,3,4 序列',
+	'2. `Row_${rowNumber}` → 输出 Row_1, Row_2 等标签',
+	'3. offset % 2 === 0 ? "A" : "B" → 交替填充 A/B',
+	'4. direction === 1 ? baseNumber + offset : baseNumber - offset → 向下递增、向上递减'
+].join('\n');
+
 let latestPayload = undefined;
 let activeCell = undefined;
 const columnWidths = Object.create(null);
@@ -705,6 +713,9 @@ function openFillPopup() {
 		}
 		const span = document.createElement('span');
 		span.textContent = mode.label;
+		if (mode.value === 'formula') {
+			item.title = FORMULA_TOOLTIP_HELP;
+		}
 		item.appendChild(input);
 		item.appendChild(span);
 		modeList.appendChild(item);
