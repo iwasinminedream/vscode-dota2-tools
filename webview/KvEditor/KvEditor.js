@@ -41,9 +41,11 @@ let textureMenuState = null;
 let abilityValuesEditorState = null;
 const pendingTextureMenuRequests = new Map();
 let rowDragState = null;
+let clipboardData = null;
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
+document.addEventListener('keydown', handleClipboardShortcuts);
 
 if (formulaValueInput) {
 	formulaValueInput.addEventListener('input', () => {
@@ -132,7 +134,11 @@ function selectCell(td, context) {
 		editable: context.editable,
 		element: context.element ?? null,
 		fieldConfig: context.fieldConfig,
-		usesDropdown: Boolean(context.usesDropdown)
+		usesDropdown: Boolean(context.usesDropdown),
+		value: context.value ?? '',
+		dataType: context.dataType ?? 'cell',
+		abilityEntries: context.dataType === 'abilityValues' ? cloneAbilityValuesEntries(context.abilityEntries || []) : undefined,
+		hasAbilityField: Boolean(context.hasAbilityField),
 	};
 	selectedCellKey = {
 		column: context.column,
@@ -152,6 +158,168 @@ function selectCell(td, context) {
 		formulaValueInput.disabled = disableFormulaInput;
 		formulaValueInput.placeholder = disableFormulaInput && context.editable ? '请通过下拉选择' : '';
 		formulaValueInput.value = context.value ?? '';
+	}
+}
+
+function isEditableElement(element) {
+	if (!element) {
+		return false;
+	}
+	if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
+		return true;
+	}
+	return Boolean(element.isContentEditable);
+}
+
+function copyTextToClipboard(text) {
+	const helper = document.createElement('textarea');
+	try {
+		helper.value = text ?? '';
+		helper.setAttribute('readonly', '');
+		helper.style.position = 'fixed';
+		helper.style.opacity = '0';
+		helper.style.pointerEvents = 'none';
+		helper.style.top = '0';
+		helper.style.left = '0';
+		document.body.appendChild(helper);
+		helper.focus();
+		helper.select();
+		document.execCommand('copy');
+	} catch (error) {
+		console.warn('[kv-editor] copy failed', error);
+	} finally {
+		if (helper.parentElement) {
+			helper.parentElement.removeChild(helper);
+		}
+	}
+}
+
+function copySelectedCell() {
+	if (!selectedCell) {
+		return;
+	}
+	let text = '';
+	if (selectedCell.dataType === 'abilityValues') {
+		const entries = cloneAbilityValuesEntries(selectedCell.abilityEntries || []);
+		clipboardData = {
+			type: 'abilityValues',
+			entries,
+			hasAbilityField: Boolean(selectedCell.hasAbilityField),
+			text: selectedCell.value ?? ''
+		};
+		text = clipboardData.text;
+	} else if (selectedCell.editable && selectedCell.element) {
+		const value = readElementValue(selectedCell.element, selectedCell.fieldConfig);
+		clipboardData = {
+			type: 'cell',
+			value,
+			column: selectedCell.column,
+			text: value
+		};
+		text = value;
+	} else {
+		const value = selectedCell.value ?? '';
+		clipboardData = {
+			type: 'text',
+			value,
+			column: selectedCell.column,
+			text: value
+		};
+		text = value;
+	}
+	copyTextToClipboard(text ?? '');
+}
+
+function pasteToSelectedCell() {
+	if (!selectedCell || !clipboardData) {
+		return;
+	}
+	if (selectedCell.dataType === 'abilityValues') {
+		if (clipboardData.type !== 'abilityValues' || !selectedTd) {
+			return;
+		}
+		if (!selectedCell.rowId) {
+			return;
+		}
+		const hasAbilityField = clipboardData.hasAbilityField !== false || selectedCell.hasAbilityField;
+		const { entries: sanitizedEntries, displayValue } = populateAbilityValuesCell(selectedTd, clipboardData.entries || [], hasAbilityField !== false);
+		selectedCell.value = displayValue;
+		selectedCell.abilityEntries = cloneAbilityValuesEntries(sanitizedEntries);
+		selectedCell.hasAbilityField = hasAbilityField !== false;
+		if (formulaValueInput) {
+			formulaValueInput.value = displayValue;
+		}
+		const payloadEntries = normalizeAbilityEntriesForPayload(sanitizedEntries);
+		vscode.postMessage({
+			type: 'editAbilityValues',
+			payload: {
+				id: selectedCell.rowId,
+				entries: payloadEntries,
+			}
+		});
+		if (Array.isArray(latestPayload?.rows) && typeof selectedCell.rowIndex === 'number') {
+			const targetRow = latestPayload.rows[selectedCell.rowIndex];
+			if (targetRow) {
+				targetRow.abilityValues = sanitizedEntries.map((entry) => ({
+					key: entry.key,
+					originalKey: entry.originalKey,
+					value: entry.value,
+					type: entry.type,
+					modifiers: (entry.modifiers || []).map((modifier) => ({
+						key: modifier.key,
+						value: modifier.value,
+					}))
+				}));
+				if (!targetRow.values || typeof targetRow.values !== 'object') {
+					targetRow.values = {};
+				}
+				if (selectedCell.hasAbilityField) {
+					targetRow.values.AbilityValues = targetRow.values.AbilityValues ?? '';
+				} else if (targetRow.values) {
+					delete targetRow.values.AbilityValues;
+				}
+			}
+		}
+		return;
+	}
+	if (!selectedCell.editable || !selectedCell.element) {
+		return;
+	}
+	if (clipboardData.type === 'abilityValues') {
+		return;
+	}
+	const newValue = String(clipboardData.value ?? clipboardData.text ?? '');
+	setElementValue(selectedCell.element, newValue, selectedCell.fieldConfig);
+	if (selectedCell.usesDropdown) {
+		const display = selectedTd?.querySelector('.kv-select-display');
+		if (display) {
+			updateSelectDisplay(selectedCell.element, display, selectedCell.fieldConfig);
+		}
+	}
+	if (!selectedCell.usesDropdown && formulaValueInput) {
+		formulaValueInput.value = newValue;
+	}
+	handleElementChange(selectedCell.element, selectedCell.fieldConfig);
+	selectedCell.value = newValue;
+}
+
+function handleClipboardShortcuts(event) {
+	if (!selectedCell) {
+		return;
+	}
+	const isCopy = event.key?.toLowerCase() === 'c';
+	const isPaste = event.key?.toLowerCase() === 'v';
+	if (!(event.ctrlKey || event.metaKey) || (!isCopy && !isPaste)) {
+		return;
+	}
+	if (isEditableElement(document.activeElement)) {
+		return;
+	}
+	event.preventDefault();
+	if (isCopy) {
+		copySelectedCell();
+	} else {
+		pasteToSelectedCell();
 	}
 }
 
@@ -784,19 +952,22 @@ function restoreSelection(columnLabels, columnLetters, columnOptions) {
 	const rowIndex = Number(td.dataset.rowIndex ?? '0');
 	const columnName = columnLabels.get(selectedCellKey.column) ?? selectedCellKey.column;
 	const columnLetter = columnLetters.get(selectedCellKey.column) ?? selectedCellKey.column;
-	const editable = selectedCellKey.column !== ROW_NUMBER_COLUMN_KEY && selectedCellKey.column !== 'id' && selectedCellKey.column !== 'AbilityValues';
+	const isAbilityColumn = selectedCellKey.column === 'AbilityValues';
+	const editable = selectedCellKey.column !== ROW_NUMBER_COLUMN_KEY && selectedCellKey.column !== 'id' && !isAbilityColumn;
 	const fieldConfig = columnOptions[selectedCellKey.column];
 	const usesDropdown = Boolean(fieldConfig?.options?.length);
 	let element = null;
 	if (editable) {
 		element = usesDropdown ? td.querySelector('select') : td.querySelector('input');
 	}
-	const value = selectedCellKey.column === 'AbilityValues'
+	const value = isAbilityColumn
 		? (td.dataset.displayValue ?? td.textContent ?? '')
 		: editable
 			? readElementValue(element, fieldConfig)
 			: (td.textContent ?? '');
 	const rowId = td.dataset.rowId ?? '';
+	const abilityEntries = isAbilityColumn ? parseAbilityEntriesFromCell(td) : undefined;
+	const hasAbilityField = isAbilityColumn ? td.dataset.hasAbilityField === 'true' : false;
 	selectCell(td, {
 		column: selectedCellKey.column,
 		columnLetter,
@@ -807,8 +978,122 @@ function restoreSelection(columnLabels, columnLetters, columnOptions) {
 		element,
 		fieldConfig,
 		usesDropdown,
-		value
+		value,
+		dataType: isAbilityColumn ? 'abilityValues' : 'cell',
+		abilityEntries,
+		hasAbilityField
 	});
+}
+
+function parseAbilityEntriesFromCell(td) {
+	if (!td) {
+		return [];
+	}
+	const json = td.dataset.abilityEntries;
+	if (!json) {
+		return [];
+	}
+	try {
+		const parsed = JSON.parse(json);
+		return cloneAbilityValuesEntries(parsed);
+	} catch (error) {
+		console.warn('[kv-editor] failed to parse ability entries from cell', error);
+		return [];
+	}
+}
+
+function populateAbilityValuesCell(td, entries, hasAbilityField) {
+	if (!td) {
+		return { entries: [], displayValue: '' };
+	}
+	const sanitizedEntries = cloneAbilityValuesEntries(entries || []);
+	td.innerHTML = '';
+	td.classList.remove('kv-ability-values-cell-empty');
+	td.dataset.hasAbilityField = hasAbilityField ? 'true' : 'false';
+	try {
+		td.dataset.abilityEntries = JSON.stringify(sanitizedEntries);
+	} catch (error) {
+		console.warn('[kv-editor] failed to stringify ability entries', error);
+		delete td.dataset.abilityEntries;
+	}
+	const list = document.createElement('div');
+	list.className = 'kv-ability-values-list';
+	const displayLines = [];
+	if (sanitizedEntries.length) {
+		sanitizedEntries.forEach((entry) => {
+			const block = document.createElement('div');
+			block.className = 'kv-ability-values-block';
+			const baseRow = document.createElement('div');
+			baseRow.className = 'kv-ability-values-entry kv-ability-values-entry-base';
+			const baseKey = document.createElement('span');
+			baseKey.className = 'kv-ability-values-key';
+			baseKey.textContent = entry.key;
+			baseKey.title = entry.key;
+			const baseValue = document.createElement('span');
+			baseValue.className = 'kv-ability-values-value';
+			baseValue.textContent = entry.value;
+			baseValue.title = entry.value;
+			baseRow.appendChild(baseKey);
+			baseRow.appendChild(baseValue);
+			block.appendChild(baseRow);
+			displayLines.push(`${entry.key}: ${entry.value}`);
+			(entry.modifiers || []).forEach((modifier) => {
+				const modifierRow = document.createElement('div');
+				modifierRow.className = 'kv-ability-values-entry kv-ability-values-entry-modifier';
+				const modifierKey = document.createElement('span');
+				modifierKey.className = 'kv-ability-values-key';
+				modifierKey.textContent = modifier.key;
+				modifierKey.title = modifier.key;
+				const modifierValue = document.createElement('span');
+				modifierValue.className = 'kv-ability-values-value';
+				modifierValue.textContent = modifier.value;
+				modifierValue.title = modifier.value;
+				modifierRow.appendChild(modifierKey);
+				modifierRow.appendChild(modifierValue);
+				block.appendChild(modifierRow);
+				displayLines.push(`${modifier.key}: ${modifier.value}`);
+			});
+			list.appendChild(block);
+		});
+		td.appendChild(list);
+	} else if (hasAbilityField) {
+		const placeholder = document.createElement('div');
+		placeholder.className = 'kv-ability-values-empty';
+		placeholder.textContent = '无条目';
+		td.appendChild(placeholder);
+	} else {
+		td.classList.add('kv-ability-values-cell-empty');
+		td.textContent = '—';
+	}
+	const displayValue = displayLines.length
+		? displayLines.join('\n')
+		: hasAbilityField
+			? '无条目'
+			: '—';
+	td.dataset.displayValue = displayValue;
+	td.title = '双击编辑 AbilityValues';
+	return { entries: sanitizedEntries, displayValue };
+}
+
+function normalizeAbilityEntriesForPayload(entries) {
+	return (entries || []).map((entry) => {
+		const trimmedKey = (entry.key || '').trim();
+		const trimmedOriginalKey = (entry.originalKey || '').trim() || trimmedKey;
+		const normalizedModifiers = (entry.modifiers || [])
+			.map((modifier) => ({
+				key: (modifier.key || '').trim(),
+				value: (modifier.value || '').trim(),
+			}))
+			.filter((modifier) => modifier.key.length > 0);
+		const type = entry.type === 'scalar' && normalizedModifiers.length === 0 ? 'scalar' : 'object';
+		return {
+			key: trimmedKey,
+			originalKey: trimmedOriginalKey,
+			value: (entry.value || '').trim(),
+			type,
+			modifiers: normalizedModifiers,
+		};
+	}).filter((entry) => entry.key.length > 0);
 }
 
 // 渲染主表格结构和单元格控件
@@ -944,26 +1229,8 @@ function renderTable(columns, rows, columnOptions) {
 					});
 				});
 			} else if (column === 'id') {
-				const idValue = row.id ?? '';
+				td.textContent = row.id ?? '';
 				td.classList.add('kv-cell-id');
-				td.textContent = '';
-				td.removeAttribute('title');
-				const primary = document.createElement('div');
-				primary.className = 'kv-id-primary';
-				primary.textContent = idValue;
-				td.appendChild(primary);
-				const localizedName = row.localization?.name;
-				if (localizedName) {
-					const secondary = document.createElement('div');
-					secondary.className = 'kv-id-secondary';
-					secondary.textContent = localizedName;
-					secondary.title = localizedName;
-					td.appendChild(secondary);
-				}
-				const localizedDescription = row.localization?.description;
-				if (localizedDescription) {
-					td.title = localizedDescription;
-				}
 				td.addEventListener('click', () => {
 					selectCell(td, {
 						column,
@@ -975,7 +1242,7 @@ function renderTable(columns, rows, columnOptions) {
 						element: null,
 						fieldConfig: undefined,
 						usesDropdown: false,
-						value: idValue
+						value: row.id ?? ''
 					});
 				});
 			} else {
@@ -983,69 +1250,16 @@ function renderTable(columns, rows, columnOptions) {
 				if (column === 'AbilityValues') {
 					td.classList.add('kv-ability-values-cell');
 					td.tabIndex = 0;
-					const abilityEntries = Array.isArray(row.abilityValues) ? row.abilityValues : [];
 					const hasAbilityField = row.values && Object.prototype.hasOwnProperty.call(row.values, column);
-					if (abilityEntries.length) {
-						const list = document.createElement('div');
-						list.className = 'kv-ability-values-list';
-						abilityEntries.forEach((entry) => {
-							const block = document.createElement('div');
-							block.className = 'kv-ability-values-block';
-							const baseRow = document.createElement('div');
-							baseRow.className = 'kv-ability-values-entry kv-ability-values-entry-base';
-							const baseKey = document.createElement('span');
-							baseKey.className = 'kv-ability-values-key';
-							baseKey.textContent = entry.key;
-							baseKey.title = entry.key;
-							const baseValue = document.createElement('span');
-							baseValue.className = 'kv-ability-values-value';
-							baseValue.textContent = entry.value;
-							baseValue.title = entry.value;
-							baseRow.appendChild(baseKey);
-							baseRow.appendChild(baseValue);
-							block.appendChild(baseRow);
-							(entry.modifiers || []).forEach((modifier) => {
-								const modifierRow = document.createElement('div');
-								modifierRow.className = 'kv-ability-values-entry kv-ability-values-entry-modifier';
-								const modifierKey = document.createElement('span');
-								modifierKey.className = 'kv-ability-values-key';
-								modifierKey.textContent = modifier.key;
-								modifierKey.title = modifier.key;
-								const modifierValue = document.createElement('span');
-								modifierValue.className = 'kv-ability-values-value';
-								modifierValue.textContent = modifier.value;
-								modifierValue.title = modifier.value;
-								modifierRow.appendChild(modifierKey);
-								modifierRow.appendChild(modifierValue);
-								block.appendChild(modifierRow);
-							});
-							list.appendChild(block);
-						});
-						td.appendChild(list);
-					} else if (hasAbilityField) {
-						const placeholder = document.createElement('div');
-						placeholder.className = 'kv-ability-values-empty';
-						placeholder.textContent = '无条目';
-						td.appendChild(placeholder);
-					} else {
-						td.classList.add('kv-ability-values-cell-empty');
-						td.textContent = '—';
-					}
-					const displayLines = [];
-					abilityEntries.forEach((entry) => {
-						displayLines.push(`${entry.key}: ${entry.value}`);
-						(entry.modifiers || []).forEach((modifier) => {
-							displayLines.push(`${modifier.key}: ${modifier.value}`);
-						});
-					});
-					const displayValue = displayLines.length
-						? displayLines.join('\n')
-						: hasAbilityField
-							? '无条目'
-							: '—';
-					td.dataset.displayValue = displayValue;
-					td.title = '双击编辑 AbilityValues';
+					const populated = populateAbilityValuesCell(td, row.abilityValues, hasAbilityField);
+					const getAbilityContext = () => {
+						const entries = parseAbilityEntriesFromCell(td);
+						const hasField = td.dataset.hasAbilityField === 'true';
+						const display = td.dataset.displayValue ?? populated.displayValue;
+						return { entries, hasField, display };
+					};
 					const setSelection = () => {
+						const abilityContext = getAbilityContext();
 						selectCell(td, {
 							column,
 							columnLetter,
@@ -1056,7 +1270,10 @@ function renderTable(columns, rows, columnOptions) {
 							element: null,
 							fieldConfig: undefined,
 							usesDropdown: false,
-							value: displayValue,
+							value: abilityContext.display,
+							dataType: 'abilityValues',
+							abilityEntries: abilityContext.entries,
+							hasAbilityField: abilityContext.hasField,
 						});
 					};
 					td.addEventListener('click', setSelection);
@@ -1066,21 +1283,23 @@ function renderTable(columns, rows, columnOptions) {
 							event.preventDefault();
 							setSelection();
 							if (event.key === 'Enter' && !event.shiftKey) {
+								const context = getAbilityContext();
 								openAbilityValuesEditor({
 									rowId: row.id ?? '',
 									column,
 									columnName,
-									entries: abilityEntries,
+									entries: context.entries,
 								});
 							}
 						}
 					});
 					td.addEventListener('dblclick', () => {
+						const context = getAbilityContext();
 						openAbilityValuesEditor({
 							rowId: row.id ?? '',
 							column,
 							columnName,
-							entries: abilityEntries,
+							entries: context.entries,
 						});
 					});
 				} else if (usesDropdown) {
@@ -1808,24 +2027,7 @@ function submitAbilityValuesEditor() {
 		}
 		return;
 	}
-	const payloadEntries = entries.map((entry) => {
-		const trimmedKey = (entry.key || '').trim();
-		const trimmedOriginalKey = (entry.originalKey || '').trim() || trimmedKey;
-		const normalizedModifiers = entry.modifiers
-			.map((modifier) => ({
-				key: (modifier.key || '').trim(),
-				value: (modifier.value || '').trim(),
-			}))
-			.filter((modifier) => modifier.key.length > 0);
-		const type = entry.type === 'scalar' && normalizedModifiers.length === 0 ? 'scalar' : 'object';
-		return {
-			key: trimmedKey,
-			originalKey: trimmedOriginalKey,
-			value: (entry.value || '').trim(),
-			type,
-			modifiers: normalizedModifiers,
-		};
-	});
+	const payloadEntries = normalizeAbilityEntriesForPayload(entries);
 	vscode.postMessage({
 		type: 'editAbilityValues',
 		payload: {
