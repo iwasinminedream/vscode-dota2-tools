@@ -1646,15 +1646,15 @@ function updateColumnWidth(column, width) {
 	if (colElement) {
 		colElement.style.width = `${adjusted}px`;
 	}
-	const headerCell = tableSection.querySelector(`th[data-column="${column}"]`);
-	if (headerCell) {
-		headerCell.style.width = `${adjusted}px`;
-	}
-	const dataCells = tableSection.querySelectorAll(`td[data-column="${column}"]`);
-	dataCells.forEach((cell) => {
-		cell.style.width = `${adjusted}px`;
-	});
-	refreshTableWidth();
+	// const headerCell = tableSection.querySelector(`th[data-column="${column}"]`);
+	// if (headerCell) {
+	// 	headerCell.style.width = `${adjusted}px`;
+	// }
+	// const dataCells = tableSection.querySelectorAll(`td[data-column="${column}"]`);
+	// dataCells.forEach((cell) => {
+	// 	cell.style.width = `${adjusted}px`;
+	// });
+	// refreshTableWidth();
 }
 
 // 开始列宽拖拽操作

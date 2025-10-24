@@ -1,47 +1,45 @@
 # VS Code Dota2 Tools – Copilot Instructions
 
 ## Big Picture
-- This extension surfaces Dota2 authoring utilities built on VS Code APIs; TypeScript entry `src/extension.ts` localizes UI, spins status bar, calls `init(...)`, wires ~30 commands, then instantiates the global `FeiShu` client.
-- `src/init.ts` iterates `moduleList` and re-runs on workspace/config changes; each module init must be idempotent because settings toggles or folder changes trigger it again.
-- Responsibilities by folder: `module/` long-lived singletons (status bar, API notes, sheet cloud), `command/` command bodies, `listener/` file watchers, `TreeDataProvider/` & `CustomTextEditorProvider/` for views/editors, `utils/` for shared helpers.
-- Runtime data under `resource/`, `kv/`, and `webview/` feed API browsers, completions, and icon pickers; never mutate them without refreshing dependent caches.
+- Extension entry `src/extension.ts` localizes strings, spins up the status bar, runs `init(context)`, registers ~30 `dota2tools.*` commands, then instantiates the global `FeiShu` client for sheet sync.
+- `src/init.ts` loops `moduleList` and respects user config `dota2-tools.A1.module_list`; expect modules to re-run whenever workspace folders or config change.
+- Folder roles: `command/` command bodies, `module/` long-lived services, `listener/` fs watchers, `TreeDataProvider/` & `CustomTextEditorProvider/` VS Code views/editors, `utils/` shared helpers, `resource/` + `kv/` + `webview/` static datasets consumed by UI.
 
-## Initialization Flow
-- `moduleListConfig` in `dota2-tools.A1.module_list` decides which inits run; `skipModuleList` maps module names to config keys, so respect these checks when adding modules.
-- Use `showStatusBarMessage` / `refreshStatusBarMessage` during init to keep progress output consistent; status text also mirrors to the dedicated output channel opened via `dota2tools.showOutput`.
-- Subscribe to `EventManager` (`Class/event.ts`) instead of raw VS Code listeners so module reconfiguration stays centralized.
-- If a module needs cleanup, export a `stop...` helper and call it before re-registering because `init` runs again on workspace-folder changes.
+## Module Lifecycle
+- Extend `moduleList` only with idempotent initializers; map feature toggles in `skipModuleList` and surface new keys through `package.json` + `package.nls*.json` + `src/declarations/common.d.ts`.
+- Use `EventManager` (`Class/event.ts`) instead of raw VS Code listeners to hook configuration/workspace events and store the listener index for cleanup.
+- `module/statusBar.ts` centralizes progress + logging; call `showStatusBarMessage` / `refreshStatusBarMessage` (and `changeStatusBarState`) rather than touching the item directly.
+- Before re-registering disposables (watchers, providers) expose a `stop...` helper and invoke it; `init.ts` expects modules to handle repeated activation gracefully.
 
-## Runtime Data & State
-- `module/addonInfo.ts` discovers `${game}` and `${content}` paths via settings or `addoninfo.txt`; query `getGameDir()` / `getContentDir()` before touching disk.
-- Path settings accept tokens (`${game}`, `${content}`, `${workspace}`); resolve with helpers like `getPathConfiguration`, `eachExcelConfig`, and `getRootPath`.
-- API note data (`resource/api_note*.json`) flows through `Class/DotaApiNote`; after edits call refresh callbacks so trees and completions update.
-- Localization strings live in `package.nls*.json`; add new keys via `localize`/`reverseLocalize` and update `src/declarations/common.d.ts` when setting schemas change.
+## Paths, Data & Localization
+- `module/addonInfo.ts` caches `${game}`/`${content}` paths via settings `dota2-tools.addon_path` or `addoninfo.txt`; always call `getGameDir()` / `getContentDir()` and check `isValidFolder()` before filesystem work.
+- Helpers like `eachExcelConfig` and `getRootPath()` resolve `${game}`, `${content}`, `${workspace}` tokens before reading from disk; reuse them for new path-aware flows.
+- API notes live under `resource/api_note*.json` and are loaded by `Class/DotaApiNote`; update downstream trees/completions through the callbacks in `apiNoteInit` when mutating note data.
+- String resources live in `package.nls*.json`; use `localize`/`reverseLocalize` (`utils/localize.ts`) and update declaration types when adding settings or messages.
 
 ## Automation & Watchers
-- Excel→KV (`listenerAbilityExcel.ts`, `listenerUnitExcel.ts`) and KV→JS (`listenerKV2JS.ts`) watchers respect `dota2-tools.A3.listener`; always `stopWatch()` before re-registering on config change.
-- CSV conversion relies on `command/cmdExcel2KV` helpers (`eachExcelConfig`, `abilityCSV2KV`, `unitCSV2KV`, `writeKeyValue`); maintain AbilitySpecial numbering logic if extending.
-- Localization merge uses `listenerLocalization.ts` plus `command/cmdLocalization.ts`; keep new automation aligned with `combineLocalization`.
-- `node-watch` instances operate under `getRootPath()`; guard against missing workspace folders and surface issues through status bar messages instead of raw errors.
+- CSV/Excel automation hangs off `listenerAbilityExcel.ts`, `listenerUnitExcel.ts`, and `listenerKV2JS.ts`; they watch `getRootPath()` recursively via `node-watch` and honor toggles in `dota2-tools.A3.listener`.
+- `command/cmdExcel2KV.ts` drives conversions using `eachExcelConfig`, `abilityCSV2KV`/`unitCSV2KV`, and `writeKeyValue`; preserve AbilitySpecial numbering + dynamic extensions in `getExtname` when extending.
+- Localization merge flows through `listener/listenerLocalization.ts` and `command/cmdLocalization.ts`; keep `combineLocalization` as the canonical merge entry point.
+- Surface watcher state changes via the status bar (e.g. `[监听目录]` messages) to stay consistent with existing UX.
 
-## UI & Interaction
-- Status bar state centralizes in `module/statusBar.ts`; use `showStatusBarMessage`, `refreshStatusBarMessage`, and `changeStatusBarState` instead of mutating UI directly.
-- API trees (`TreeDataProvider/*`) link to completions via `getLuaApiTree()` and `getDotaApiNoteClass()`; call their refresh methods rather than rebuilding providers.
-- Webviews must load HTML with `utils/getWebviewContent` so resource URIs rewrite correctly; stash feature assets under `webview/<feature>/`.
-- KV tooling couples `TreeDataProvider/kvTree.ts` and `CustomTextEditorProvider/kvEditorProvider.ts`; read editor prefs via `readKvEditorSettings` before writing back to disk.
+## UI, Views & Webviews
+- Tree views and editors (KV explorer) live in `module/kvEditor.ts`, `TreeDataProvider/kvTree.ts`, `CustomTextEditorProvider/kvEditorProvider.ts`; call `readKvEditorSettings` to respect `dota2-tools.A10.kv_editor` before rendering.
+- API browsers under `module/treeApi.ts` share data with completions (`module/completion.ts`); refresh using provided accessors (`getLuaApiTree`, `getLuaCompletion`) instead of re-creating providers.
+- Webviews read HTML through `utils/getWebviewContent`; stash assets in `webview/<feature>/` and ensure URIs route via `asWebviewUri` inside the helper to avoid broken resources.
 
 ## External Integrations
-- `Class/FeiShu` encapsulates Lark API auth and throttling; route cloud sync through `FeiShu.request` so tenant tokens auto-refresh.
-- `module/sheet_cloud.ts` manages timers, status badges, and quick picks for branch-aware sheet sync; reuse helpers like `processFileData`, `exportSheetToCsv`, and `switchBranch` to stay within existing polling logic.
-- When touching cloud sync, keep `sheetIDMap`, `branchList`, and `exportTaskList` caches current—they suppress redundant API calls and drive polling intervals.
+- `Class/FeiShu` wraps Lark/Feishu REST + SDK; always call `FeiShu.request` to reuse token refresh and honor rate limits declared in `URL_LIST`.
+- `module/sheet_cloud.ts` orchestrates sheet syncing (branch quick picks, timers, caches `sheetIDMap`/`branchList`/`exportTaskList`); reuse its helpers when extending cloud features.
+- HTTP utilities (`utils/request.ts`) centralize fetch logic and should be reused for any new remote calls.
 
 ## Build & Validation
-- Install deps with `npm install`; hot reload TypeScript via `npm run watch` (task `npm: 0`), build release bundles with `npm run compile`, and exercise incremental checks with `npm run watch-tests`.
-- Webpack outputs to `dist/extension.js`; adjust shared globals with `webpack.config.js` in mind when pulling new dependencies.
-- There is no dedicated automated suite beyond watch-tests; lean on type checking plus manual validation of core commands and webviews.
+- Standard workflow: `npm install`, then `npm run watch` (task `npm: 0`) for type checking + incremental build; use `npm run compile` for production bundle (`dist/extension.js`).
+- Incremental validation relies on `npm run watch-tests` (task `npm: 1`); no other automated tests exist, so manual verification of commands/webviews is expected.
+- Webpack config (`webpack.config.js`) shares globals—adjust it when introducing new entry points or externals.
 
 ## Conventions & Pitfalls
-- Keep modules idempotent and store disposables in `context.subscriptions`; expose memoized accessors (`getLuaCompletion`, `getDotaApiNoteClass`) when sharing state.
-- Settings toggles live under namespaced keys (`dota2-tools.A*`); add new ones to `package.json`, `package.nls*.json`, and `src/declarations/common.d.ts` together.
-- Many commands assume valid `${game}`/`${content}` directories; call `isValidFolder()` and report actionable status messages when paths are missing.
-- Prefer shared helpers (`utils/kvUtils`, `utils/pathUtils`, `utils/getWebviewContent`) over bespoke logic to stay aligned with existing workflows.
+- Register disposables on `context.subscriptions`; memoize singleton accessors (e.g. `getDotaApiNoteClass`, `getLuaCompletion`) for cross-module sharing.
+- Many commands assume resolved addon directories; when paths are missing, use `showStatusBarMessage` plus friendly `vscode.window` prompts instead of throwing.
+- Prefer helpers in `utils/` (`kvUtils`, `pathUtils`, `getWebviewContent`, `findFile`) over bespoke logic to stay aligned with existing error handling and token resolution.
+- New commands must be registered in `extension.ts` and declared in `package.json` contributions + localization files to appear in the command palette.
