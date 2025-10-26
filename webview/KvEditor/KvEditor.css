@@ -635,6 +635,10 @@ body.kv-ability-editor-open {
 	overflow: hidden;
 }
 
+body.kv-column-options-editor-open {
+	overflow: hidden;
+}
+
 .kv-button {
 	display: inline-flex;
 	align-items: center;
@@ -817,6 +821,120 @@ body.kv-ability-editor-open {
 	font-size: 13px;
 }
 
+.kv-column-options-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 60;
+}
+
+.kv-column-options-dialog {
+	width: min(640px, 90vw);
+	max-height: 70vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+	color: var(--vscode-editorWidget-foreground, var(--vscode-editor-foreground));
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 6px;
+	box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+.kv-column-options-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+}
+
+.kv-column-options-title {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.kv-column-options-body {
+	flex: 1 1 auto;
+	padding: 16px;
+	overflow: auto;
+}
+
+.kv-column-options-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.kv-column-options-row {
+	display: grid;
+	grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(180px, 1.2fr) auto;
+	gap: 8px;
+	align-items: center;
+	padding: 12px;
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 6px;
+	background: var(--vscode-editor-background);
+}
+
+.kv-column-options-input {
+	width: 100%;
+}
+
+.kv-column-options-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.kv-column-options-action {
+	padding: 4px;
+	width: 28px;
+	height: 28px;
+}
+
+.kv-column-options-action .codicon {
+	font-size: 14px;
+}
+
+.kv-column-options-empty {
+	padding: 24px;
+	text-align: center;
+	border: 1px dashed var(--vscode-panel-border);
+	border-radius: 6px;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-descriptionForeground);
+	font-size: 13px;
+}
+
+.kv-column-options-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 16px;
+	border-top: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-sideBar-background);
+}
+
+.kv-column-options-footer-right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.kv-column-options-error {
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground));
+	background: var(--vscode-inputValidation-errorBackground, transparent);
+	border: 1px solid var(--vscode-inputValidation-errorBorder, transparent);
+}
+
 .kv-ability-editor-footer {
 	display: flex;
 	align-items: center;
@@ -876,6 +994,52 @@ body.kv-ability-editor-open {
 	flex-direction: column;
 	gap: 4px;
 	align-items: flex-start;
+}
+
+.kv-column-header-title-row {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	min-height: 18px;
+}
+
+.kv-column-options-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: transparent;
+	color: var(--vscode-descriptionForeground);
+	padding: 0;
+	margin-left: auto;
+	width: 18px;
+	height: 18px;
+	border-radius: 3px;
+	font-size: 14px;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.kv-column-options-button .codicon {
+	font-size: 14px;
+}
+
+.kv-column-header-title-row:hover .kv-column-options-button,
+.kv-column-options-button:focus-visible {
+	opacity: 1;
+	pointer-events: auto;
+	color: var(--vscode-editor-foreground);
+}
+
+.kv-column-options-button:hover {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-column-options-button:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
 }
 
 .kv-column-letter {
@@ -943,6 +1107,8 @@ body.kv-ability-editor-open {
 }
 
 .kv-column-name {
+	flex: 1 1 auto;
+	min-width: 0;
 	font-size: 11px;
 	color: var(--vscode-descriptionForeground);
 	text-overflow: ellipsis;

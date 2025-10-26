@@ -45,6 +45,7 @@ let columnOptionConfig = Object.create(null);
 
 const modifiedColumns = new Set();
 const originalColumnWidths = Object.create(null);
+let columnOptionsEditorState = null;
 let resizeState = null;
 let openMultiSelectContext = null;
 let pendingMultiSelectReopen = null;
@@ -2045,7 +2046,29 @@ function renderTable(columns, rows, columnOptions) {
 			nameEl.textContent = headerLabel;
 			nameEl.title = headerLabel;
 			wrapper.appendChild(letterButton);
-			wrapper.appendChild(nameEl);
+			const titleRow = document.createElement('div');
+			titleRow.className = 'kv-column-header-title-row';
+			titleRow.appendChild(nameEl);
+			const columnFieldConfig = columnOptions?.[column];
+			const optionsButton = document.createElement('button');
+			optionsButton.type = 'button';
+			optionsButton.className = 'kv-column-options-button';
+			optionsButton.title = `编辑 ${headerLabel} 下拉选项`;
+			optionsButton.setAttribute('aria-label', `编辑 ${headerLabel} 下拉选项`);
+			optionsButton.innerHTML = '<span class="codicon codicon-list-unordered"></span>';
+			optionsButton.addEventListener('mousedown', (event) => event.stopPropagation());
+			optionsButton.addEventListener('click', (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				openColumnOptionsEditor({
+					column,
+					columnName: headerLabel,
+					folderType: latestPayload?.folderType ?? 'custom',
+					options: cloneColumnOptionEntries(columnFieldConfig?.options ?? []),
+				});
+			});
+			titleRow.appendChild(optionsButton);
+			wrapper.appendChild(titleRow);
 			th.appendChild(wrapper);
 		}
 		if (columnIndex >= 0) {
@@ -2497,6 +2520,25 @@ function cloneAbilityValuesEntries(entries) {
 	}));
 }
 
+function cloneColumnOptionEntries(options) {
+	if (!Array.isArray(options)) {
+		return [];
+	}
+	return options.map((option) => {
+		const value = typeof option?.value === 'string' ? option.value : '';
+		const label = typeof option?.label === 'string' ? option.label : '';
+		const description = typeof option?.description === 'string' ? option.description : '';
+		const hasFallbackFlag = option && typeof option === 'object' && Object.prototype.hasOwnProperty.call(option, 'labelIsFallback');
+		const labelIsFallback = hasFallbackFlag ? option.labelIsFallback === true : false;
+		return {
+			value,
+			label,
+			description,
+			labelIsFallback,
+		};
+	});
+}
+
 function createNewAbilityValuesEntry(existingEntries) {
 	const usedKeys = new Set();
 	(existingEntries || []).forEach((entry) => {
@@ -2923,6 +2965,388 @@ function submitAbilityValuesEditor() {
 		},
 	});
 	closeAbilityValuesEditor();
+}
+
+function openColumnOptionsEditor(context) {
+	if (!context || !context.column) {
+		return;
+	}
+	closeColumnOptionsEditor();
+	const overlay = document.createElement('div');
+	overlay.className = 'kv-column-options-overlay';
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-column-options-dialog';
+	overlay.appendChild(dialog);
+	const header = document.createElement('div');
+	header.className = 'kv-column-options-header';
+	const title = document.createElement('div');
+	title.className = 'kv-column-options-title';
+	const titleParts = [];
+	if (context.columnName) {
+		titleParts.push(context.columnName);
+	}
+	titleParts.push('下拉选项');
+	title.textContent = titleParts.join(' · ');
+	header.appendChild(title);
+	const closeButton = document.createElement('button');
+	closeButton.type = 'button';
+	closeButton.className = 'kv-button kv-button-icon kv-column-options-close';
+	closeButton.title = '关闭';
+	closeButton.innerHTML = '<span class="codicon codicon-close"></span>';
+	header.appendChild(closeButton);
+	dialog.appendChild(header);
+	const body = document.createElement('div');
+	body.className = 'kv-column-options-body';
+	const listContainer = document.createElement('div');
+	listContainer.className = 'kv-column-options-list';
+	body.appendChild(listContainer);
+	dialog.appendChild(body);
+	const footer = document.createElement('div');
+	footer.className = 'kv-column-options-footer';
+	const footerLeft = document.createElement('div');
+	footerLeft.className = 'kv-column-options-footer-left';
+	const addButton = document.createElement('button');
+	addButton.type = 'button';
+	addButton.className = 'kv-button kv-button-secondary';
+	addButton.textContent = '新增选项';
+	footerLeft.appendChild(addButton);
+	footer.appendChild(footerLeft);
+	const footerRight = document.createElement('div');
+	footerRight.className = 'kv-column-options-footer-right';
+	const errorEl = document.createElement('div');
+	errorEl.className = 'kv-column-options-error';
+	errorEl.hidden = true;
+	footerRight.appendChild(errorEl);
+	const cancelButton = document.createElement('button');
+	cancelButton.type = 'button';
+	cancelButton.className = 'kv-button kv-button-secondary';
+	cancelButton.textContent = '取消';
+	footerRight.appendChild(cancelButton);
+	const saveButton = document.createElement('button');
+	saveButton.type = 'button';
+	saveButton.className = 'kv-button kv-button-primary';
+	saveButton.textContent = '保存';
+	footerRight.appendChild(saveButton);
+	footer.appendChild(footerRight);
+	dialog.appendChild(footer);
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			closeColumnOptionsEditor();
+		}
+	};
+	const options = cloneColumnOptionEntries(context.options || []);
+	const state = {
+		overlay,
+		dialog,
+		listContainer,
+		errorEl,
+		column: context.column,
+		columnName: context.columnName || context.column,
+		folderType: context.folderType || (latestPayload?.folderType ?? 'custom'),
+		options,
+		keyHandler,
+	};
+	listContainer.addEventListener('input', handleColumnOptionsEditorInput);
+	listContainer.addEventListener('click', handleColumnOptionsEditorClick);
+	overlay.addEventListener('click', (event) => {
+		if (event.target === overlay) {
+			closeColumnOptionsEditor();
+		}
+	});
+	dialog.addEventListener('click', (event) => event.stopPropagation());
+	closeButton.addEventListener('click', () => closeColumnOptionsEditor());
+	cancelButton.addEventListener('click', () => closeColumnOptionsEditor());
+	saveButton.addEventListener('click', () => submitColumnOptionsEditor());
+	addButton.addEventListener('click', () => {
+		if (!columnOptionsEditorState) {
+			return;
+		}
+		resetColumnOptionsEditorError();
+		columnOptionsEditorState.options.push({ value: '', label: '', description: '', labelIsFallback: true });
+		renderColumnOptionsEditorOptions();
+		focusColumnOptionsEditorInput(columnOptionsEditorState.options.length - 1, 'value');
+	});
+	resetColumnOptionsEditorError(state);
+	columnOptionsEditorState = state;
+	renderColumnOptionsEditorOptions();
+	document.body.appendChild(overlay);
+	document.addEventListener('keydown', keyHandler, true);
+	document.body.classList.add('kv-column-options-editor-open');
+	if (options.length) {
+		focusColumnOptionsEditorInput(0, 'value');
+	}
+}
+
+function closeColumnOptionsEditor() {
+	if (!columnOptionsEditorState) {
+		return;
+	}
+	const { overlay, listContainer, keyHandler } = columnOptionsEditorState;
+	if (listContainer) {
+		listContainer.removeEventListener('input', handleColumnOptionsEditorInput);
+		listContainer.removeEventListener('click', handleColumnOptionsEditorClick);
+	}
+	if (overlay?.parentElement) {
+		overlay.parentElement.removeChild(overlay);
+	}
+	if (keyHandler) {
+		document.removeEventListener('keydown', keyHandler, true);
+	}
+	document.body.classList.remove('kv-column-options-editor-open');
+	columnOptionsEditorState = null;
+}
+
+function resetColumnOptionsEditorError(state) {
+	const targetState = state || columnOptionsEditorState;
+	if (!targetState?.errorEl) {
+		return;
+	}
+	targetState.errorEl.textContent = '';
+	targetState.errorEl.hidden = true;
+}
+
+function setColumnOptionsEditorError(message) {
+	if (!columnOptionsEditorState?.errorEl) {
+		return;
+	}
+	columnOptionsEditorState.errorEl.textContent = message || '存在未通过校验的内容。';
+	columnOptionsEditorState.errorEl.hidden = false;
+}
+
+function renderColumnOptionsEditorOptions() {
+	if (!columnOptionsEditorState) {
+		return;
+	}
+	const { listContainer, options } = columnOptionsEditorState;
+	listContainer.innerHTML = '';
+	if (!options.length) {
+		const empty = document.createElement('div');
+		empty.className = 'kv-column-options-empty';
+		empty.textContent = '暂无下拉选项，点击“新增选项”开始添加。';
+		listContainer.appendChild(empty);
+		return;
+	}
+	options.forEach((option, index) => {
+		const row = document.createElement('div');
+		row.className = 'kv-column-options-row';
+		row.dataset.index = String(index);
+		const valueInput = document.createElement('input');
+		valueInput.type = 'text';
+		valueInput.className = 'kv-ability-editor-input kv-column-options-input';
+		valueInput.placeholder = '选项值';
+		valueInput.dataset.role = 'value';
+		valueInput.dataset.index = String(index);
+		valueInput.value = option.value;
+		row.appendChild(valueInput);
+		const labelInput = document.createElement('input');
+		labelInput.type = 'text';
+		labelInput.className = 'kv-ability-editor-input kv-column-options-input';
+		labelInput.placeholder = '显示文本（可选）';
+		labelInput.dataset.role = 'label';
+		labelInput.dataset.index = String(index);
+		labelInput.value = option.labelIsFallback ? '' : option.label;
+		row.appendChild(labelInput);
+		const descriptionInput = document.createElement('input');
+		descriptionInput.type = 'text';
+		descriptionInput.className = 'kv-ability-editor-input kv-column-options-input';
+		descriptionInput.placeholder = '描述（可选）';
+		descriptionInput.dataset.role = 'description';
+		descriptionInput.dataset.index = String(index);
+		descriptionInput.value = option.description;
+		row.appendChild(descriptionInput);
+		const actions = document.createElement('div');
+		actions.className = 'kv-column-options-actions';
+		const moveUpButton = document.createElement('button');
+		moveUpButton.type = 'button';
+		moveUpButton.className = 'kv-button kv-button-tertiary kv-column-options-action';
+		moveUpButton.dataset.role = 'move-up';
+		moveUpButton.dataset.index = String(index);
+		moveUpButton.innerHTML = '<span class="codicon codicon-arrow-up"></span>';
+		moveUpButton.title = '上移';
+		moveUpButton.disabled = index === 0;
+		actions.appendChild(moveUpButton);
+		const moveDownButton = document.createElement('button');
+		moveDownButton.type = 'button';
+		moveDownButton.className = 'kv-button kv-button-tertiary kv-column-options-action';
+		moveDownButton.dataset.role = 'move-down';
+		moveDownButton.dataset.index = String(index);
+		moveDownButton.innerHTML = '<span class="codicon codicon-arrow-down"></span>';
+		moveDownButton.title = '下移';
+		moveDownButton.disabled = index === options.length - 1;
+		actions.appendChild(moveDownButton);
+		const removeButton = document.createElement('button');
+		removeButton.type = 'button';
+		removeButton.className = 'kv-button kv-button-tertiary kv-column-options-action';
+		removeButton.dataset.role = 'remove';
+		removeButton.dataset.index = String(index);
+		removeButton.innerHTML = '<span class="codicon codicon-trash"></span>';
+		removeButton.title = '删除';
+		actions.appendChild(removeButton);
+		row.appendChild(actions);
+		listContainer.appendChild(row);
+	});
+}
+
+function handleColumnOptionsEditorInput(event) {
+	if (!columnOptionsEditorState) {
+		return;
+	}
+	const target = event.target;
+	if (!(target instanceof HTMLInputElement)) {
+		return;
+	}
+	const index = Number(target.dataset.index ?? '-1');
+	if (Number.isNaN(index) || index < 0) {
+		return;
+	}
+	const entry = columnOptionsEditorState.options[index];
+	if (!entry) {
+		return;
+	}
+	const role = target.dataset.role;
+	if (role === 'value') {
+		entry.value = target.value;
+		if (entry.labelIsFallback) {
+			entry.label = entry.value;
+		}
+	} else if (role === 'label') {
+		const rawLabel = target.value;
+		entry.label = rawLabel;
+		entry.labelIsFallback = rawLabel.trim().length === 0;
+		if (entry.labelIsFallback) {
+			entry.label = entry.value;
+		}
+	} else if (role === 'description') {
+		entry.description = target.value;
+	}
+	resetColumnOptionsEditorError();
+}
+
+function handleColumnOptionsEditorClick(event) {
+	if (!columnOptionsEditorState) {
+		return;
+	}
+	const target = event.target instanceof HTMLElement ? event.target.closest('button[data-role]') : null;
+	if (!(target instanceof HTMLButtonElement)) {
+		return;
+	}
+	const index = Number(target.dataset.index ?? '-1');
+	if (Number.isNaN(index) || index < 0) {
+		return;
+	}
+	const role = target.dataset.role;
+	const { options } = columnOptionsEditorState;
+	if (role === 'remove') {
+		options.splice(index, 1);
+		renderColumnOptionsEditorOptions();
+		resetColumnOptionsEditorError();
+		if (options.length) {
+			const focusIndex = Math.min(index, options.length - 1);
+			focusColumnOptionsEditorInput(focusIndex, 'value');
+		}
+		return;
+	}
+	if (role === 'move-up' && index > 0) {
+		const temp = options[index - 1];
+		options[index - 1] = options[index];
+		options[index] = temp;
+		renderColumnOptionsEditorOptions();
+		focusColumnOptionsEditorInput(index - 1, 'value');
+		resetColumnOptionsEditorError();
+		return;
+	}
+	if (role === 'move-down' && index < options.length - 1) {
+		const temp = options[index + 1];
+		options[index + 1] = options[index];
+		options[index] = temp;
+		renderColumnOptionsEditorOptions();
+		focusColumnOptionsEditorInput(index + 1, 'value');
+		resetColumnOptionsEditorError();
+	}
+}
+
+function focusColumnOptionsEditorInput(index, role) {
+	if (!columnOptionsEditorState) {
+		return;
+	}
+	window.requestAnimationFrame(() => {
+		if (!columnOptionsEditorState) {
+			return;
+		}
+		const selector = `.kv-column-options-input[data-role="${role}"][data-index="${index}"]`;
+		const input = columnOptionsEditorState.listContainer.querySelector(selector);
+		if (input instanceof HTMLInputElement) {
+			input.focus({ preventScroll: false });
+			if (role === 'value' || role === 'label') {
+				input.select();
+			}
+		}
+	});
+}
+
+function validateColumnOptionsEntries(entries) {
+	const seen = new Set();
+	for (let i = 0; i < entries.length; i += 1) {
+		const value = (entries[i].value || '').trim();
+		if (!value) {
+			return { valid: false, message: `第 ${i + 1} 行的选项值不能为空。` };
+		}
+		const key = value.toLowerCase();
+		if (seen.has(key)) {
+			return { valid: false, message: `选项值 "${value}" 重复。` };
+		}
+		seen.add(key);
+	}
+	return { valid: true };
+}
+
+function submitColumnOptionsEditor() {
+	if (!columnOptionsEditorState) {
+		return;
+	}
+	resetColumnOptionsEditorError();
+	const { column, folderType, options } = columnOptionsEditorState;
+	const normalized = options.map((option) => {
+		const value = (option.value || '').trim();
+		const description = (option.description || '').trim();
+		const hasFallback = option.labelIsFallback === true;
+		const rawLabel = hasFallback ? '' : (option.label || '').trim();
+		const labelIsFallback = hasFallback || rawLabel.length === 0;
+		return {
+			value,
+			label: rawLabel,
+			description,
+			labelIsFallback,
+		};
+	});
+	const validation = validateColumnOptionsEntries(normalized);
+	if (!validation.valid) {
+		setColumnOptionsEditorError(validation.message || '存在未通过校验的内容。');
+		return;
+	}
+	const payloadOptions = normalized.map((entry) => {
+		const result = {
+			value: entry.value,
+		};
+		if (!entry.labelIsFallback && entry.label.length) {
+			result.label = entry.label;
+		}
+		if (entry.description) {
+			result.description = entry.description;
+		}
+		return result;
+	});
+	vscode.postMessage({
+		type: 'saveColumnOptions',
+		payload: {
+			column,
+			folderType,
+			options: payloadOptions,
+		},
+	});
+	closeColumnOptionsEditor();
 }
 
 function createTextureMenuRequestId() {
