@@ -1460,5 +1460,23 @@
 		],
 		"multiple": false,
 		"separator": "|"
+	},
+	"ItemShareability": {
+		"options": [
+			{
+				"value": "ITEM_FULLY_SHAREABLE",
+				"label": "完全共享"
+			},
+			{
+				"value": "ITEM_NOT_SHAREABLE",
+				"label": "不共享"
+			},
+			{
+				"value": "ITEM_PARTIALLY_SHAREABLE",
+				"label": "部分共享"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
 	}
 }

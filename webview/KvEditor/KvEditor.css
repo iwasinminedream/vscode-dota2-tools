@@ -875,12 +875,71 @@ body.kv-ability-editor-open {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
+	align-items: flex-start;
 }
 
 .kv-column-letter {
+	background: transparent;
+	border: none;
+	padding: 0;
+	margin: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	color: var(--vscode-editor-foreground);
 	font-size: 12px;
 	font-weight: 600;
-	color: var(--vscode-editor-foreground);
+	font-family: inherit;
+	line-height: 1;
+	position: relative;
+	cursor: default;
+}
+
+.kv-column-letter:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	border-radius: 2px;
+}
+
+
+.kv-column-letter-text {
+	opacity: 1;
+	transition: opacity 0.12s ease;
+}
+
+.kv-column-letter-icon {
+	position: absolute;
+	inset: 0;
+	/* display: none !important; */
+	opacity: 0;
+	align-items: center;
+	justify-content: center;
+	font-size: 14px;
+}
+
+.kv-column-draggable .kv-column-letter {
+	cursor: grab;
+}
+
+.kv-column-letter.kv-column-letter-dragging,
+.kv-column-draggable .kv-column-letter:active {
+	cursor: grabbing;
+}
+
+
+.kv-column-draggable:hover .kv-column-letter-text,
+.kv-column-letter.kv-column-letter-dragging .kv-column-letter-text {
+	opacity: 0;
+}
+
+.kv-column-draggable:hover .kv-column-letter-icon,
+.kv-column-letter.kv-column-letter-dragging .kv-column-letter-icon {
+	/* display: inline-flex !important; */
+	opacity: 1;
+}
+
+.kv-column-draggable .kv-column-letter[aria-disabled="true"] {
+	cursor: default;
 }
 
 .kv-column-name {
@@ -919,6 +978,35 @@ body.kv-resizing .kv-resizer::after {
 body.kv-resizing,
 body.kv-resizing * {
 	cursor: col-resize !important;
+}
+
+body.kv-column-dragging,
+body.kv-column-dragging * {
+	cursor: grabbing !important;
+}
+
+.kv-table th.kv-column-drop-target-before,
+.kv-table th.kv-column-drop-target-after {
+	background: rgba(37, 150, 190, 0.12);
+}
+
+.kv-table th.kv-column-drop-target-before::before,
+.kv-table th.kv-column-drop-target-after::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: var(--vscode-focusBorder);
+	border-radius: 2px;
+}
+
+.kv-table th.kv-column-drop-target-before::before {
+	left: -1px;
+}
+
+.kv-table th.kv-column-drop-target-after::after {
+	right: -1px;
 }
 
 body.kv-texture-menu-open {

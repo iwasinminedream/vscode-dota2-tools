@@ -54,6 +54,7 @@ let fillHandleElement = null;
 let fillHandleState = null;
 let fillPreviewCells = [];
 let fillPopupState = null;
+let columnDragState = null;
 
 const FILL_DEFAULT_STEP = 1;
 const FILL_DEFAULT_RATIO = 2;
@@ -1876,6 +1877,7 @@ function renderTable(columns, rows, columnOptions) {
 	if (!tableSection) {
 		return;
 	}
+	cleanupColumnDragState();
 	let preservePending = Boolean(pendingMultiSelectReopen);
 	if (!preservePending && openMultiSelectContext && openMultiSelectContext.isMulti) {
 		const reopenColumn = openMultiSelectContext.select?.dataset.key ?? '';
@@ -1922,7 +1924,9 @@ function renderTable(columns, rows, columnOptions) {
 	for (const column of displayColumns) {
 		const th = document.createElement('th');
 		const headerLabel = columnLabels.get(column) ?? column;
+		const columnIndex = column === ROW_NUMBER_COLUMN_KEY ? -1 : columns.indexOf(column);
 		th.dataset.column = column;
+		th.dataset.columnIndex = String(columnIndex);
 		th.style.width = `${getColumnWidth(column, headerLabel)}px`;
 		th.style.minWidth = `${getMinColumnWidth(column)}px`;
 		if (column === ROW_NUMBER_COLUMN_KEY) {
@@ -1930,16 +1934,44 @@ function renderTable(columns, rows, columnOptions) {
 		} else {
 			const wrapper = document.createElement('div');
 			wrapper.className = 'kv-column-header';
-			const letterEl = document.createElement('span');
-			letterEl.className = 'kv-column-letter';
-			letterEl.textContent = columnLetters.get(column) ?? '';
+			const letterButton = document.createElement('button');
+			letterButton.type = 'button';
+			letterButton.className = 'kv-column-letter';
+			const letterText = document.createElement('span');
+			letterText.className = 'kv-column-letter-text';
+			letterText.textContent = columnLetters.get(column) ?? '';
+			letterButton.appendChild(letterText);
+			const letterIcon = document.createElement('span');
+			letterIcon.className = 'codicon codicon-gripper kv-column-letter-icon';
+			letterIcon.setAttribute('aria-hidden', 'true');
+			letterButton.appendChild(letterIcon);
+			if (columnIndex > 0) {
+				letterButton.setAttribute('draggable', 'true');
+				letterButton.setAttribute('aria-label', `拖动列 ${headerLabel}`);
+				letterButton.addEventListener('dragstart', (event) => handleColumnDragStart(event, column, columnIndex, letterButton));
+				letterButton.addEventListener('dragend', (event) => handleColumnDragEnd(event, letterButton));
+				letterButton.addEventListener('mousedown', (event) => event.stopPropagation());
+				letterButton.addEventListener('click', (event) => event.preventDefault());
+				th.classList.add('kv-column-draggable');
+			} else {
+				letterButton.setAttribute('draggable', 'false');
+				letterButton.setAttribute('aria-disabled', 'true');
+				letterButton.tabIndex = -1;
+				letterButton.addEventListener('mousedown', (event) => event.stopPropagation());
+				letterButton.addEventListener('click', (event) => event.preventDefault());
+			}
 			const nameEl = document.createElement('span');
 			nameEl.className = 'kv-column-name';
 			nameEl.textContent = headerLabel;
 			nameEl.title = headerLabel;
-			wrapper.appendChild(letterEl);
+			wrapper.appendChild(letterButton);
 			wrapper.appendChild(nameEl);
 			th.appendChild(wrapper);
+		}
+		if (columnIndex >= 0) {
+			th.addEventListener('dragover', (event) => handleColumnDragOver(event, th, column, columnIndex));
+			th.addEventListener('dragleave', (event) => handleColumnDragLeave(event, th));
+			th.addEventListener('drop', (event) => handleColumnDrop(event, column));
 		}
 		const resizer = document.createElement('div');
 		resizer.className = 'kv-resizer';
@@ -2862,6 +2894,20 @@ function requestRowReorder(sourceId, sourceIndex, targetIndex) {
 	});
 }
 
+function requestColumnReorder(sourceKey, sourceIndex, targetIndex) {
+	if (!sourceKey || typeof sourceIndex !== 'number' || Number.isNaN(sourceIndex) || typeof targetIndex !== 'number' || Number.isNaN(targetIndex)) {
+		return;
+	}
+	vscode.postMessage({
+		type: 'reorderColumns',
+		payload: {
+			sourceKey,
+			sourceIndex,
+			targetIndex,
+		},
+	});
+}
+
 function handleTextureMenuData(payload) {
 	if (!payload || typeof payload.requestId !== 'string') {
 		return;
@@ -2886,6 +2932,139 @@ function handleTextureMenuError(payload) {
 	clearTimeout(pending.timeout);
 	pendingTextureMenuRequests.delete(payload.requestId);
 	pending.reject(payload.error || '加载失败');
+}
+
+function handleColumnDragStart(event, columnKey, columnIndex, handleElement) {
+	if (!event || columnIndex <= 0 || !latestPayload?.columns?.length) {
+		if (event) {
+			event.preventDefault();
+		}
+		return;
+	}
+	columnDragState = {
+		sourceKey: columnKey,
+		sourceIndex: columnIndex,
+		targetIndex: undefined,
+		targetHeader: null,
+		dropPosition: null,
+		handle: handleElement || null,
+	};
+	if (event.dataTransfer) {
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', columnKey ?? '');
+	}
+	if (handleElement instanceof HTMLElement) {
+		handleElement.classList.add('kv-column-letter-dragging');
+	}
+	document.body.classList.add('kv-column-dragging');
+}
+
+function handleColumnDragEnd(event, handleElement) {
+	if (handleElement instanceof HTMLElement) {
+		handleElement.classList.remove('kv-column-letter-dragging');
+	}
+	cleanupColumnDragState();
+}
+
+
+function handleColumnDragOver(event, headerElement, columnKey, columnIndex) {
+	if (!columnDragState || !Array.isArray(latestPayload?.columns) || columnIndex < 0 || !headerElement) {
+		return;
+	}
+	const columns = latestPayload.columns;
+	const rect = headerElement.getBoundingClientRect();
+	const center = rect.left + rect.width / 2;
+	let position = event.clientX < center ? 'before' : 'after';
+	if (columnIndex === 0 && position === 'before') {
+		position = 'after';
+	}
+	let dropIndex = position === 'before' ? columnIndex : columnIndex + 1;
+	dropIndex = Math.max(1, Math.min(dropIndex, columns.length));
+	const sourceIndex = columnDragState.sourceIndex;
+	let effectiveTarget = dropIndex;
+	if (dropIndex > sourceIndex) {
+		effectiveTarget -= 1;
+	}
+	if (!Number.isInteger(effectiveTarget) || effectiveTarget === sourceIndex || effectiveTarget < 1) {
+		columnDragState.targetIndex = undefined;
+		clearColumnDropIndicator();
+		return;
+	}
+	columnDragState.targetIndex = dropIndex;
+	columnDragState.dropPosition = position;
+	setColumnDropIndicator(headerElement, position);
+	if (event) {
+		event.preventDefault();
+		if (event.dataTransfer) {
+			event.dataTransfer.dropEffect = 'move';
+		}
+	}
+}
+
+function handleColumnDragLeave(event, headerElement) {
+	if (!columnDragState || !headerElement) {
+		return;
+	}
+	const related = event?.relatedTarget;
+	if (related && headerElement.contains(related)) {
+		return;
+	}
+	if (columnDragState.targetHeader === headerElement) {
+		headerElement.classList.remove('kv-column-drop-target-before', 'kv-column-drop-target-after');
+		columnDragState.targetHeader = null;
+		columnDragState.targetIndex = undefined;
+		columnDragState.dropPosition = null;
+	}
+}
+
+function handleColumnDrop(event, columnKey) {
+	if (!columnDragState) {
+		return;
+	}
+	if (event) {
+		event.preventDefault();
+	}
+	const { sourceKey, sourceIndex, targetIndex } = columnDragState;
+	if (sourceKey && typeof targetIndex === 'number') {
+		let finalIndex = targetIndex;
+		if (finalIndex > sourceIndex) {
+			finalIndex -= 1;
+		}
+		const maxIndex = Math.max(1, ((latestPayload?.columns?.length ?? 1) - 1));
+		finalIndex = Math.max(1, Math.min(finalIndex, maxIndex));
+		if (finalIndex !== sourceIndex) {
+			requestColumnReorder(sourceKey, sourceIndex, finalIndex);
+		}
+	}
+	cleanupColumnDragState();
+}
+
+function setColumnDropIndicator(headerElement, position) {
+	if (!columnDragState || !headerElement) {
+		return;
+	}
+	if (columnDragState.targetHeader && columnDragState.targetHeader !== headerElement) {
+		columnDragState.targetHeader.classList.remove('kv-column-drop-target-before', 'kv-column-drop-target-after');
+	}
+	headerElement.classList.toggle('kv-column-drop-target-before', position === 'before');
+	headerElement.classList.toggle('kv-column-drop-target-after', position === 'after');
+	columnDragState.targetHeader = headerElement;
+}
+
+function clearColumnDropIndicator() {
+	if (columnDragState?.targetHeader) {
+		columnDragState.targetHeader.classList.remove('kv-column-drop-target-before', 'kv-column-drop-target-after');
+		columnDragState.targetHeader = null;
+	}
+}
+
+function cleanupColumnDragState() {
+	clearColumnDropIndicator();
+	if (columnDragState?.handle instanceof HTMLElement) {
+		columnDragState.handle.classList.remove('kv-column-letter-dragging');
+	}
+	columnDragState = null;
+	document.body.classList.remove('kv-column-dragging');
 }
 
 function handleRowDragStart(event, rowId, rowIndex, totalRows) {

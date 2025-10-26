@@ -102,6 +102,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					vscode.window.showErrorMessage(messageText);
 				});
 			}
+			if (message.type === 'reorderColumns') {
+				const reorderMessage: KvEditorColumnReorderMessage | undefined = message.payload;
+				this.handleReorderColumns(document, reorderMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+			}
 			if (message.type === 'requestTextureMenu') {
 				const requestPayload: TextureMenuRequestMessage | undefined = message.payload;
 				if (!requestPayload || typeof requestPayload.requestId !== 'string') {
@@ -1471,6 +1478,100 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private async handleReorderColumns(document: vscode.TextDocument, payload: KvEditorColumnReorderMessage | undefined): Promise<void> {
+		if (!payload) {
+			return;
+		}
+		const sourceKey = typeof payload.sourceKey === 'string' ? payload.sourceKey : '';
+		const sourceIndex = typeof payload.sourceIndex === 'number' ? payload.sourceIndex : -1;
+		const targetIndex = typeof payload.targetIndex === 'number' ? payload.targetIndex : -1;
+		if (!sourceKey || sourceIndex <= 0 || targetIndex <= 0 || !Number.isInteger(sourceIndex) || !Number.isInteger(targetIndex)) {
+			return;
+		}
+		const originalText = document.getText();
+		const parsed = this.parseKv(originalText);
+		if (!parsed.columns.length) {
+			return;
+		}
+		const columns = parsed.columns.slice();
+		const sourcePosition = columns.indexOf(sourceKey);
+		if (sourcePosition <= 0 || sourcePosition !== sourceIndex) {
+			return;
+		}
+		const kvObject = readKeyValue2(originalText ?? '');
+		const header = Object.keys(kvObject)[0];
+		if (!header) {
+			throw new Error('无法解析 KV 根节点，未执行列排序。');
+		}
+		const blockRaw = kvObject[header];
+		if (!blockRaw || typeof blockRaw !== 'object') {
+			throw new Error('当前 KV 结构不支持列排序。');
+		}
+		const totalColumns = columns.length;
+		let finalTargetIndex = Math.max(1, Math.min(targetIndex, totalColumns - 1));
+		if (finalTargetIndex === sourcePosition) {
+			return;
+		}
+		const [movedKey] = columns.splice(sourcePosition, 1);
+		columns.splice(finalTargetIndex, 0, movedKey);
+		const orderedKeys = columns.filter((key) => key !== 'id');
+		const block = blockRaw as Record<string, unknown>;
+		const entries = Object.entries(block);
+		if (!entries.length) {
+			return;
+		}
+		const reorderedBlock: Record<string, unknown> = {};
+		for (const [rowKey, rowValue] of entries) {
+			if (this.isPlainObject(rowValue)) {
+				reorderedBlock[rowKey] = this.reorderRowColumns(rowValue as Record<string, unknown>, orderedKeys);
+			} else {
+				reorderedBlock[rowKey] = rowValue;
+			}
+		}
+		kvObject[header] = reorderedBlock;
+		const newContent = writeKeyValue(kvObject);
+		const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+		const edit = new vscode.WorkspaceEdit();
+		edit.replace(document.uri, fullRange, newContent);
+		const applied = await vscode.workspace.applyEdit(edit);
+		if (!applied) {
+			throw new Error('写入 KV 文本失败。');
+		}
+		const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+		if (autoSaveMode && autoSaveMode !== 'off') {
+			const saved = await document.save();
+			if (!saved) {
+				throw new Error('保存 KV 文件失败。');
+			}
+		}
+	}
+
+	private reorderRowColumns(row: Record<string, unknown>, orderedKeys: string[]): Record<string, unknown> {
+		if (!orderedKeys.length) {
+			return row;
+		}
+		const entries = Object.entries(row);
+		if (!entries.length) {
+			return row;
+		}
+		const remaining = new Map(entries);
+		const reordered: Record<string, unknown> = {};
+		for (const key of orderedKeys) {
+			if (!remaining.has(key)) {
+				continue;
+			}
+			reordered[key] = remaining.get(key) as unknown;
+			remaining.delete(key);
+		}
+		for (const [key, value] of entries) {
+			if (remaining.has(key)) {
+				reordered[key] = value;
+				remaining.delete(key);
+			}
+		}
+		return reordered;
+	}
+
 }
 
 interface KvEditorPayload {
@@ -1550,6 +1651,12 @@ interface LocalizationCacheEntry {
 type LocalizationTokenMap = Map<string, string>;
 interface KvEditorReorderMessage {
 	sourceId: string;
+	sourceIndex: number;
+	targetIndex: number;
+}
+
+interface KvEditorColumnReorderMessage {
+	sourceKey: string;
 	sourceIndex: number;
 	targetIndex: number;
 }
