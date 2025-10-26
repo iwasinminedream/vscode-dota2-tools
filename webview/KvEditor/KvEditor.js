@@ -35,6 +35,7 @@ const FORMULA_TOOLTIP_HELP = [
 let latestPayload = undefined;
 let activeCell = undefined;
 const columnWidths = Object.create(null);
+let currentDocumentKey = undefined;
 
 let selectedCellKey = undefined;
 let selectedCell = undefined;
@@ -42,6 +43,8 @@ let selectedTd = undefined;
 let suppressFormulaCommit = false;
 let columnOptionConfig = Object.create(null);
 
+const modifiedColumns = new Set();
+const originalColumnWidths = Object.create(null);
 let resizeState = null;
 let openMultiSelectContext = null;
 let pendingMultiSelectReopen = null;
@@ -58,6 +61,9 @@ let columnDragState = null;
 
 const FILL_DEFAULT_STEP = 1;
 const FILL_DEFAULT_RATIO = 2;
+const COLUMN_WIDTH_SAVE_DEBOUNCE_MS = 600;
+
+let columnWidthSaveHandle = null;
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
@@ -1636,26 +1642,96 @@ function refreshTableWidth() {
 	table.style.width = `${Math.max(totalWidth, fallbackWidth)}px`;
 }
 
+function resetColumnState() {
+	for (const key of Object.keys(columnWidths)) {
+		delete columnWidths[key];
+	}
+	for (const key of Object.keys(originalColumnWidths)) {
+		delete originalColumnWidths[key];
+	}
+	modifiedColumns.clear();
+}
+
+function cancelColumnWidthSave() {
+	if (!columnWidthSaveHandle) {
+		return;
+	}
+	clearTimeout(columnWidthSaveHandle);
+	columnWidthSaveHandle = null;
+}
+
+function markColumnWidthChange(column, width) {
+	if (column === ROW_NUMBER_COLUMN_KEY) {
+		return;
+	}
+	const normalized = Math.max(getMinColumnWidth(column), Math.round(width));
+	const baseline = originalColumnWidths[column];
+	if (baseline === undefined) {
+		originalColumnWidths[column] = normalized;
+		modifiedColumns.delete(column);
+		return;
+	}
+	if (Math.round(baseline) === normalized) {
+		modifiedColumns.delete(column);
+	} else {
+		modifiedColumns.add(column);
+	}
+	if (!modifiedColumns.size) {
+		cancelColumnWidthSave();
+	}
+}
+
+function scheduleColumnWidthSave() {
+	if (!latestPayload || !modifiedColumns.size) {
+		return;
+	}
+	if (columnWidthSaveHandle) {
+		clearTimeout(columnWidthSaveHandle);
+	}
+	columnWidthSaveHandle = setTimeout(() => {
+		columnWidthSaveHandle = null;
+		const widthsPayload = {};
+		modifiedColumns.forEach((column) => {
+			const width = columnWidths[column];
+			if (typeof width !== 'number' || !Number.isFinite(width)) {
+				return;
+			}
+			const normalized = Math.max(getMinColumnWidth(column), Math.round(width));
+			const baseline = originalColumnWidths[column];
+			if (baseline !== undefined && Math.round(baseline) === normalized) {
+				return;
+			}
+			widthsPayload[column] = normalized;
+		});
+		if (!Object.keys(widthsPayload).length) {
+			return;
+		}
+		vscode.postMessage({
+			type: 'saveColumnWidths',
+			payload: {
+				widths: widthsPayload,
+			},
+		});
+		Object.entries(widthsPayload).forEach(([column, value]) => {
+			originalColumnWidths[column] = value;
+			modifiedColumns.delete(column);
+		});
+	}, COLUMN_WIDTH_SAVE_DEBOUNCE_MS);
+}
+
 // 更新指定列的宽度并刷新布局
 function updateColumnWidth(column, width) {
 	const adjusted = Math.max(getMinColumnWidth(column), width);
 	columnWidths[column] = adjusted;
-	if (!tableSection) {
-		return;
+	if (tableSection) {
+		const colElement = tableSection.querySelector(`col[data-column="${column}"]`);
+		if (colElement) {
+			colElement.style.width = `${adjusted}px`;
+		}
 	}
-	const colElement = tableSection.querySelector(`col[data-column="${column}"]`);
-	if (colElement) {
-		colElement.style.width = `${adjusted}px`;
-	}
-	// const headerCell = tableSection.querySelector(`th[data-column="${column}"]`);
-	// if (headerCell) {
-	// 	headerCell.style.width = `${adjusted}px`;
-	// }
-	// const dataCells = tableSection.querySelectorAll(`td[data-column="${column}"]`);
-	// dataCells.forEach((cell) => {
-	// 	cell.style.width = `${adjusted}px`;
-	// });
-	// refreshTableWidth();
+	refreshTableWidth();
+	markColumnWidthChange(column, adjusted);
+	scheduleColumnWidthSave();
 }
 
 // 开始列宽拖拽操作
@@ -1693,6 +1769,7 @@ function stopColumnResize() {
 	}
 	resizeState = null;
 	document.body.classList.remove('kv-resizing');
+	scheduleColumnWidthSave();
 }
 
 // 重新聚焦此前活跃的输入控件
@@ -1913,6 +1990,9 @@ function renderTable(columns, rows, columnOptions) {
 		}
 		columnLabels.set(column, headerLabel);
 		const width = getColumnWidth(column, headerLabel);
+		if (!(column in originalColumnWidths)) {
+			originalColumnWidths[column] = Math.round(width);
+		}
 		const colElement = document.createElement('col');
 		colElement.dataset.column = column;
 		colElement.style.width = `${width}px`;
@@ -3947,10 +4027,39 @@ function showTextureMenuError(message) {
 	textureMenuState.body.appendChild(closeButton);
 }
 
+function applyColumnLayout(columns, layout) {
+	if (!Array.isArray(columns) || !layout || typeof layout !== 'object') {
+		return;
+	}
+	const widths = layout.columnWidths;
+	if (!widths || typeof widths !== 'object') {
+		return;
+	}
+	for (const column of columns) {
+		if (column === ROW_NUMBER_COLUMN_KEY) {
+			continue;
+		}
+		const saved = widths[column];
+		if (typeof saved !== 'number' || !Number.isFinite(saved)) {
+			continue;
+		}
+		const normalized = Math.max(getMinColumnWidth(column), Math.round(saved));
+		columnWidths[column] = normalized;
+		originalColumnWidths[column] = normalized;
+		modifiedColumns.delete(column);
+	}
+}
+
 // 根据扩展端消息刷新整体界面
 function render(payload) {
 	if (!payload) {
 		return;
+	}
+	cancelColumnWidthSave();
+	const nextDocumentKey = (payload.documentKey || payload.fileName || '').toString();
+	if (currentDocumentKey !== nextDocumentKey) {
+		resetColumnState();
+		currentDocumentKey = nextDocumentKey;
 	}
 	latestPayload = payload;
 	const metaParts = [];
@@ -3989,6 +4098,7 @@ function render(payload) {
 		setSectionVisibility({ showTable: false, showEmpty: true, showError: false });
 		return;
 	}
+	applyColumnLayout(payload.columns, payload.columnLayout);
 	renderTable(payload.columns, payload.rows, columnOptionConfig);
 	if (emptySection) {
 		emptySection.textContent = '';

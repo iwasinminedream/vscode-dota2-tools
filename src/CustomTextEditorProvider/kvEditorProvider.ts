@@ -25,6 +25,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	private readonly columnOptionConfig: KvEditorColumnOptionMap;
 	private readonly textureMenuCache = new Map<string, TextureMenuRawIcon[]>();
 	private readonly localizationCache = new Map<string, LocalizationCacheEntry>();
+	private readonly userSettingsCache = new Map<string, KvEditorUserSettings>();
 	private heroFilterCache: TextureMenuHeroCache[] | undefined;
 
 	public async resolveCustomTextEditor(
@@ -109,6 +110,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					vscode.window.showErrorMessage(messageText);
 				});
 			}
+			if (message.type === 'saveColumnWidths') {
+				const saveMessage: KvEditorSaveColumnWidthsMessage | undefined = message.payload;
+				this.handleSaveColumnWidths(document, saveMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'requestTextureMenu') {
 				const requestPayload: TextureMenuRequestMessage | undefined = message.payload;
 				if (!requestPayload || typeof requestPayload.requestId !== 'string') {
@@ -132,19 +141,24 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private buildPayload(document: vscode.TextDocument, webview: vscode.Webview): KvEditorPayload {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		const documentKey = workspaceFolder ? this.getDocumentSettingsKey(document.uri, workspaceFolder) : undefined;
 		const settings = readKvEditorSettings();
 		const entry = settings ? findKvEntryForUri(document.uri, settings) : undefined;
 		const folderType: KvFolderType = entry?.type ?? 'custom';
 		const parsed = this.parseKv(document.getText());
 		this.enrichRowsWithLocalization(parsed.rows, folderType, document.uri.fsPath, entry);
+		const columnLayout = this.loadColumnLayout(document);
 		return {
 			fileName: path.basename(document.uri.fsPath),
+			documentKey,
 			folderType,
 			header: parsed.header,
 			columns: parsed.columns,
 			rows: parsed.rows,
 			error: parsed.error,
 			columnOptions: this.getResolvedColumnOptions(folderType),
+			columnLayout,
 			texturePreviews: this.buildTexturePreviews(document, parsed.rows, webview, entry),
 			scriptSupport: this.buildScriptSupport(folderType),
 		};
@@ -1546,6 +1560,195 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private async handleSaveColumnWidths(
+		document: vscode.TextDocument,
+		message?: KvEditorSaveColumnWidthsMessage,
+	): Promise<void> {
+		if (!message || typeof message !== 'object' || !message.widths) {
+			return;
+		}
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return;
+		}
+		const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+		if (!documentKey) {
+			return;
+		}
+		const sanitized = this.sanitizeColumnWidthMap(message.widths);
+		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
+		if (!sanitized || !Object.keys(sanitized).length) {
+			if (settings.files[documentKey]) {
+				delete settings.files[documentKey];
+				this.writeUserSettings(workspaceFolder, settings);
+			}
+			return;
+		}
+		const existingEntry = settings.files[documentKey];
+		const existingWidths = existingEntry?.columnWidths ? { ...existingEntry.columnWidths } : {};
+		const mergedWidths = { ...existingWidths, ...sanitized };
+		if (!Object.keys(mergedWidths).length) {
+			if (settings.files[documentKey]) {
+				delete settings.files[documentKey];
+				this.writeUserSettings(workspaceFolder, settings);
+			}
+			return;
+		}
+		settings.files[documentKey] = {
+			...existingEntry,
+			columnWidths: mergedWidths,
+		};
+		this.writeUserSettings(workspaceFolder, settings);
+	}
+
+	private loadColumnLayout(document: vscode.TextDocument): KvEditorColumnLayout | undefined {
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return undefined;
+		}
+		const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+		if (!documentKey) {
+			return undefined;
+		}
+		const settings = this.getUserSettings(workspaceFolder);
+		const entry = settings.files[documentKey];
+		if (!entry?.columnWidths || !Object.keys(entry.columnWidths).length) {
+			return undefined;
+		}
+		return {
+			columnWidths: { ...entry.columnWidths },
+		};
+	}
+
+	private getUserSettings(folder: vscode.WorkspaceFolder): KvEditorUserSettings {
+		const cacheKey = folder.uri.fsPath;
+		const cached = this.userSettingsCache.get(cacheKey);
+		if (cached) {
+			return cached;
+		}
+		const settings = this.readUserSettingsFromDisk(folder);
+		this.userSettingsCache.set(cacheKey, settings);
+		return settings;
+	}
+
+	private copyUserSettings(source: KvEditorUserSettings): KvEditorUserSettings {
+		const files: Record<string, KvEditorUserFileSettings> = {};
+		for (const [key, value] of Object.entries(source.files) as Array<[string, KvEditorUserFileSettings]>) {
+			files[key] = {
+				columnWidths: value.columnWidths ? { ...value.columnWidths } : undefined,
+			};
+		}
+		return { files };
+	}
+
+	private readUserSettingsFromDisk(folder: vscode.WorkspaceFolder): KvEditorUserSettings {
+		const settingsPath = this.getUserSettingsPath(folder);
+		if (!this.pathExists(settingsPath)) {
+			return { files: {} };
+		}
+		try {
+			const raw = fs.readFileSync(settingsPath, 'utf8');
+			const parsed = JSON.parse(raw) as unknown;
+			return this.normalizeUserSettings(parsed);
+		} catch (error) {
+			console.warn('[kvEditorProvider] Failed to read column width settings:', error);
+			return { files: {} };
+		}
+	}
+
+	private normalizeUserSettings(raw: unknown): KvEditorUserSettings {
+		const result: KvEditorUserSettings = { files: {} };
+		if (!raw || typeof raw !== 'object') {
+			return result;
+		}
+		const container = raw as Record<string, unknown>;
+		const filesSection = container.files;
+		if (!filesSection || typeof filesSection !== 'object') {
+			return result;
+		}
+		for (const [key, entry] of Object.entries(filesSection as Record<string, unknown>)) {
+			if (typeof key !== 'string' || !key) {
+				continue;
+			}
+			if (!entry || typeof entry !== 'object') {
+				continue;
+			}
+			const recordEntry = entry as Record<string, unknown>;
+			const columnWidths = this.sanitizeColumnWidthMap(recordEntry.columnWidths);
+			if (columnWidths && Object.keys(columnWidths).length) {
+				result.files[key] = { columnWidths };
+			}
+		}
+		return result;
+	}
+
+	private writeUserSettings(folder: vscode.WorkspaceFolder, settings: KvEditorUserSettings): void {
+		const targetPath = this.getUserSettingsPath(folder);
+		const dir = path.dirname(targetPath);
+		try {
+			fs.mkdirSync(dir, { recursive: true });
+			const serialized = this.serializeUserSettings(settings);
+			fs.writeFileSync(targetPath, `${serialized}\n`, 'utf8');
+			this.userSettingsCache.set(folder.uri.fsPath, this.copyUserSettings(settings));
+		} catch (error) {
+			console.warn('[kvEditorProvider] Failed to write column width settings:', error);
+			const message = error instanceof Error ? error.message : String(error);
+			throw new Error(`保存列宽失败：${message}`);
+		}
+	}
+
+	private serializeUserSettings(settings: KvEditorUserSettings): string {
+		const files: Record<string, KvEditorUserFileSettings> = {};
+		for (const [key, value] of Object.entries(settings.files) as Array<[string, KvEditorUserFileSettings]>) {
+			if (!value.columnWidths || !Object.keys(value.columnWidths).length) {
+				continue;
+			}
+			const sorted = Object.keys(value.columnWidths)
+				.sort()
+				.reduce<Record<string, number>>((acc, column) => {
+					acc[column] = value.columnWidths![column];
+					return acc;
+				}, {});
+			files[key] = { columnWidths: sorted };
+		}
+		return JSON.stringify({ files }, null, 2);
+	}
+
+	private sanitizeColumnWidthMap(raw: unknown): Record<string, number> | undefined {
+		if (!raw || typeof raw !== 'object') {
+			return undefined;
+		}
+		const result: Record<string, number> = {};
+		for (const [column, value] of Object.entries(raw as Record<string, unknown>)) {
+			if (column === '__rowNumber') {
+				continue;
+			}
+			const numeric = typeof value === 'number' ? value : Number(value);
+			if (!Number.isFinite(numeric)) {
+				continue;
+			}
+			const rounded = Math.max(32, Math.round(numeric));
+			result[column] = rounded;
+		}
+		return Object.keys(result).length ? result : undefined;
+	}
+
+	private getUserSettingsPath(folder: vscode.WorkspaceFolder): string {
+		return path.join(folder.uri.fsPath, '.vscode', 'kv_edotir_user_setting.json');
+	}
+
+	private getDocumentSettingsKey(uri: vscode.Uri, folder: vscode.WorkspaceFolder): string | undefined {
+		let relativePath = path.relative(folder.uri.fsPath, uri.fsPath);
+		if (!relativePath) {
+			relativePath = path.basename(uri.fsPath);
+		}
+		if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+			return undefined;
+		}
+		const normalized = relativePath.split(path.sep).filter(Boolean).join('/');
+		return normalized || path.basename(uri.fsPath);
+	}
+
 	private reorderRowColumns(row: Record<string, unknown>, orderedKeys: string[]): Record<string, unknown> {
 		if (!orderedKeys.length) {
 			return row;
@@ -1576,12 +1779,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 interface KvEditorPayload {
 	fileName: string;
+	documentKey?: string;
 	folderType: KvFolderType;
 	header: string;
 	columns: string[];
 	rows: ParsedKvRow[];
 	error?: string;
 	columnOptions: KvEditorColumnOptionResolvedMap;
+	columnLayout?: KvEditorColumnLayout;
 	texturePreviews: Record<string, TexturePreviewPayload>;
 	scriptSupport: KvEditorScriptSupport;
 }
@@ -1761,4 +1966,20 @@ interface TextureMenuHeroDisplay {
 interface OpenScriptFileMessage {
 	scriptPath: string;
 	folderType?: KvFolderType;
+}
+
+interface KvEditorColumnLayout {
+	columnWidths?: Record<string, number>;
+}
+
+interface KvEditorSaveColumnWidthsMessage {
+	widths: Record<string, number>;
+}
+
+interface KvEditorUserSettings {
+	files: Record<string, KvEditorUserFileSettings>;
+}
+
+interface KvEditorUserFileSettings {
+	columnWidths?: Record<string, number>;
 }
