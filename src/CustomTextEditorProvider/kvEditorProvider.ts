@@ -1341,7 +1341,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private async handleBulkEditMessage(document: vscode.TextDocument, message?: KvEditorBulkEditMessage): Promise<void> {
-		const rawEdits = Array.isArray(message?.edits) ? message.edits : [];
+		const rawEdits = Array.isArray(message?.edits) ? (message?.edits ?? []) : [];
 		const edits = rawEdits
 			.filter((edit): edit is KvEditorEditMessage => Boolean(edit && edit.id && edit.key && edit.key !== 'id'));
 		if (!edits.length) {
