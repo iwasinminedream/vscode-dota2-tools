@@ -1585,7 +1585,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			return;
 		}
 		const existingEntry = settings.files[documentKey];
-		const existingWidths = existingEntry?.columnWidths ? { ...existingEntry.columnWidths } : {};
+		const existingColumnWidths = existingEntry?.columnWidths;
+		const existingWidths = existingColumnWidths ? { ...existingColumnWidths } : {};
 		const mergedWidths = { ...existingWidths, ...sanitized };
 		if (!Object.keys(mergedWidths).length) {
 			if (settings.files[documentKey]) {
@@ -1594,10 +1595,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			return;
 		}
-		settings.files[documentKey] = {
-			...existingEntry,
-			columnWidths: mergedWidths,
-		};
+		settings.files[documentKey] = existingEntry
+			? { ...existingEntry, columnWidths: mergedWidths }
+			: { columnWidths: mergedWidths };
 		this.writeUserSettings(workspaceFolder, settings);
 	}
 
