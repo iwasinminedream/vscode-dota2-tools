@@ -122,6 +122,30 @@ body {
 	--kv-cell-base-height: 32px;
 }
 
+.kv-table td.kv-cell-formula::after {
+	content: 'ƒ';
+	position: absolute;
+	top: 4px;
+	right: 6px;
+	font-size: 10px;
+	font-weight: 600;
+	color: rgba(37, 150, 190, 0.8);
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.kv-table td.kv-cell-formula-error,
+.kv-table td.kv-cell-formula-error input,
+.kv-table td.kv-cell-formula-error .kv-select-display,
+.kv-table td.kv-cell-formula-error .kv-select-tag {
+	color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground));
+}
+
+.kv-table td.kv-cell-formula-error::after {
+	color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground));
+	opacity: 0.9;
+}
+
 .kv-row-drag-btn {
 	position: absolute;
 	inset: 0;

@@ -60,6 +60,12 @@ let fillPreviewCells = [];
 let fillPopupState = null;
 let columnDragState = null;
 
+const FORMULA_ERROR_VALUE = '#ERROR!';
+const FORMULA_CYCLE_VALUE = '#CYCLE!';
+
+const formulaDefinitions = new Map();
+const formulaComputedValues = new Map();
+
 const FILL_DEFAULT_STEP = 1;
 const FILL_DEFAULT_RATIO = 2;
 const COLUMN_WIDTH_SAVE_DEBOUNCE_MS = 600;
@@ -114,6 +120,549 @@ function setSectionVisibility({ showTable, showEmpty, showError }) {
 	}
 }
 
+function makeFormulaDefinitionKey(column, rowId, rowIndex) {
+	const columnKey = typeof column === 'string' ? column : '';
+	const normalizedId = typeof rowId === 'string' && rowId.length ? rowId : undefined;
+	if (normalizedId) {
+		return `${columnKey}|id:${normalizedId}`;
+	}
+	if (Number.isFinite(rowIndex)) {
+		const normalizedIndex = Math.max(0, Math.floor(Number(rowIndex)));
+		return `${columnKey}|index:${normalizedIndex}`;
+	}
+	return undefined;
+}
+
+function setFormulaDefinition(column, rowId, rowIndex, formula) {
+	const trimmed = typeof formula === 'string' ? formula.trim() : '';
+	const key = makeFormulaDefinitionKey(column, rowId, rowIndex);
+	if (!key) {
+		return;
+	}
+	if (!trimmed || !trimmed.startsWith('=')) {
+		formulaDefinitions.delete(key);
+		return;
+	}
+	formulaDefinitions.set(key, {
+		column,
+		rowId: typeof rowId === 'string' && rowId.length ? rowId : undefined,
+		rowIndex: Number.isFinite(rowIndex) ? Math.max(0, Math.floor(Number(rowIndex))) : undefined,
+		formula: trimmed,
+	});
+}
+
+function removeFormulaDefinition(column, rowId, rowIndex) {
+	const keys = new Set();
+	const idKey = makeFormulaDefinitionKey(column, rowId, undefined);
+	if (idKey) {
+		keys.add(idKey);
+	}
+	const indexKey = makeFormulaDefinitionKey(column, undefined, rowIndex);
+	if (indexKey) {
+		keys.add(indexKey);
+	}
+	keys.forEach((key) => {
+		formulaDefinitions.delete(key);
+	});
+}
+
+function getFormulaDefinition(column, rowId, rowIndex) {
+	const idKey = makeFormulaDefinitionKey(column, rowId, undefined);
+	if (idKey && formulaDefinitions.has(idKey)) {
+		return formulaDefinitions.get(idKey);
+	}
+	const indexKey = makeFormulaDefinitionKey(column, undefined, rowIndex);
+	if (indexKey && formulaDefinitions.has(indexKey)) {
+		return formulaDefinitions.get(indexKey);
+	}
+	return undefined;
+}
+
+function applyFormulaDefinitions(entries) {
+	formulaDefinitions.clear();
+	if (!Array.isArray(entries)) {
+		return;
+	}
+	entries.forEach((entry) => {
+		if (!entry || typeof entry.column !== 'string' || typeof entry.formula !== 'string') {
+			return;
+		}
+		setFormulaDefinition(entry.column, entry.rowId, entry.rowIndex, entry.formula);
+	});
+}
+
+function makeComputedFormulaKey(column, rowIndex) {
+	const columnKey = typeof column === 'string' ? column : '';
+	const normalizedIndex = Math.max(0, Math.floor(Number(rowIndex ?? 0)));
+	return `${columnKey}|${normalizedIndex}`;
+}
+
+function getComputedFormulaEntry(column, rowIndex) {
+	const key = makeComputedFormulaKey(column, rowIndex);
+	return formulaComputedValues.get(key);
+}
+
+function setComputedFormulaEntry(column, rowIndex, entry) {
+	const key = makeComputedFormulaKey(column, rowIndex);
+	formulaComputedValues.set(key, entry);
+}
+
+function clearComputedFormulaEntries() {
+	formulaComputedValues.clear();
+}
+
+function getCellDisplayValue(rowIndex, rowId, column, fallbackValue) {
+	const computed = getComputedFormulaEntry(column, rowIndex);
+	if (computed && typeof computed.value === 'string') {
+		return computed.value;
+	}
+	if (fallbackValue !== undefined && fallbackValue !== null) {
+		return String(fallbackValue);
+	}
+	return '';
+}
+
+function recalculateFormulas(options = {}) {
+	if (!latestPayload || !Array.isArray(latestPayload.rows) || !Array.isArray(latestPayload.columns)) {
+		clearComputedFormulaEntries();
+		updatePayloadFormulasSnapshot();
+		return;
+	}
+	const { emitUpdates = false } = options;
+	const rows = latestPayload.rows;
+	const columns = latestPayload.columns;
+	if (!formulaDefinitions.size) {
+		clearComputedFormulaEntries();
+		updatePayloadFormulasSnapshot();
+		return;
+	}
+	const letterToColumn = new Map();
+	columns.forEach((column, index) => {
+		letterToColumn.set(getColumnLetter(index), column);
+	});
+	const rowIdToIndex = new Map();
+	rows.forEach((row, index) => {
+		if (row && typeof row.id === 'string' && row.id.length) {
+			rowIdToIndex.set(row.id, index);
+		}
+	});
+	const positionDefinitions = new Map();
+	formulaDefinitions.forEach((definition) => {
+		if (!definition || typeof definition.column !== 'string' || typeof definition.formula !== 'string') {
+			return;
+		}
+		let resolvedIndex;
+		if (definition.rowId && rowIdToIndex.has(definition.rowId)) {
+			resolvedIndex = rowIdToIndex.get(definition.rowId);
+		} else if (Number.isFinite(definition.rowIndex)) {
+			const idx = Math.max(0, Math.floor(Number(definition.rowIndex)));
+			if (idx >= 0 && idx < rows.length) {
+				resolvedIndex = idx;
+			}
+		}
+		if (resolvedIndex === undefined) {
+			return;
+		}
+		definition.rowIndex = resolvedIndex;
+		const row = rows[resolvedIndex];
+		if (!definition.rowId && row && typeof row.id === 'string' && row.id.length) {
+			definition.rowId = row.id;
+		}
+		const key = makeComputedFormulaKey(definition.column, resolvedIndex);
+		positionDefinitions.set(key, {
+			column: definition.column,
+			rowId: definition.rowId,
+			rowIndex: resolvedIndex,
+			formula: definition.formula,
+		});
+	});
+	const previousComputed = new Map(formulaComputedValues);
+	clearComputedFormulaEntries();
+	if (!positionDefinitions.size) {
+		return;
+	}
+	const visiting = new Set();
+	const cache = new Map();
+	const getRawValue = (columnKey, rowIndex) => {
+		const row = rows[rowIndex];
+		if (!row || !row.values) {
+			return '';
+		}
+		const raw = row.values[columnKey];
+		return raw === undefined || raw === null ? '' : String(raw);
+	};
+	const computePosition = (columnKey, rowIndex) => {
+		const key = makeComputedFormulaKey(columnKey, rowIndex);
+		if (cache.has(key)) {
+			return cache.get(key);
+		}
+		if (visiting.has(key)) {
+			const cycleResult = { value: FORMULA_CYCLE_VALUE, error: 'CYCLE' };
+			cache.set(key, cycleResult);
+			return cycleResult;
+		}
+		visiting.add(key);
+		let result;
+		const definition = positionDefinitions.get(key);
+		if (!definition) {
+			result = { value: getRawValue(columnKey, rowIndex) };
+		} else {
+			const evaluation = evaluateFormulaExpression(definition.formula, {
+				resolveReference(columnLetter, rowNumber) {
+					const column = letterToColumn.get(columnLetter);
+					if (!column) {
+						return { value: '', error: 'REF' };
+					}
+					const targetIndex = rowNumber - 1;
+					if (targetIndex < 0 || targetIndex >= rows.length) {
+						return { value: '', error: 'REF' };
+					}
+					return computePosition(column, targetIndex);
+				},
+				getRawValue: getRawValue,
+				context: {
+					rowIndex,
+					rowNumber: rowIndex + 1,
+					rowId: rows[rowIndex]?.id ?? '',
+					row: rows[rowIndex],
+					values: rows[rowIndex]?.values ?? {},
+				},
+				resolveColumn(columnLetter) {
+					return letterToColumn.get(columnLetter);
+				},
+			});
+			if (evaluation.error) {
+				result = { value: FORMULA_ERROR_VALUE, error: evaluation.error };
+			} else {
+				result = { value: evaluation.value };
+			}
+		}
+		cache.set(key, result);
+		visiting.delete(key);
+		return result;
+	};
+	const pendingEdits = [];
+	positionDefinitions.forEach((definition) => {
+		const evaluation = computePosition(definition.column, definition.rowIndex);
+		const value = typeof evaluation.value === 'string' ? evaluation.value : String(evaluation.value ?? '');
+		setComputedFormulaEntry(definition.column, definition.rowIndex, {
+			column: definition.column,
+			rowId: definition.rowId,
+			rowIndex: definition.rowIndex,
+			value,
+			error: evaluation.error,
+		});
+		const previous = previousComputed.get(makeComputedFormulaKey(definition.column, definition.rowIndex));
+		if (!previous || previous.value !== value) {
+			const row = rows[definition.rowIndex];
+			if (row && row.id) {
+				pendingEdits.push({ id: row.id, key: definition.column, value });
+			}
+		}
+		const targetRow = rows[definition.rowIndex];
+		if (targetRow && targetRow.values) {
+			targetRow.values[definition.column] = value;
+		}
+	});
+	if (emitUpdates && pendingEdits.length) {
+		dispatchBulkEdit(pendingEdits);
+	}
+	updatePayloadFormulasSnapshot();
+}
+
+function getFormulaDefinitionEntries() {
+	return Array.from(formulaDefinitions.values())
+		.map((definition) => {
+			if (!definition || typeof definition.column !== 'string' || typeof definition.formula !== 'string') {
+				return undefined;
+			}
+			const rowIndex = Number.isFinite(definition.rowIndex)
+				? Math.max(0, Math.floor(Number(definition.rowIndex)))
+				: undefined;
+			if (rowIndex === undefined) {
+				return undefined;
+			}
+			return {
+				column: definition.column,
+				rowId: definition.rowId,
+				rowIndex,
+				formula: definition.formula,
+			};
+		})
+		.filter((entry) => Boolean(entry));
+}
+
+function updatePayloadFormulasSnapshot() {
+	if (!latestPayload) {
+		return;
+	}
+	latestPayload.formulas = getFormulaDefinitionEntries();
+}
+
+function postSaveFormulaMessage({ column, rowId, rowIndex, formula }) {
+	if (!column) {
+		return;
+	}
+	const payload = { column };
+	if (typeof rowId === 'string' && rowId.length) {
+		payload.rowId = rowId;
+	}
+	if (Number.isFinite(rowIndex) && rowIndex >= 0) {
+		payload.rowIndex = Math.floor(Number(rowIndex));
+	}
+	if (typeof formula === 'string') {
+		payload.formula = formula;
+	}
+	vscode.postMessage({
+		type: 'saveFormula',
+		payload,
+	});
+}
+
+function replaceCellReferencesInExpression(expression, replacer) {
+	if (typeof expression !== 'string' || !expression.length) {
+		return { text: '', references: [] };
+	}
+	let result = '';
+	const references = [];
+	let index = 0;
+	let stringDelimiter = null;
+	while (index < expression.length) {
+		const char = expression[index];
+		if (stringDelimiter) {
+			result += char;
+			if (char === '\\' && index + 1 < expression.length) {
+				result += expression[index + 1];
+				index += 2;
+				continue;
+			}
+			if (char === stringDelimiter) {
+				stringDelimiter = null;
+			}
+			index += 1;
+			continue;
+		}
+		if (char === '"' || char === '\'' || char === '`') {
+			stringDelimiter = char;
+			result += char;
+			index += 1;
+			continue;
+		}
+		if (/[A-Za-z]/.test(char)) {
+			let start = index;
+			let letters = '';
+			while (index < expression.length && /[A-Za-z]/.test(expression[index])) {
+				letters += expression[index];
+				index += 1;
+			}
+			if (/^[A-Z]+$/.test(letters) && index < expression.length && /\d/.test(expression[index])) {
+				let digits = '';
+				while (index < expression.length && /\d/.test(expression[index])) {
+					digits += expression[index];
+					index += 1;
+				}
+				const rowNumber = Number(digits);
+				if (Number.isFinite(rowNumber) && rowNumber > 0) {
+					const replacement = replacer(letters, rowNumber, `${letters}${digits}`);
+					if (replacement !== undefined) {
+						result += replacement;
+						references.push({ columnLetter: letters, rowNumber });
+						continue;
+					}
+				}
+				result += letters + digits;
+				continue;
+			}
+			result += letters;
+			continue;
+		}
+		result += char;
+		index += 1;
+	}
+	return { text: result, references };
+}
+
+function evaluateFormulaExpression(formula, hooks = {}) {
+	const trimmed = typeof formula === 'string' ? formula.trim() : '';
+	if (!trimmed.startsWith('=')) {
+		return { value: trimmed };
+	}
+	const expressionBody = trimmed.slice(1);
+	const rewrite = replaceCellReferencesInExpression(expressionBody, (columnLetter, rowNumber) => {
+		return `__ref(${JSON.stringify(columnLetter)}, ${Number(rowNumber)})`;
+	});
+	let evaluator;
+	try {
+		evaluator = new Function(
+			'__ref',
+			'__helpers',
+			'Math',
+			'Number',
+			'String',
+			`"use strict";\nconst __ctx = __helpers.context || {};\nconst { rowIndex = 0, rowNumber = rowIndex + 1, rowId = "", row = undefined, values = {} } = __ctx;\nconst { toNumber, toString } = __helpers;\nreturn (${rewrite.text});`,
+		);
+	} catch (error) {
+		return { value: '', error: 'PARSE' };
+	}
+	let referenceError = null;
+	const referenceGetter = (columnLetter, rowNumber) => {
+		if (typeof hooks.resolveReference !== 'function') {
+			referenceError = referenceError ?? 'REF';
+			return '';
+		}
+		try {
+			const result = hooks.resolveReference(columnLetter, Number(rowNumber));
+			if (!result) {
+				referenceError = referenceError ?? 'REF';
+				return '';
+			}
+			if (result.error) {
+				referenceError = referenceError ?? result.error;
+			}
+			return result.value ?? '';
+		} catch (error) {
+			referenceError = referenceError ?? 'REF';
+			return '';
+		}
+	};
+	const helpers = {
+		toNumber(value, fallback = 0) {
+			if (typeof value === 'number') {
+				return Number.isFinite(value) ? value : fallback;
+			}
+			const parsed = Number(value);
+			return Number.isFinite(parsed) ? parsed : fallback;
+		},
+		toString(value) {
+			if (value === undefined || value === null) {
+				return '';
+			}
+			return String(value);
+		},
+		context: hooks.context || {},
+	};
+	try {
+		const value = evaluator(referenceGetter, helpers, Math, Number, String);
+		if (referenceError) {
+			return { value, error: referenceError };
+		}
+		return { value };
+	} catch (error) {
+		return { value: '', error: 'EXEC' };
+	}
+}
+
+function applyFormulaDecorations(td, definition, computed) {
+	if (!td) {
+		return;
+	}
+	if (definition && typeof definition.formula === 'string' && definition.formula.length) {
+		td.dataset.formula = definition.formula;
+		td.classList.add('kv-cell-formula');
+	} else {
+		delete td.dataset.formula;
+		td.classList.remove('kv-cell-formula');
+	}
+	if (computed && computed.error) {
+		td.dataset.formulaError = computed.error;
+		td.classList.add('kv-cell-formula-error');
+	} else {
+		delete td.dataset.formulaError;
+		td.classList.remove('kv-cell-formula-error');
+	}
+}
+
+function updateFormulaCell(columnKey, rowIndex) {
+	if (!tableSection || !Array.isArray(latestPayload?.rows)) {
+		return;
+	}
+	const selector = `td[data-column="${columnKey}"][data-row-index="${rowIndex}"]`;
+	const td = tableSection.querySelector(selector);
+	if (!td) {
+		return;
+	}
+	const row = latestPayload.rows[rowIndex];
+	const rowId = td.dataset.rowId ?? row?.id ?? '';
+	const definition = getFormulaDefinition(columnKey, rowId, rowIndex);
+	const computed = getComputedFormulaEntry(columnKey, rowIndex);
+	applyFormulaDecorations(td, definition, computed);
+	const displayValue = getCellDisplayValue(rowIndex, rowId, columnKey, row?.values?.[columnKey]);
+	const fieldConfig = columnOptionConfig?.[columnKey];
+	const input = td.querySelector('input');
+	const select = td.querySelector('select');
+	if (input) {
+		setElementValue(input, displayValue, undefined);
+		input.dataset.initialValue = input.value ?? '';
+		if (definition) {
+			input.dataset.formulaValue = definition.formula;
+		} else {
+			delete input.dataset.formulaValue;
+		}
+		input.title = input.value;
+	} else if (select) {
+		setElementValue(select, displayValue, fieldConfig);
+		const normalized = readElementValue(select, fieldConfig);
+		select.dataset.initialValue = normalized;
+		if (definition) {
+			select.dataset.formulaValue = definition.formula;
+		} else {
+			delete select.dataset.formulaValue;
+		}
+		select.title = normalized;
+		const display = td.querySelector('.kv-select-display');
+		if (display) {
+			updateSelectDisplay(select, display, fieldConfig);
+		}
+	} else if (!td.classList.contains('kv-ability-values-cell')) {
+		td.textContent = displayValue;
+	}
+	if (td.dataset) {
+		td.dataset.displayValue = displayValue;
+	}
+	if (selectedTd === td) {
+		if (selectedCell) {
+			selectedCell.value = displayValue;
+			selectedCell.formula = definition ? definition.formula : undefined;
+			selectedCell.formulaError = computed?.error;
+		}
+		if (formulaValueInput) {
+			if (definition && definition.formula) {
+				formulaValueInput.value = definition.formula;
+			} else {
+				formulaValueInput.value = displayValue ?? '';
+			}
+		}
+	}
+}
+
+function refreshFormulaResultsForTable() {
+	if (!tableSection || !Array.isArray(latestPayload?.rows)) {
+		return;
+	}
+	const seen = new Set();
+	formulaDefinitions.forEach((definition) => {
+		if (!definition || typeof definition.column !== 'string' || !Number.isFinite(definition.rowIndex)) {
+			return;
+		}
+		const normalizedIndex = Math.max(0, Math.floor(Number(definition.rowIndex)));
+		seen.add(makeComputedFormulaKey(definition.column, normalizedIndex));
+		updateFormulaCell(definition.column, normalizedIndex);
+	});
+	const decorated = tableSection.querySelectorAll('td.kv-cell-formula, td[data-formula]');
+	decorated.forEach((td) => {
+		const column = td.dataset.column;
+		const rowIndex = Number(td.dataset.rowIndex ?? '-1');
+		if (!column || !Number.isFinite(rowIndex) || rowIndex < 0) {
+			return;
+		}
+		const key = makeComputedFormulaKey(column, rowIndex);
+		if (seen.has(key)) {
+			return;
+		}
+		updateFormulaCell(column, rowIndex);
+	});
+}
+
 // 清空当前选中单元格及其公式编辑器状态
 function clearSelection() {
 	closeMultiSelectDropdown();
@@ -154,6 +703,9 @@ function selectCell(td, context) {
 	}
 	selectedTd = td;
 	td.classList.add('kv-cell-selected');
+	const formulaDefinition = getFormulaDefinition(context.column, context.rowId, context.rowIndex);
+	const computedEntry = getComputedFormulaEntry(context.column, context.rowIndex);
+	const displayValue = getCellDisplayValue(context.rowIndex, context.rowId, context.column, context.value);
 	selectedCell = {
 		column: context.column,
 		columnLetter: context.columnLetter,
@@ -164,10 +716,12 @@ function selectCell(td, context) {
 		element: context.element ?? null,
 		fieldConfig: context.fieldConfig,
 		usesDropdown: Boolean(context.usesDropdown),
-		value: context.value ?? '',
+		value: displayValue,
 		dataType: context.dataType ?? 'cell',
 		abilityEntries: context.dataType === 'abilityValues' ? cloneAbilityValuesEntries(context.abilityEntries || []) : undefined,
 		hasAbilityField: Boolean(context.hasAbilityField),
+		formula: formulaDefinition ? formulaDefinition.formula : undefined,
+		formulaError: computedEntry?.error,
 	};
 	selectedCellKey = {
 		column: context.column,
@@ -186,7 +740,11 @@ function selectCell(td, context) {
 		const disableFormulaInput = !context.editable || Boolean(context.usesDropdown);
 		formulaValueInput.disabled = disableFormulaInput;
 		formulaValueInput.placeholder = disableFormulaInput && context.editable ? '请通过下拉选择' : '';
-		formulaValueInput.value = context.value ?? '';
+		if (formulaDefinition && formulaDefinition.formula) {
+			formulaValueInput.value = formulaDefinition.formula;
+		} else {
+			formulaValueInput.value = displayValue ?? '';
+		}
 	}
 	refreshFillHandle();
 }
@@ -455,7 +1013,11 @@ function revertFormulaValue() {
 	const original = selectedCell.element.dataset.initialValue ?? '';
 	setElementValue(selectedCell.element, original, selectedCell.fieldConfig);
 	if (formulaValueInput) {
-		formulaValueInput.value = original;
+		if (selectedCell.formula) {
+			formulaValueInput.value = selectedCell.formula;
+		} else {
+			formulaValueInput.value = original;
+		}
 	}
 }
 
@@ -1186,6 +1748,20 @@ function formatFormulaResult(result, template) {
 	return String(result);
 }
 
+function resolveRowIndex(rowId, fallbackIndex) {
+	if (Number.isFinite(fallbackIndex) && fallbackIndex >= 0) {
+		return Math.floor(Number(fallbackIndex));
+	}
+	if (!Array.isArray(latestPayload?.rows)) {
+		return undefined;
+	}
+	if (typeof rowId === 'string' && rowId.length) {
+		const index = latestPayload.rows.findIndex((row) => row && row.id === rowId);
+		return index >= 0 ? index : undefined;
+	}
+	return undefined;
+}
+
 // 处理单元格数据变动并通知扩展端
 function handleElementChange(element, fieldConfig) {
 	if (!element) {
@@ -1193,23 +1769,66 @@ function handleElementChange(element, fieldConfig) {
 	}
 	const id = element.dataset.id;
 	const key = element.dataset.key;
-	if (!id || !key) {
+	const columnKey = typeof key === 'string' ? key.trim() : '';
+	if (!columnKey) {
 		return;
 	}
-	const currentValue = readElementValue(element, fieldConfig);
+	const rowIndex = resolveRowIndex(id, Number(element.dataset.rowIndex));
+	const currentValueRaw = readElementValue(element, fieldConfig);
+	const currentValue = currentValueRaw === undefined || currentValueRaw === null ? '' : String(currentValueRaw);
+	const trimmedValue = currentValue.trim();
+	const previousFormula = element.dataset.formulaValue ?? '';
+	const isFormula = trimmedValue.startsWith('=');
+	if (isFormula) {
+		if (previousFormula === trimmedValue) {
+			return;
+		}
+		if (!Number.isFinite(rowIndex) || rowIndex === undefined || rowIndex < 0) {
+			console.warn('[kv-editor] 忽略无法定位行的公式写入', { column: columnKey, id });
+			return;
+		}
+		element.dataset.formulaValue = trimmedValue;
+		setFormulaDefinition(columnKey, id, rowIndex, trimmedValue);
+		updatePayloadFormulasSnapshot();
+		recalculateFormulas({ emitUpdates: true });
+		refreshFormulaResultsForTable();
+		postSaveFormulaMessage({ column: columnKey, rowId: id, rowIndex, formula: trimmedValue });
+		return;
+	}
+	const hadFormula = Boolean(previousFormula);
+	if (hadFormula) {
+		if (Number.isFinite(rowIndex) && rowIndex !== undefined && rowIndex >= 0) {
+			removeFormulaDefinition(columnKey, id, rowIndex);
+		}
+		delete element.dataset.formulaValue;
+		updatePayloadFormulasSnapshot();
+		postSaveFormulaMessage({ column: columnKey, rowId: id, rowIndex, formula: '' });
+	}
 	const previous = element.dataset.initialValue ?? '';
 	if (previous === currentValue) {
 		return;
 	}
 	element.dataset.initialValue = currentValue;
 	element.title = currentValue;
-	vscode.postMessage({
-		type: 'edit',
-		payload: { id, key, value: currentValue }
-	});
-	if (selectedCell && selectedCell.element === element && formulaValueInput) {
-		formulaValueInput.value = currentValue;
+	if (Number.isFinite(rowIndex) && rowIndex !== undefined && rowIndex >= 0) {
+		updateCachedRowValue(rowIndex, columnKey, currentValue);
 	}
+	if (id) {
+		vscode.postMessage({
+			type: 'edit',
+			payload: { id, key: columnKey, value: currentValue }
+		});
+	}
+	if (selectedCell && selectedCell.element === element) {
+		selectedCell.value = currentValue;
+		selectedCell.formula = undefined;
+		selectedCell.formulaError = undefined;
+		if (formulaValueInput) {
+			formulaValueInput.value = currentValue;
+		}
+	}
+	recalculateFormulas({ emitUpdates: true });
+	refreshFormulaResultsForTable();
 }
 
 // 获取多选项的显示文案
@@ -2156,8 +2775,12 @@ function renderTable(columns, rows, columnOptions) {
 					});
 				});
 			} else {
-				const value = row.values?.[column] ?? '';
+				const rawValue = row.values?.[column];
+				const displayValue = getCellDisplayValue(rowIndex, row.id ?? '', column, rawValue);
+				const formulaDefinition = getFormulaDefinition(column, row.id ?? '', rowIndex);
+				const computedEntry = getComputedFormulaEntry(column, rowIndex);
 				if (column === 'AbilityValues') {
+					applyFormulaDecorations(td, undefined, undefined);
 					td.classList.add('kv-ability-values-cell');
 					td.tabIndex = 0;
 					const hasAbilityField = row.values && Object.prototype.hasOwnProperty.call(row.values, column);
@@ -2216,6 +2839,7 @@ function renderTable(columns, rows, columnOptions) {
 					const select = document.createElement('select');
 					select.dataset.id = row.id ?? '';
 					select.dataset.key = column;
+					select.dataset.rowIndex = String(rowIndex);
 					const isMultiSelect = Boolean(fieldConfig?.multiple);
 					if (isMultiSelect) {
 						select.multiple = true;
@@ -2226,9 +2850,14 @@ function renderTable(columns, rows, columnOptions) {
 						optionEl.textContent = option.label;
 						select.appendChild(optionEl);
 					});
-					setElementValue(select, value, fieldConfig);
+					setElementValue(select, displayValue, fieldConfig);
 					const initialValue = readElementValue(select, fieldConfig);
 					select.dataset.initialValue = initialValue;
+					if (formulaDefinition) {
+						select.dataset.formulaValue = formulaDefinition.formula;
+					} else {
+						delete select.dataset.formulaValue;
+					}
 					select.title = initialValue;
 					const container = document.createElement('div');
 					container.className = 'kv-select-cell';
@@ -2239,6 +2868,8 @@ function renderTable(columns, rows, columnOptions) {
 					select.classList.add('kv-select-hidden');
 					updateSelectDisplay(select, display, fieldConfig);
 					td.appendChild(container);
+					applyFormulaDecorations(td, formulaDefinition, computedEntry);
+					td.dataset.displayValue = readElementValue(select, fieldConfig);
 					if (isMultiSelect) {
 						const updateSelection = () => {
 							const currentValue = readElementValue(select, fieldConfig);
@@ -2301,8 +2932,14 @@ function renderTable(columns, rows, columnOptions) {
 					input.type = 'text';
 					input.dataset.id = row.id ?? '';
 					input.dataset.key = column;
-					setElementValue(input, value, undefined);
+					input.dataset.rowIndex = String(rowIndex);
+					setElementValue(input, displayValue, undefined);
 					input.dataset.initialValue = input.value ?? '';
+					if (formulaDefinition) {
+						input.dataset.formulaValue = formulaDefinition.formula;
+					} else {
+						delete input.dataset.formulaValue;
+					}
 					input.title = input.value;
 					const previewInfo = column === 'AbilityTextureName' && row.id ? texturePreviewMap[row.id] : undefined;
 					const isScriptColumn = column === 'ScriptFile';
@@ -2403,6 +3040,8 @@ function renderTable(columns, rows, columnOptions) {
 						updateScriptButtonState();
 						input.addEventListener('input', updateScriptButtonState);
 					}
+					applyFormulaDecorations(td, formulaDefinition, computedEntry);
+					td.dataset.displayValue = input.value ?? '';
 					const updateSelection = () => {
 						selectCell(td, {
 							column,
@@ -4486,6 +5125,8 @@ function render(payload) {
 		currentDocumentKey = nextDocumentKey;
 	}
 	latestPayload = payload;
+	applyFormulaDefinitions(payload.formulas);
+	recalculateFormulas({ emitUpdates: false });
 	const metaParts = [];
 	if (payload.folderType) {
 		metaParts.push(`路径类型: ${formatFolderType(payload.folderType)}`);
