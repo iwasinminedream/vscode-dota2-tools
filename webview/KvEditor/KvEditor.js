@@ -3187,10 +3187,35 @@ function renderTable(columns, rows, columnOptions) {
 					};
 					input.addEventListener('focus', () => {
 						activeCell = { id: row.id ?? '', key: column };
+						// 如果是公式单元格，focus 时显示公式以便编辑
+						const formulaDef = getFormulaDefinition(column, row.id ?? '', rowIndex);
+						if (formulaDef && formulaDef.formula) {
+							const currentValue = input.value ?? '';
+							// 如果当前显示的是计算结果（不是公式），则切换到公式
+							if (!currentValue.startsWith('=')) {
+								setElementValue(input, formulaDef.formula, undefined);
+							}
+						}
 						updateSelection();
 					});
 					input.addEventListener('blur', () => {
 						activeCell = undefined;
+						// 延迟执行以确保 change 事件先处理
+						setTimeout(() => {
+							// 如果是公式单元格且当前显示的是公式文本（未修改），恢复显示计算结果
+							const formulaDef = getFormulaDefinition(column, row.id ?? '', rowIndex);
+							if (formulaDef && formulaDef.formula) {
+								const currentValue = input.value ?? '';
+								// 只有当前值等于公式定义时才恢复（说明用户没有修改）
+								if (currentValue.trim() === formulaDef.formula.trim()) {
+									const computed = getComputedFormulaEntry(column, rowIndex);
+									if (computed && typeof computed.value === 'string') {
+										setElementValue(input, computed.value, undefined);
+										input.dataset.initialValue = computed.value;
+									}
+								}
+							}
+						}, 0);
 					});
 					input.addEventListener('change', () => {
 						handleElementChange(input, undefined);
@@ -3223,6 +3248,7 @@ function renderTable(columns, rows, columnOptions) {
 						updateSelection();
 					});
 					td.addEventListener('dblclick', () => {
+						// focus 事件会自动处理公式显示
 						input.focus();
 						input.select();
 					});
