@@ -1264,12 +1264,19 @@ function openFillPopup() {
 	form.className = 'kv-fill-popup-form';
 	const modeList = document.createElement('div');
 	modeList.className = 'kv-fill-popup-modes';
-	const modes = [
-		{ value: 'copy', label: '复制' },
-		{ value: 'arithmetic', label: '等差填充' },
-		{ value: 'geometric', label: '等比填充' },
-		{ value: 'formula', label: '公式填充' }
-	];
+	const baseFormula = getSelectedCellFormulaValue();
+	const hasBaseFormula = baseFormula.length > 0;
+	const modes = hasBaseFormula
+		? [
+			{ value: 'formulaSequence', label: '序列' },
+			{ value: 'copy', label: '复制' },
+		]
+		: [
+			{ value: 'copy', label: '复制' },
+			{ value: 'arithmetic', label: '等差填充' },
+			{ value: 'geometric', label: '等比填充' },
+			{ value: 'formula', label: '公式填充' }
+		];
 	const modeInputs = [];
 	modes.forEach((mode, index) => {
 		const item = document.createElement('label');
@@ -1399,6 +1406,7 @@ function openFillPopup() {
 		outsideHandler,
 		scrollHandler,
 		resizeHandler,
+		hasBaseFormula,
 	};
 	positionFillPopup();
 	requestAnimationFrame(() => positionFillPopup());
@@ -1474,6 +1482,9 @@ function handleFillApply() {
 		case 'copy':
 			result = performCopyFill();
 			break;
+		case 'formulaSequence':
+			result = performFormulaSequenceFill();
+			break;
 		case 'arithmetic':
 			result = performArithmeticFill();
 			break;
@@ -1530,6 +1541,67 @@ function prepareFillOperation({ allowDropdown }) {
 		targetRows,
 		column: columnKey,
 	};
+}
+
+function getSelectedCellFormulaValue() {
+	const direct = typeof selectedCell?.formula === 'string' ? selectedCell.formula : '';
+	const fallback = selectedCell?.element?.dataset?.formulaValue ?? '';
+	const candidate = direct && direct.trim().length ? direct : fallback;
+	const trimmed = typeof candidate === 'string' ? candidate.trim() : '';
+	return trimmed.startsWith('=') ? trimmed : '';
+}
+
+function offsetFormulaReferences(formula, rowOffset) {
+	const trimmed = typeof formula === 'string' ? formula.trim() : '';
+	if (!trimmed.startsWith('=') || !Number.isFinite(rowOffset) || rowOffset === 0) {
+		return trimmed;
+	}
+	const expression = trimmed.slice(1);
+	const rewrite = replaceCellReferencesInExpression(expression, (columnLetter, rowNumber) => {
+		const nextRow = Number(rowNumber) + rowOffset;
+		if (!Number.isFinite(nextRow) || nextRow <= 0) {
+			return `${columnLetter}${rowNumber}`;
+		}
+		return `${columnLetter}${Math.floor(nextRow)}`;
+	});
+	return `=${rewrite.text}`;
+}
+
+function applyFormulaDefinitionsToContexts(columnKey, contexts, formulaFactory) {
+	if (!Array.isArray(contexts) || !contexts.length) {
+		return { success: false, message: '没有可填充的单元格。' };
+	}
+	const updates = [];
+	contexts.forEach((context, index) => {
+		if (!context || !context.element) {
+			return;
+		}
+		const formula = formulaFactory(context, index);
+		const trimmed = typeof formula === 'string' ? formula.trim() : '';
+		if (!trimmed.startsWith('=')) {
+			return;
+		}
+		const targetRowIndex = Number.isFinite(context.rowIndex) ? Number(context.rowIndex) : undefined;
+		if (targetRowIndex === undefined || targetRowIndex < 0) {
+			return;
+		}
+		const rowId = typeof context.id === 'string' && context.id.length
+			? context.id
+			: (typeof context.rowId === 'string' ? context.rowId : '');
+		context.element.dataset.formulaValue = trimmed;
+		setElementValue(context.element, trimmed, context.fieldConfig);
+		context.element.dataset.initialValue = trimmed;
+		setFormulaDefinition(columnKey, rowId, targetRowIndex, trimmed);
+		updates.push({ column: columnKey, rowId, rowIndex: targetRowIndex, formula: trimmed });
+	});
+	if (!updates.length) {
+		return { success: false, message: '未生成可写入的公式。' };
+	}
+	updatePayloadFormulasSnapshot();
+	recalculateFormulas({ emitUpdates: true });
+	refreshFormulaResultsForTable();
+	updates.forEach((entry) => postSaveFormulaMessage(entry));
+	return { success: true };
 }
 
 function applyValueToContext(context, value, columnKey, collector) {
@@ -1600,11 +1672,19 @@ function formatNumericValueWithTemplate(value, template) {
 }
 
 function performCopyFill() {
-	const prepared = prepareFillOperation({ allowDropdown: true });
+	const baseFormula = getSelectedCellFormulaValue();
+	const prepared = prepareFillOperation({ allowDropdown: !baseFormula });
 	if (!prepared.success) {
 		return prepared;
 	}
 	const { baseValueRaw, contexts, column } = prepared;
+	if (baseFormula) {
+		const result = applyFormulaDefinitionsToContexts(column, contexts, () => baseFormula);
+		if (result.success) {
+			clearFillPreview();
+		}
+		return result;
+	}
 	for (const context of contexts) {
 		if (context.usesDropdown && !isValueAvailableInSelect(context.element, baseValueRaw)) {
 			return { success: false, message: '目标下拉列表中不存在要复制的值' };
@@ -1617,6 +1697,31 @@ function performCopyFill() {
 	dispatchBulkEdit(edits);
 	clearFillPreview();
 	return { success: true };
+}
+
+function performFormulaSequenceFill() {
+	const baseFormula = getSelectedCellFormulaValue();
+	if (!baseFormula) {
+		return { success: false, message: '当前单元格不是公式，无法使用序列填充。' };
+	}
+	const prepared = prepareFillOperation({ allowDropdown: false });
+	if (!prepared.success) {
+		return prepared;
+	}
+	const baseRowIndex = Number.isFinite(selectedCell?.rowIndex) ? Number(selectedCell.rowIndex) : undefined;
+	if (baseRowIndex === undefined) {
+		return { success: false, message: '无法确定公式的基准行。' };
+	}
+	const { contexts, column } = prepared;
+	const result = applyFormulaDefinitionsToContexts(column, contexts, (context) => {
+		const targetRowIndex = Number(context.rowIndex);
+		const offset = Number.isFinite(targetRowIndex) ? targetRowIndex - baseRowIndex : 0;
+		return offsetFormulaReferences(baseFormula, offset);
+	});
+	if (result.success) {
+		clearFillPreview();
+	}
+	return result;
 }
 
 function performArithmeticFill() {
