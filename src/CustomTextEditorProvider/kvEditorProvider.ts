@@ -1643,29 +1643,53 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		if (!documentKey) {
 			return;
 		}
-		const sanitized = this.sanitizeColumnWidthMap(message.widths);
+
+		// 分离需要更新和需要删除的列
+		const widthsToUpdate: Record<string, number> = {};
+		const columnsToDelete: string[] = [];
+
+		if (message.widths && typeof message.widths === 'object') {
+			for (const [column, value] of Object.entries(message.widths)) {
+				if (column === '__rowNumber') {
+					continue;
+				}
+				if (value === null || value === undefined) {
+					// null 或 undefined 表示删除
+					columnsToDelete.push(column);
+				} else {
+					const numeric = typeof value === 'number' ? value : Number(value);
+					if (Number.isFinite(numeric)) {
+						const rounded = Math.max(32, Math.round(numeric));
+						widthsToUpdate[column] = rounded;
+					}
+				}
+			}
+		}
+
 		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
-		if (!sanitized || !Object.keys(sanitized).length) {
-			if (settings.files[documentKey]) {
-				delete settings.files[documentKey];
-				this.writeUserSettings(workspaceFolder, settings);
-			}
-			return;
-		}
 		const existingEntry = settings.files[documentKey];
-		const existingColumnWidths = existingEntry?.columnWidths;
-		const existingWidths = existingColumnWidths ? { ...existingColumnWidths } : {};
-		const mergedWidths = { ...existingWidths, ...sanitized };
-		if (!Object.keys(mergedWidths).length) {
+		const existingWidths = existingEntry?.columnWidths ? { ...existingEntry.columnWidths } : {};
+
+		// 应用更新
+		Object.assign(existingWidths, widthsToUpdate);
+
+		// 应用删除
+		columnsToDelete.forEach((column) => {
+			delete existingWidths[column];
+		});
+
+		// 如果没有剩余的列宽配置，删除整个文档条目
+		if (!Object.keys(existingWidths).length) {
 			if (settings.files[documentKey]) {
 				delete settings.files[documentKey];
-				this.writeUserSettings(workspaceFolder, settings);
 			}
-			return;
+		} else {
+			// 否则更新或创建文档条目
+			settings.files[documentKey] = existingEntry
+				? { ...existingEntry, columnWidths: existingWidths }
+				: { columnWidths: existingWidths };
 		}
-		settings.files[documentKey] = existingEntry
-			? { ...existingEntry, columnWidths: mergedWidths }
-			: { columnWidths: mergedWidths };
+
 		this.writeUserSettings(workspaceFolder, settings);
 	}
 

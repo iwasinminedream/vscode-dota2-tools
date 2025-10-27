@@ -45,6 +45,7 @@ let columnOptionConfig = Object.create(null);
 
 const modifiedColumns = new Set();
 const originalColumnWidths = Object.create(null);
+const savedColumnWidths = new Set(); // 记录哪些列的宽度是从配置文件加载的
 let columnOptionsEditorState = null;
 let resizeState = null;
 let openMultiSelectContext = null;
@@ -2431,6 +2432,7 @@ function resetColumnState() {
 		delete originalColumnWidths[key];
 	}
 	modifiedColumns.clear();
+	savedColumnWidths.clear();
 }
 
 function cancelColumnWidthSave() {
@@ -2472,6 +2474,9 @@ function scheduleColumnWidthSave() {
 	columnWidthSaveHandle = setTimeout(() => {
 		columnWidthSaveHandle = null;
 		const widthsPayload = {};
+		const columnsToRemoveFromSaved = new Set();
+
+		// 处理修改过的列
 		modifiedColumns.forEach((column) => {
 			const width = columnWidths[column];
 			if (typeof width !== 'number' || !Number.isFinite(width)) {
@@ -2483,7 +2488,51 @@ function scheduleColumnWidthSave() {
 				return;
 			}
 			widthsPayload[column] = normalized;
+			// 如果这个列曾经被保存过，现在又被修改了，需要更新保存记录
+			savedColumnWidths.add(column);
 		});
+
+		// 检查曾经保存过但现在可能需要删除的列
+		// 如果一个列曾经被保存，但现在的宽度已经恢复到系统计算的初始值（而不是保存的值），则需要删除
+		if (!latestPayload.columns) {
+			latestPayload.columns = [];
+		}
+		savedColumnWidths.forEach((column) => {
+			// 如果这个列已经在 widthsPayload 中，说明它被重新修改了，不需要检查删除
+			if (widthsPayload[column] !== undefined) {
+				return;
+			}
+			// 检查该列是否仍存在于当前表格中
+			if (!latestPayload.columns.includes(column)) {
+				// 列已经不存在了，标记为需要从保存记录中删除
+				columnsToRemoveFromSaved.add(column);
+				return;
+			}
+			// 获取当前列宽
+			const currentWidth = columnWidths[column];
+			if (!Number.isFinite(currentWidth)) {
+				return;
+			}
+			// 获取该列的系统默认宽度（不考虑保存的值）
+			const headerLabel = column;
+			const labelLength = Math.max((headerLabel ?? '').length, 4);
+			const systemDefaultWidth = column === 'AbilityValues'
+				? Math.max(COLUMN_MIN_WIDTH, 220)
+				: Math.max(COLUMN_MIN_WIDTH, labelLength * 12);
+			// 如果当前宽度等于系统默认宽度，说明用户已经将列宽恢复到初始状态
+			// 此时应该删除配置文件中的保存值
+			if (Math.round(currentWidth) === Math.round(systemDefaultWidth)) {
+				columnsToRemoveFromSaved.add(column);
+			}
+		});
+
+		// 从 savedColumnWidths 中移除标记为删除的列
+		columnsToRemoveFromSaved.forEach((column) => {
+			savedColumnWidths.delete(column);
+			// 将这些列的宽度设为 null，后端会识别并删除配置
+			widthsPayload[column] = null;
+		});
+
 		if (!Object.keys(widthsPayload).length) {
 			return;
 		}
@@ -2494,7 +2543,12 @@ function scheduleColumnWidthSave() {
 			},
 		});
 		Object.entries(widthsPayload).forEach(([column, value]) => {
-			originalColumnWidths[column] = value;
+			if (value === null) {
+				// 删除该列的记录
+				delete originalColumnWidths[column];
+			} else {
+				originalColumnWidths[column] = value;
+			}
 			modifiedColumns.delete(column);
 		});
 	}, COLUMN_WIDTH_SAVE_DEBOUNCE_MS);
@@ -2587,7 +2641,8 @@ function restoreSelection(columnLabels, columnLetters, columnOptions) {
 	const columnName = columnLabels.get(selectedCellKey.column) ?? selectedCellKey.column;
 	const columnLetter = columnLetters.get(selectedCellKey.column) ?? selectedCellKey.column;
 	const isAbilityColumn = selectedCellKey.column === 'AbilityValues';
-	const editable = selectedCellKey.column !== ROW_NUMBER_COLUMN_KEY && selectedCellKey.column !== 'id' && !isAbilityColumn;
+	// id 列现在也可以编辑了
+	const editable = selectedCellKey.column !== ROW_NUMBER_COLUMN_KEY && !isAbilityColumn;
 	const fieldConfig = columnOptions[selectedCellKey.column];
 	const usesDropdown = Boolean(fieldConfig?.options?.length);
 	let element = null;
@@ -2919,8 +2974,50 @@ function renderTable(columns, rows, columnOptions) {
 					});
 				});
 			} else if (column === 'id') {
-				td.textContent = row.id ?? '';
 				td.classList.add('kv-cell-id');
+				// 改为可编辑的 input 元素
+				const input = document.createElement('input');
+				input.type = 'text';
+				input.dataset.id = row.id ?? '';
+				input.dataset.key = column;
+				input.dataset.rowIndex = String(rowIndex);
+				const displayValue = getCellDisplayValue(rowIndex, row.id ?? '', column, row.id ?? '');
+				const formulaDefinition = getFormulaDefinition(column, row.id ?? '', rowIndex);
+				const computedEntry = getComputedFormulaEntry(column, rowIndex);
+				setElementValue(input, displayValue, undefined);
+				input.dataset.initialValue = input.value ?? '';
+				if (formulaDefinition) {
+					input.dataset.formulaValue = formulaDefinition.formula;
+				} else {
+					delete input.dataset.formulaValue;
+				}
+				input.title = input.value;
+				applyFormulaDecorations(td, formulaDefinition, computedEntry);
+				td.dataset.displayValue = displayValue;
+				td.appendChild(input);
+				input.addEventListener('change', () => handleElementChange(input, undefined));
+				input.addEventListener('focus', (event) => {
+					activeCell = { id: row.id ?? '', key: column };
+					const isFormula = typeof input.dataset.formulaValue === 'string' && input.dataset.formulaValue.length > 0;
+					if (isFormula) {
+						setElementValue(input, input.dataset.formulaValue, undefined);
+					}
+					setTimeout(() => {
+						input.select();
+					}, 0);
+				});
+				input.addEventListener('blur', (event) => {
+					const isFormula = typeof input.dataset.formulaValue === 'string' && input.dataset.formulaValue.length > 0;
+					if (isFormula) {
+						const displayVal = getCellDisplayValue(rowIndex, row.id ?? '', column, input.dataset.initialValue ?? '');
+						setElementValue(input, displayVal, undefined);
+					}
+				});
+				input.addEventListener('mousedown', (event) => {
+					if (document.activeElement !== input) {
+						input.blur();
+					}
+				});
 				td.addEventListener('click', () => {
 					selectCell(td, {
 						column,
@@ -2928,12 +3025,17 @@ function renderTable(columns, rows, columnOptions) {
 						columnName,
 						rowId: row.id ?? '',
 						rowIndex,
-						editable: false,
-						element: null,
+						editable: true,
+						element: input,
 						fieldConfig: undefined,
 						usesDropdown: false,
-						value: row.id ?? ''
+						value: displayValue
 					});
+					if (document.activeElement !== input) {
+						// focus 事件会自动处理公式显示
+						input.focus();
+						input.select();
+					}
 				});
 			} else {
 				const rawValue = row.values?.[column];
@@ -5309,6 +5411,7 @@ function applyColumnLayout(columns, layout) {
 		const normalized = Math.max(getMinColumnWidth(column), Math.round(saved));
 		columnWidths[column] = normalized;
 		originalColumnWidths[column] = normalized;
+		savedColumnWidths.add(column); // 记录该列是从配置加载的
 		modifiedColumns.delete(column);
 	}
 }
