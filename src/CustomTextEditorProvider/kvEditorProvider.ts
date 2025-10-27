@@ -108,6 +108,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					vscode.window.showErrorMessage(messageText);
 				});
 			}
+			if (message.type === 'renameId') {
+				const renameMessage: KvEditorRenameIdMessage | undefined = message.payload;
+				this.handleRenameIdMessage(document, renameMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+			}
 			if (message.type === 'reorderRows') {
 				const reorderMessage: KvEditorReorderMessage | undefined = message.payload;
 				this.handleReorderRows(document, reorderMessage).catch((error: unknown) => {
@@ -1423,6 +1430,64 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		});
 	}
 
+	private handleRenameIdMessage(document: vscode.TextDocument, message?: KvEditorRenameIdMessage): Promise<void> {
+		return this.runSerializedEdit(async () => {
+			if (!message || !message.oldId || !message.newId) {
+				return;
+			}
+			const oldId = message.oldId.trim();
+			const newId = message.newId.trim();
+			if (!oldId || !newId || oldId === newId) {
+				return;
+			}
+			const originalText = document.getText();
+			const kvObject = readKeyValue2(originalText ?? '');
+			const header = Object.keys(kvObject)[0];
+			if (!header) {
+				throw new Error('无法解析 KV 根节点，修改未保存。');
+			}
+			const block = kvObject[header];
+			if (!block || typeof block !== 'object') {
+				throw new Error('当前 KV 结构不支持直接编辑。');
+			}
+			const blockRecord = block as Record<string, unknown>;
+			const oldRow = blockRecord[oldId];
+			if (!oldRow) {
+				throw new Error(`未找到条目 "${oldId}"，修改未保存。`);
+			}
+			if (blockRecord[newId] !== undefined) {
+				throw new Error(`条目 "${newId}" 已存在，无法重命名。`);
+			}
+
+			// 重建对象以保持属性顺序
+			const newBlock: Record<string, unknown> = {};
+			for (const key of Object.keys(blockRecord)) {
+				if (key === oldId) {
+					newBlock[newId] = oldRow;
+				} else {
+					newBlock[key] = blockRecord[key];
+				}
+			}
+			kvObject[header] = newBlock;
+
+			const newContent = writeKeyValue(kvObject);
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+			const edit = new vscode.WorkspaceEdit();
+			edit.replace(document.uri, fullRange, newContent);
+			const applied = await vscode.workspace.applyEdit(edit);
+			if (!applied) {
+				throw new Error('写入 KV 文本失败。');
+			}
+			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+			if (autoSaveMode && autoSaveMode !== 'off') {
+				const saved = await document.save();
+				if (!saved) {
+					throw new Error('保存 KV 文件失败。');
+				}
+			}
+		});
+	}
+
 	private async handleOpenScriptFile(
 		document: vscode.TextDocument,
 		payload: OpenScriptFileMessage | undefined,
@@ -2484,6 +2549,11 @@ interface KvEditorColumnReorderMessage {
 	sourceKey: string;
 	sourceIndex: number;
 	targetIndex: number;
+}
+
+interface KvEditorRenameIdMessage {
+	oldId: string;
+	newId: string;
 }
 
 interface KvEditorColumnOption {

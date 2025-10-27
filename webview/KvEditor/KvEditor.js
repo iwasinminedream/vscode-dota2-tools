@@ -1939,6 +1939,34 @@ function handleElementChange(element, fieldConfig) {
 	const currentValueRaw = readElementValue(element, fieldConfig);
 	const currentValue = currentValueRaw === undefined || currentValueRaw === null ? '' : String(currentValueRaw);
 	const trimmedValue = currentValue.trim();
+
+	// 特殊处理 id 列的修改
+	if (columnKey === 'id') {
+		const oldId = element.dataset.initialValue ?? '';
+		const newId = trimmedValue;
+		if (oldId === newId) {
+			return;
+		}
+		if (!oldId || !newId) {
+			console.warn('[kv-editor] id 列的值不能为空', { oldId, newId });
+			// 恢复原值
+			setElementValue(element, oldId, fieldConfig);
+			return;
+		}
+		element.dataset.initialValue = newId;
+		element.title = newId;
+		// 发送 renameId 消息
+		vscode.postMessage({
+			type: 'renameId',
+			payload: { oldId, newId }
+		});
+		// 更新选中单元格的状态
+		if (selectedCell && selectedCell.element === element) {
+			selectedCell.value = newId;
+		}
+		return;
+	}
+
 	const previousFormula = element.dataset.formulaValue ?? '';
 	const isFormula = trimmedValue.startsWith('=');
 	if (isFormula) {
