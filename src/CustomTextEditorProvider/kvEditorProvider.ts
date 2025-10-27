@@ -1698,8 +1698,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			const maxRowIndex = Math.max(0, totalRows);
 			insertionRowIndex = Math.max(0, Math.min(maxRowIndex, insertionRowIndex));
 			const newRowKey = this.generateUniqueRowKey(block);
+			const newRowValue = this.buildInitialRowValue(rowEntries, referenceInfo, insertionRowIndex);
 			const newEntries = entries.slice();
-			newEntries.splice(insertionEntryIndex, 0, [newRowKey, {}]);
+			newEntries.splice(insertionEntryIndex, 0, [newRowKey, newRowValue]);
 			const reorderedBlock: Record<string, unknown> = {};
 			newEntries.forEach(([key, value]) => {
 				reorderedBlock[key] = value;
@@ -1726,6 +1727,83 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 			}
 		});
+	}
+
+	private buildInitialRowValue(
+		rowEntries: Array<{ key: string; value: unknown; index: number; }>,
+		referenceEntry: { key: string; value: unknown; index: number; } | undefined,
+		insertionRowIndex: number,
+	): Record<string, unknown> {
+		const totalRows = rowEntries.length;
+		let templateEntry = referenceEntry;
+		if ((!templateEntry || !this.isPlainObject(templateEntry.value)) && totalRows > 0) {
+			const fallbackIndex = Math.min(Math.max(0, insertionRowIndex > 0 ? insertionRowIndex - 1 : 0), totalRows - 1);
+			const fallbackEntry = rowEntries[fallbackIndex];
+			if (fallbackEntry && this.isPlainObject(fallbackEntry.value)) {
+				templateEntry = fallbackEntry;
+			}
+		}
+		let columnKeys: string[] = [];
+		if (templateEntry && this.isPlainObject(templateEntry.value)) {
+			columnKeys = this.extractTemplateScalarColumns(templateEntry.value as Record<string, unknown>);
+		}
+		if (!columnKeys.length) {
+			columnKeys = this.collectTemplateScalarColumns(rowEntries);
+		}
+		const newRow: Record<string, unknown> = {};
+		for (const key of columnKeys) {
+			newRow[key] = '';
+		}
+		return newRow;
+	}
+
+	private extractTemplateScalarColumns(rowValue: Record<string, unknown>): string[] {
+		const keys: string[] = [];
+		for (const [key, value] of Object.entries(rowValue)) {
+			if (this.shouldSkipTemplateColumn(key, value)) {
+				continue;
+			}
+			keys.push(key);
+		}
+		return keys;
+	}
+
+	private collectTemplateScalarColumns(rowEntries: Array<{ key: string; value: unknown; index: number; }>): string[] {
+		const seen = new Set<string>();
+		const keys: string[] = [];
+		for (const entry of rowEntries) {
+			if (!this.isPlainObject(entry.value)) {
+				continue;
+			}
+			const rowValue = entry.value as Record<string, unknown>;
+			for (const [key, value] of Object.entries(rowValue)) {
+				if (seen.has(key) || this.shouldSkipTemplateColumn(key, value)) {
+					continue;
+				}
+				seen.add(key);
+				keys.push(key);
+			}
+		}
+		return keys;
+	}
+
+	private shouldSkipTemplateColumn(key: string, value: unknown): boolean {
+		if (!key) {
+			return true;
+		}
+		if (key === 'id') {
+			return true;
+		}
+		if (key.startsWith('//')) {
+			return true;
+		}
+		if (key === 'AbilityValues') {
+			return true;
+		}
+		if (this.isPlainObject(value)) {
+			return true;
+		}
+		return false;
 	}
 
 	private async handleReorderColumns(document: vscode.TextDocument, payload: KvEditorColumnReorderMessage | undefined): Promise<void> {
