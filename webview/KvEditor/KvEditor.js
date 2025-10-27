@@ -3228,6 +3228,10 @@ function renderTable(columns, rows, columnOptions) {
 						if (document.activeElement === input) {
 							return;
 						}
+						// 点击其他单元格时，先让当前焦点元素失焦
+						if (document.activeElement instanceof HTMLElement && document.activeElement !== input) {
+							document.activeElement.blur();
+						}
 						// 只在首次点击（获取焦点）时阻止默认行为并更新选中状态
 						if (event.detail === 1) {
 							event.preventDefault();
@@ -3249,6 +3253,10 @@ function renderTable(columns, rows, columnOptions) {
 					td.addEventListener('click', (event) => {
 						if (event.target instanceof HTMLInputElement) {
 							return;
+						}
+						// 点击 td（非 input 区域）时，先让当前焦点元素失焦
+						if (document.activeElement instanceof HTMLElement) {
+							document.activeElement.blur();
 						}
 						updateSelection();
 					});
