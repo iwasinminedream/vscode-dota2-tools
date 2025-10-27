@@ -1030,13 +1030,37 @@ function commitFormulaValue() {
 		return;
 	}
 	const newValue = formulaValueInput.value ?? '';
-	const current = readElementValue(selectedCell.element, selectedCell.fieldConfig);
-	const initial = selectedCell.element.dataset.initialValue ?? '';
-	if (current === newValue && initial === newValue) {
-		return;
+	const trimmedValue = newValue.trim();
+	const isFormula = trimmedValue.startsWith('=');
+
+	// 对于公式，需要特殊处理以避免显示公式文本
+	if (isFormula) {
+		const previousFormula = selectedCell.element.dataset.formulaValue ?? '';
+		// 如果公式没有变化，无需处理
+		if (previousFormula === trimmedValue) {
+			return;
+		}
+		// 临时设置公式文本以便 handleElementChange 检测
+		setElementValue(selectedCell.element, trimmedValue, selectedCell.fieldConfig);
+		handleElementChange(selectedCell.element, selectedCell.fieldConfig);
+		// handleElementChange 会调用 refreshFormulaResultsForTable 更新显示
+		// 但为了避免 focus 事件读取到公式文本，立即恢复显示计算结果
+		if (selectedCell.rowIndex !== undefined && selectedCell.column) {
+			const computed = getComputedFormulaEntry(selectedCell.column, selectedCell.rowIndex);
+			if (computed && typeof computed.value === 'string') {
+				setElementValue(selectedCell.element, computed.value, selectedCell.fieldConfig);
+			}
+		}
+	} else {
+		// 普通值的处理
+		const current = readElementValue(selectedCell.element, selectedCell.fieldConfig);
+		const initial = selectedCell.element.dataset.initialValue ?? '';
+		if (current === newValue && initial === newValue) {
+			return;
+		}
+		setElementValue(selectedCell.element, newValue, selectedCell.fieldConfig);
+		handleElementChange(selectedCell.element, selectedCell.fieldConfig);
 	}
-	setElementValue(selectedCell.element, newValue, selectedCell.fieldConfig);
-	handleElementChange(selectedCell.element, selectedCell.fieldConfig);
 }
 
 // 获取字段配置中定义的分隔符
