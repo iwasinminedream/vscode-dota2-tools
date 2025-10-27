@@ -352,14 +352,20 @@ function recalculateFormulas(options = {}) {
 			value,
 			error: evaluation.error,
 		});
-		const previous = previousComputed.get(makeComputedFormulaKey(definition.column, definition.rowIndex));
-		if (!previous || previous.value !== value) {
+		// 比较公式计算结果与文件中的实际值
+		const targetRow = rows[definition.rowIndex];
+		const currentValueInFile = targetRow?.values?.[definition.column];
+		const normalizedCurrentValue = currentValueInFile === undefined || currentValueInFile === null
+			? ''
+			: String(currentValueInFile);
+		// 只有当计算结果与文件中的值不一致时才需要更新
+		if (normalizedCurrentValue !== value) {
 			const row = rows[definition.rowIndex];
 			if (row && row.id) {
 				pendingEdits.push({ id: row.id, key: definition.column, value });
 			}
 		}
-		const targetRow = rows[definition.rowIndex];
+		// 更新内存中的值
 		if (targetRow && targetRow.values) {
 			targetRow.values[definition.column] = value;
 		}
@@ -5294,7 +5300,8 @@ function render(payload) {
 	}
 	latestPayload = payload;
 	applyFormulaDefinitions(payload.formulas);
-	recalculateFormulas({ emitUpdates: false });
+	// 初始加载时重新计算公式，如果发现值不一致则同步到文件
+	recalculateFormulas({ emitUpdates: true });
 	const metaParts = [];
 	if (payload.folderType) {
 		metaParts.push(`路径类型: ${formatFolderType(payload.folderType)}`);
