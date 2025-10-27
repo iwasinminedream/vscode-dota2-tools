@@ -3224,6 +3224,11 @@ function renderTable(columns, rows, columnOptions) {
 						}
 					});
 					input.addEventListener('mousedown', (event) => {
+						// 如果 input 已经有焦点（正在编辑），允许浏览器处理点击（更新光标位置）
+						if (document.activeElement === input) {
+							return;
+						}
+						// 只在首次点击（获取焦点）时阻止默认行为并更新选中状态
 						if (event.detail === 1) {
 							event.preventDefault();
 							updateSelection();
