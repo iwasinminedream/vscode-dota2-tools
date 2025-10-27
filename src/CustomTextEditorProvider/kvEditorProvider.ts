@@ -130,6 +130,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				});
 				return;
 			}
+			if (message.type === 'insertColumn') {
+				const insertMessage: KvEditorInsertColumnMessage | undefined = message.payload;
+				this.handleInsertColumn(document, insertMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'reorderColumns') {
 				const reorderMessage: KvEditorColumnReorderMessage | undefined = message.payload;
 				this.handleReorderColumns(document, reorderMessage).catch((error: unknown) => {
@@ -1729,6 +1737,103 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		});
 	}
 
+	private handleInsertColumn(document: vscode.TextDocument, message?: KvEditorInsertColumnMessage): Promise<void> {
+		return this.runSerializedEdit(async () => {
+			if (!message) {
+				return;
+			}
+			const position = message.position === 'before' || message.position === 'after' ? message.position : undefined;
+			if (!position) {
+				return;
+			}
+			const referenceKey = typeof message.referenceKey === 'string' ? message.referenceKey.trim() : '';
+			const columnName = typeof message.columnName === 'string' ? message.columnName.trim() : '';
+			const referenceIndex = Number(message.referenceIndex);
+
+			if (!referenceKey || !columnName) {
+				return;
+			}
+			if (!Number.isFinite(referenceIndex) || referenceIndex < 0) {
+				return;
+			}
+
+			const originalText = document.getText();
+			const kvObject = readKeyValue2(originalText ?? '');
+			const header = Object.keys(kvObject)[0];
+			if (!header) {
+				throw new Error('无法解析 KV 根节点，未执行插入。');
+			}
+			const blockRaw = kvObject[header];
+			if (!blockRaw || typeof blockRaw !== 'object') {
+				throw new Error('当前 KV 结构不支持列插入。');
+			}
+			const block = blockRaw as Record<string, unknown>;
+			const entries = Object.entries(block);
+
+			// 验证列名是否已存在
+			const parsed = this.parseKv(originalText);
+			if (parsed.columns.includes(columnName) || columnName === 'id') {
+				throw new Error(`列名 "${columnName}" 已存在。`);
+			}
+
+			// 验证列名是否合法
+			if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(columnName)) {
+				throw new Error('列名只能包含字母、数字和下划线，且不能以数字开头。');
+			}
+
+			// 在每一行的指定位置插入新列
+			const updatedBlock: Record<string, unknown> = {};
+			for (const [rowKey, rowValue] of entries) {
+				if (!this.isPlainObject(rowValue)) {
+					updatedBlock[rowKey] = rowValue;
+					continue;
+				}
+
+				const rowRecord = rowValue as Record<string, unknown>;
+				const rowEntries = Object.entries(rowRecord);
+
+				// 找到参考列的位置
+				const referencePosition = rowEntries.findIndex(([key]) => key === referenceKey);
+
+				if (referencePosition === -1) {
+					// 如果找不到参考列，直接添加到末尾
+					updatedBlock[rowKey] = {
+						...rowRecord,
+						[columnName]: '',
+					};
+				} else {
+					// 在参考列的指定位置插入新列
+					const insertPosition = position === 'before' ? referencePosition : referencePosition + 1;
+					const newRowEntries = rowEntries.slice();
+					newRowEntries.splice(insertPosition, 0, [columnName, '']);
+
+					const newRowRecord: Record<string, unknown> = {};
+					for (const [key, value] of newRowEntries) {
+						newRowRecord[key] = value;
+					}
+					updatedBlock[rowKey] = newRowRecord;
+				}
+			}
+
+			kvObject[header] = updatedBlock;
+			const newContent = writeKeyValue(kvObject);
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+			const edit = new vscode.WorkspaceEdit();
+			edit.replace(document.uri, fullRange, newContent);
+			const applied = await vscode.workspace.applyEdit(edit);
+			if (!applied) {
+				throw new Error('写入 KV 文本失败。');
+			}
+			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+			if (autoSaveMode && autoSaveMode !== 'off') {
+				const saved = await document.save();
+				if (!saved) {
+					throw new Error('保存 KV 文件失败。');
+				}
+			}
+		});
+	}
+
 	private buildInitialRowValue(
 		rowEntries: Array<{ key: string; value: unknown; index: number; }>,
 		referenceEntry: { key: string; value: unknown; index: number; } | undefined,
@@ -2825,6 +2930,13 @@ interface KvEditorInsertRowMessage {
 	referenceId?: string;
 	referenceIndex: number;
 	position: 'before' | 'after';
+}
+
+interface KvEditorInsertColumnMessage {
+	referenceKey: string;
+	referenceIndex: number;
+	position: 'before' | 'after';
+	columnName: string;
 }
 
 interface KvEditorColumnReorderMessage {

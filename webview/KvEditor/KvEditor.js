@@ -53,6 +53,7 @@ let pendingMultiSelectReopen = null;
 let textureMenuState = null;
 let abilityValuesEditorState = null;
 let rowContextMenuState = null;
+let columnContextMenuState = null;
 const pendingTextureMenuRequests = new Map();
 let rowDragState = null;
 let clipboardData = null;
@@ -697,6 +698,7 @@ function clearSelection() {
 // 选中指定单元格并同步公式栏信息
 function selectCell(td, context) {
 	closeRowContextMenu();
+	closeColumnContextMenu();
 	if (!td || !context) {
 		clearSelection();
 		return;
@@ -2911,6 +2913,20 @@ function renderTable(columns, rows, columnOptions) {
 			nameEl.className = 'kv-column-name';
 			nameEl.textContent = headerLabel;
 			nameEl.title = headerLabel;
+
+			// 为列标题添加右键菜单（跳过 id 列）
+			if (columnIndex > 0) {
+				nameEl.addEventListener('contextmenu', (event) => {
+					openColumnContextMenu(event, {
+						targetElement: nameEl,
+						columnKey: column,
+						columnIndex,
+						columnName: headerLabel
+					});
+				});
+				nameEl.style.cursor = 'context-menu';
+			}
+
 			wrapper.appendChild(letterButton);
 			const titleRow = document.createElement('div');
 			titleRow.className = 'kv-column-header-title-row';
@@ -3586,6 +3602,270 @@ function closeRowContextMenu() {
 		window.removeEventListener('blur', cleanupHandler);
 	}
 	rowContextMenuState = null;
+}
+
+function closeColumnContextMenu() {
+	if (!columnContextMenuState) {
+		return;
+	}
+	const { menu, outsideHandler, keyHandler, cleanupHandler } = columnContextMenuState;
+	if (menu && menu.parentElement) {
+		menu.parentElement.removeChild(menu);
+	}
+	if (outsideHandler) {
+		document.removeEventListener('mousedown', outsideHandler, true);
+		document.removeEventListener('contextmenu', outsideHandler, true);
+	}
+	if (keyHandler) {
+		document.removeEventListener('keydown', keyHandler, true);
+	}
+	if (cleanupHandler) {
+		document.removeEventListener('scroll', cleanupHandler, true);
+		window.removeEventListener('resize', cleanupHandler);
+		window.removeEventListener('blur', cleanupHandler);
+	}
+	columnContextMenuState = null;
+}
+
+function requestColumnInsertion(position, referenceKey, referenceIndex) {
+	if (position !== 'before' && position !== 'after') {
+		return;
+	}
+	if (!referenceKey || typeof referenceKey !== 'string') {
+		return;
+	}
+	if (!Number.isFinite(referenceIndex) || referenceIndex < 0) {
+		return;
+	}
+
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-column-insert-dialog-overlay';
+
+	const form = document.createElement('form');
+	form.className = 'kv-column-insert-dialog';
+
+	const title = document.createElement('div');
+	title.className = 'kv-column-insert-dialog-title';
+	title.textContent = position === 'before' ? '向左插入列' : '向右插入列';
+	form.appendChild(title);
+
+	const label = document.createElement('label');
+	label.textContent = '列名';
+	label.className = 'kv-column-insert-dialog-label';
+
+	const input = document.createElement('input');
+	input.type = 'text';
+	input.className = 'kv-column-insert-dialog-input';
+	input.placeholder = '请输入列名';
+	input.required = true;
+
+	label.appendChild(input);
+	form.appendChild(label);
+
+	const errorEl = document.createElement('div');
+	errorEl.className = 'kv-column-insert-dialog-error';
+	errorEl.hidden = true;
+	form.appendChild(errorEl);
+
+	const actions = document.createElement('div');
+	actions.className = 'kv-column-insert-dialog-actions';
+
+	const cancelBtn = document.createElement('button');
+	cancelBtn.type = 'button';
+	cancelBtn.className = 'kv-button kv-button-secondary';
+	cancelBtn.textContent = '取消';
+	actions.appendChild(cancelBtn);
+
+	const submitBtn = document.createElement('button');
+	submitBtn.type = 'submit';
+	submitBtn.className = 'kv-button kv-button-primary';
+	submitBtn.textContent = '插入';
+	actions.appendChild(submitBtn);
+
+	form.appendChild(actions);
+	dialog.appendChild(form);
+
+	const closeDialog = () => {
+		if (dialog.parentElement) {
+			dialog.parentElement.removeChild(dialog);
+		}
+	};
+
+	const showError = (message) => {
+		errorEl.textContent = message;
+		errorEl.hidden = false;
+	};
+
+	const clearError = () => {
+		errorEl.textContent = '';
+		errorEl.hidden = true;
+	};
+
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+		const columnName = input.value.trim();
+		if (!columnName) {
+			showError('列名不能为空');
+			return;
+		}
+
+		// 检查列名是否已存在
+		const existingColumns = latestPayload?.columns || [];
+		if (existingColumns.includes(columnName) || columnName === 'id') {
+			showError('列名已存在');
+			return;
+		}
+
+		// 检查列名是否合法（不能包含特殊字符）
+		if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(columnName)) {
+			showError('列名只能包含字母、数字和下划线，且不能以数字开头');
+			return;
+		}
+
+		vscode.postMessage({
+			type: 'insertColumn',
+			payload: {
+				referenceKey,
+				referenceIndex: Number(referenceIndex),
+				position,
+				columnName,
+			},
+		});
+
+		closeDialog();
+	});
+
+	cancelBtn.addEventListener('click', closeDialog);
+
+	input.addEventListener('input', clearError);
+
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeDialog();
+		}
+	};
+
+	document.addEventListener('keydown', keyHandler, true);
+	dialog.addEventListener('click', (event) => {
+		if (event.target === dialog) {
+			closeDialog();
+		}
+	});
+
+	const originalRemove = dialog.remove;
+	dialog.remove = function () {
+		document.removeEventListener('keydown', keyHandler, true);
+		originalRemove.call(this);
+	};
+
+	document.body.appendChild(dialog);
+
+	requestAnimationFrame(() => {
+		input.focus();
+		input.select();
+	});
+}
+
+function openColumnContextMenu(invocationEvent, context) {
+	const resolvedContext = context ?? {};
+	if (invocationEvent) {
+		invocationEvent.preventDefault();
+		invocationEvent.stopPropagation();
+	}
+
+	const { columnKey, columnIndex } = resolvedContext;
+	if (!columnKey || typeof columnKey !== 'string') {
+		return;
+	}
+	if (!Number.isFinite(columnIndex) || columnIndex < 0) {
+		return;
+	}
+
+	// 不允许在行号列和 id 列上右键
+	if (columnKey === ROW_NUMBER_COLUMN_KEY || columnKey === 'id') {
+		return;
+	}
+
+	closeColumnContextMenu();
+	closeRowContextMenu();
+	closeMultiSelectDropdown();
+	closeAbilityValuesEditor();
+
+	const menu = document.createElement('div');
+	menu.className = 'kv-column-context-menu';
+	menu.setAttribute('role', 'menu');
+
+	const options = [
+		{ label: '向左插入列', position: 'before' },
+		{ label: '向右插入列', position: 'after' }
+	];
+
+	options.forEach((option) => {
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'kv-column-context-menu-item';
+		button.textContent = option.label;
+		button.addEventListener('click', () => {
+			requestColumnInsertion(option.position, columnKey, columnIndex);
+			closeColumnContextMenu();
+		});
+		menu.appendChild(button);
+	});
+
+	menu.addEventListener('contextmenu', (event) => event.preventDefault());
+	document.body.appendChild(menu);
+
+	const anchorElement = resolvedContext?.targetElement instanceof HTMLElement ? resolvedContext.targetElement : null;
+	const anchorRect = anchorElement ? anchorElement.getBoundingClientRect() : null;
+	const pointerX = invocationEvent?.clientX ?? (anchorRect ? anchorRect.left + (anchorRect.width / 2) : window.innerWidth / 2);
+	const pointerY = invocationEvent?.clientY ?? (anchorRect ? anchorRect.top + (anchorRect.height / 2) : window.innerHeight / 2);
+
+	const rect = menu.getBoundingClientRect();
+	const margin = 8;
+	let left = pointerX;
+	let top = pointerY;
+
+	if (left + rect.width > window.innerWidth - margin) {
+		left = Math.max(margin, window.innerWidth - rect.width - margin);
+	}
+	if (top + rect.height > window.innerHeight - margin) {
+		top = Math.max(margin, window.innerHeight - rect.height - margin);
+	}
+	left = Math.max(margin, left);
+	top = Math.max(margin, top);
+
+	menu.style.left = `${left}px`;
+	menu.style.top = `${top}px`;
+
+	const outsideHandler = (event) => {
+		if (!menu.contains(event.target)) {
+			closeColumnContextMenu();
+		}
+	};
+
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeColumnContextMenu();
+		}
+	};
+
+	const cleanupHandler = () => closeColumnContextMenu();
+
+	document.addEventListener('mousedown', outsideHandler, true);
+	document.addEventListener('contextmenu', outsideHandler, true);
+	document.addEventListener('keydown', keyHandler, true);
+	document.addEventListener('scroll', cleanupHandler, true);
+	window.addEventListener('resize', cleanupHandler);
+	window.addEventListener('blur', cleanupHandler);
+
+	columnContextMenuState = {
+		menu,
+		outsideHandler,
+		keyHandler,
+		cleanupHandler
+	};
 }
 
 function requestRowInsertion(position, rowId, rowIndex) {
