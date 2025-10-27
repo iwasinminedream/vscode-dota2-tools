@@ -959,6 +959,32 @@ function handleFillDragMove(event) {
 		}
 		fillHandleState.moved = true;
 	}
+
+	// 自动滚动逻辑
+	if (tableSection) {
+		const tableRect = tableSection.getBoundingClientRect();
+		const scrollThreshold = 50; // 距离边缘多少像素开始滚动
+		const scrollSpeed = 50; // 每次滚动的像素数
+
+		// 鼠标距离表格顶部和底部的距离
+		const distanceFromTop = event.clientY - tableRect.top;
+		const distanceFromBottom = tableRect.bottom - event.clientY;
+
+		// 向上滚动：距离顶部小于阈值（包括超出顶部边缘）
+		if (distanceFromTop < scrollThreshold) {
+			const normalizedDistance = Math.max(0, distanceFromTop);
+			const scrollAmount = Math.max(1, scrollSpeed * (1 - normalizedDistance / scrollThreshold));
+			tableSection.scrollTop = Math.max(0, tableSection.scrollTop - scrollAmount);
+		}
+		// 向下滚动：距离底部小于阈值（包括超出底部边缘）
+		else if (distanceFromBottom < scrollThreshold) {
+			const normalizedDistance = Math.max(0, distanceFromBottom);
+			const scrollAmount = Math.max(1, scrollSpeed * (1 - normalizedDistance / scrollThreshold));
+			const maxScroll = tableSection.scrollHeight - tableSection.clientHeight;
+			tableSection.scrollTop = Math.min(maxScroll, tableSection.scrollTop + scrollAmount);
+		}
+	}
+
 	const targetRow = resolveFillTargetRow(event.clientY);
 	if (targetRow === null || targetRow === fillHandleState.currentRow) {
 		return;
