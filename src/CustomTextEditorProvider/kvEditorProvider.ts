@@ -183,7 +183,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		const columnLayout = this.loadColumnLayout(document);
 		const columnOptions = this.getResolvedColumnOptions(folderType, workspaceFolder);
 		const formulas = workspaceFolder && documentKey
-			? this.buildFormulaPayload(workspaceFolder, documentKey, parsed.rows)
+			? this.buildFormulaPayload(workspaceFolder, documentKey, parsed.rows, document.uri)
 			: [];
 		return {
 			fileName: path.basename(document.uri.fsPath),
@@ -1706,7 +1706,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				columnWidths: value.columnWidths ? { ...value.columnWidths } : undefined,
 			};
 		}
-		return { files };
+		const result: KvEditorUserSettings = { files };
+		if (source.formulas) {
+			result.formulas = JSON.parse(JSON.stringify(source.formulas));
+		}
+		return result;
 	}
 
 	private readUserSettingsFromDisk(folder: vscode.WorkspaceFolder): KvEditorUserSettings {
@@ -1730,23 +1734,31 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			return result;
 		}
 		const container = raw as Record<string, unknown>;
+
+		// Parse files section (column widths)
 		const filesSection = container.files;
-		if (!filesSection || typeof filesSection !== 'object') {
-			return result;
+		if (filesSection && typeof filesSection === 'object') {
+			for (const [key, entry] of Object.entries(filesSection as Record<string, unknown>)) {
+				if (typeof key !== 'string' || !key) {
+					continue;
+				}
+				if (!entry || typeof entry !== 'object') {
+					continue;
+				}
+				const recordEntry = entry as Record<string, unknown>;
+				const columnWidths = this.sanitizeColumnWidthMap(recordEntry.columnWidths);
+				if (columnWidths && Object.keys(columnWidths).length) {
+					result.files[key] = { columnWidths };
+				}
+			}
 		}
-		for (const [key, entry] of Object.entries(filesSection as Record<string, unknown>)) {
-			if (typeof key !== 'string' || !key) {
-				continue;
-			}
-			if (!entry || typeof entry !== 'object') {
-				continue;
-			}
-			const recordEntry = entry as Record<string, unknown>;
-			const columnWidths = this.sanitizeColumnWidthMap(recordEntry.columnWidths);
-			if (columnWidths && Object.keys(columnWidths).length) {
-				result.files[key] = { columnWidths };
-			}
+
+		// Parse formulas section
+		const formulasSection = container.formulas;
+		if (formulasSection && typeof formulasSection === 'object' && !Array.isArray(formulasSection)) {
+			result.formulas = formulasSection as KvEditorFormulaStorage;
 		}
+
 		return result;
 	}
 
@@ -1779,7 +1791,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}, {});
 			files[key] = { columnWidths: sorted };
 		}
-		return JSON.stringify({ files }, null, 2);
+		const payload: Record<string, unknown> = { files };
+		if (settings.formulas) {
+			payload.formulas = settings.formulas;
+		}
+		return JSON.stringify(payload, null, 2);
 	}
 
 	private sanitizeColumnWidthMap(raw: unknown): Record<string, number> | undefined {
@@ -1802,7 +1818,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private getUserSettingsPath(folder: vscode.WorkspaceFolder): string {
-		return path.join(folder.uri.fsPath, '.vscode', 'kv_edotir_user_setting.json');
+		return path.join(folder.uri.fsPath, '.vscode', 'kv_editor_setting.json');
 	}
 
 	private getDocumentSettingsKey(uri: vscode.Uri, folder: vscode.WorkspaceFolder): string | undefined {
@@ -1878,8 +1894,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			return;
 		}
 		const formulaTextRaw = typeof message.formula === 'string' ? message.formula.trim() : '';
-		const overrides = this.copyColumnOptionOverrides(this.getColumnOptionOverrides(workspaceFolder));
-		const formulas = overrides.formulas ? { ...overrides.formulas } : {};
+		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
+		const formulas = settings.formulas ? { ...settings.formulas } : {};
 		const documentFormulas = formulas[documentKey] ? { ...formulas[documentKey] } : {};
 		const rowFormulas = documentFormulas[rowKey] ? { ...documentFormulas[rowKey] } : {};
 		if (!formulaTextRaw || !formulaTextRaw.startsWith('=')) {
@@ -1899,8 +1915,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		} else if (formulas[documentKey]) {
 			delete formulas[documentKey];
 		}
-		overrides.formulas = Object.keys(formulas).length ? formulas : undefined;
-		this.writeColumnOptionOverrides(workspaceFolder, overrides);
+		settings.formulas = Object.keys(formulas).length ? formulas : undefined;
+		this.writeUserSettings(workspaceFolder, settings);
 	}
 
 	private getColumnOptionOverrides(folder: vscode.WorkspaceFolder): KvEditorColumnOptionsFile {
@@ -2248,11 +2264,28 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		folder: vscode.WorkspaceFolder,
 		documentKey: string,
 		rows: ParsedKvRow[],
+		documentUri: vscode.Uri,
 	): KvEditorFormulaPayloadEntry[] {
-		const overrides = this.getColumnOptionOverrides(folder);
-		const documentFormulas = overrides.formulas?.[documentKey];
-		if (!documentFormulas) {
+		const settings = this.getUserSettings(folder);
+		const storage = settings.formulas;
+		if (!storage) {
 			return [];
+		}
+		const resolvedDocument = this.resolveFormulaDocumentStorageEntry(documentKey, documentUri, storage);
+		if (!resolvedDocument) {
+			return [];
+		}
+		const { key: storageKey, formulas: documentFormulas } = resolvedDocument;
+		if (storageKey !== documentKey && !storage[documentKey]) {
+			const migrated = this.copyUserSettings(settings);
+			const formulasMap = migrated.formulas ? { ...migrated.formulas } : {};
+			const existing = formulasMap[storageKey];
+			if (existing) {
+				formulasMap[documentKey] = existing;
+				delete formulasMap[storageKey];
+				migrated.formulas = formulasMap;
+				this.writeUserSettings(folder, migrated);
+			}
 		}
 		const rowIdToIndex = new Map<string, number>();
 		rows.forEach((row, index) => {
@@ -2279,6 +2312,36 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		}
 		return payload;
+	}
+
+	private resolveFormulaDocumentStorageEntry(
+		documentKey: string,
+		documentUri: vscode.Uri,
+		storage: KvEditorFormulaStorage,
+	): { key: string; formulas: Record<string, Record<string, string>>; } | undefined {
+		if (!storage || typeof storage !== 'object') {
+			return undefined;
+		}
+		if (storage[documentKey]) {
+			return { key: documentKey, formulas: storage[documentKey] };
+		}
+		const normalizedTarget = this.normalizeFormulaDocumentKey(documentKey);
+		for (const [key, formulas] of Object.entries(storage)) {
+			if (this.normalizeFormulaDocumentKey(key) === normalizedTarget) {
+				return { key, formulas };
+			}
+		}
+		const absoluteTarget = this.normalizeFormulaDocumentKey(documentUri.fsPath);
+		for (const [key, formulas] of Object.entries(storage)) {
+			if (this.normalizeFormulaDocumentKey(key) === absoluteTarget) {
+				return { key, formulas };
+			}
+		}
+		return undefined;
+	}
+
+	private normalizeFormulaDocumentKey(input: string): string {
+		return input.replace(/[\\/]+/g, '/').toLowerCase();
 	}
 
 	private reorderRowColumns(row: Record<string, unknown>, orderedKeys: string[]): Record<string, unknown> {
@@ -2512,6 +2575,7 @@ interface KvEditorSaveColumnWidthsMessage {
 
 interface KvEditorUserSettings {
 	files: Record<string, KvEditorUserFileSettings>;
+	formulas?: KvEditorFormulaStorage;
 }
 
 interface KvEditorUserFileSettings {
