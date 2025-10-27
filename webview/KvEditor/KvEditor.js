@@ -52,6 +52,7 @@ let openMultiSelectContext = null;
 let pendingMultiSelectReopen = null;
 let textureMenuState = null;
 let abilityValuesEditorState = null;
+let rowContextMenuState = null;
 const pendingTextureMenuRequests = new Map();
 let rowDragState = null;
 let clipboardData = null;
@@ -695,7 +696,8 @@ function clearSelection() {
 
 // 选中指定单元格并同步公式栏信息
 function selectCell(td, context) {
-	if (!td) {
+	closeRowContextMenu();
+	if (!td || !context) {
 		clearSelection();
 		return;
 	}
@@ -2819,6 +2821,7 @@ function renderTable(columns, rows, columnOptions) {
 		return;
 	}
 	cleanupColumnDragState();
+	closeRowContextMenu();
 	let preservePending = Boolean(pendingMultiSelectReopen);
 	if (!preservePending && openMultiSelectContext && openMultiSelectContext.isMulti) {
 		const reopenColumn = openMultiSelectContext.select?.dataset.key ?? '';
@@ -2999,6 +3002,14 @@ function renderTable(columns, rows, columnOptions) {
 						fieldConfig: undefined,
 						usesDropdown: false,
 						value: indexLabel.textContent ?? ''
+					});
+				});
+				td.addEventListener('contextmenu', (event) => {
+					openRowContextMenu(event, {
+						targetElement: td,
+						rowIndex,
+						rowId: row.id ?? '',
+						menuName: 'row-index'
 					});
 				});
 			} else if (column === 'id') {
@@ -3552,6 +3563,126 @@ function closeAbilityValuesEditor() {
 	}
 	document.body.classList.remove('kv-ability-editor-open');
 	abilityValuesEditorState = null;
+}
+
+function closeRowContextMenu() {
+	if (!rowContextMenuState) {
+		return;
+	}
+	const { menu, outsideHandler, keyHandler, cleanupHandler } = rowContextMenuState;
+	if (menu && menu.parentElement) {
+		menu.parentElement.removeChild(menu);
+	}
+	if (outsideHandler) {
+		document.removeEventListener('mousedown', outsideHandler, true);
+		document.removeEventListener('contextmenu', outsideHandler, true);
+	}
+	if (keyHandler) {
+		document.removeEventListener('keydown', keyHandler, true);
+	}
+	if (cleanupHandler) {
+		document.removeEventListener('scroll', cleanupHandler, true);
+		window.removeEventListener('resize', cleanupHandler);
+		window.removeEventListener('blur', cleanupHandler);
+	}
+	rowContextMenuState = null;
+}
+
+function requestRowInsertion(position, rowId, rowIndex) {
+	if (position !== 'before' && position !== 'after') {
+		return;
+	}
+	if (!Number.isFinite(rowIndex)) {
+		return;
+	}
+	const normalizedRowId = typeof rowId === 'string' && rowId.length ? rowId : undefined;
+	vscode.postMessage({
+		type: 'insertRow',
+		payload: {
+			referenceId: normalizedRowId,
+			referenceIndex: Number(rowIndex),
+			position,
+		},
+	});
+}
+
+function openRowContextMenu(invocationEvent, context) {
+	const resolvedContext = context ?? {};
+	if (invocationEvent) {
+		invocationEvent.preventDefault();
+		invocationEvent.stopPropagation();
+	}
+	const { rowIndex } = resolvedContext;
+	if (!Number.isFinite(rowIndex)) {
+		return;
+	}
+	const normalizedIndex = Number(rowIndex);
+	const rowId = typeof resolvedContext.rowId === 'string' ? resolvedContext.rowId : '';
+	closeRowContextMenu();
+	closeMultiSelectDropdown();
+	closeAbilityValuesEditor();
+	const menu = document.createElement('div');
+	menu.className = 'kv-row-context-menu';
+	menu.setAttribute('role', 'menu');
+	const options = [
+		{ label: '向上插入一行', position: 'before' },
+		{ label: '向下插入一行', position: 'after' }
+	];
+	options.forEach((option) => {
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'kv-row-context-menu-item';
+		button.textContent = option.label;
+		button.addEventListener('click', () => {
+			requestRowInsertion(option.position, rowId, normalizedIndex);
+			closeRowContextMenu();
+		});
+		menu.appendChild(button);
+	});
+	menu.addEventListener('contextmenu', (event) => event.preventDefault());
+	document.body.appendChild(menu);
+	const anchorElement = resolvedContext?.targetElement instanceof HTMLElement ? resolvedContext.targetElement : null;
+	const anchorRect = anchorElement ? anchorElement.getBoundingClientRect() : null;
+	const pointerX = invocationEvent?.clientX ?? (anchorRect ? anchorRect.left + (anchorRect.width / 2) : window.innerWidth / 2);
+	const pointerY = invocationEvent?.clientY ?? (anchorRect ? anchorRect.top + (anchorRect.height / 2) : window.innerHeight / 2);
+	const rect = menu.getBoundingClientRect();
+	const margin = 8;
+	let left = pointerX;
+	let top = pointerY;
+	if (left + rect.width > window.innerWidth - margin) {
+		left = Math.max(margin, window.innerWidth - rect.width - margin);
+	}
+	if (top + rect.height > window.innerHeight - margin) {
+		top = Math.max(margin, window.innerHeight - rect.height - margin);
+	}
+	left = Math.max(margin, left);
+	top = Math.max(margin, top);
+	menu.style.left = `${left}px`;
+	menu.style.top = `${top}px`;
+	const outsideHandler = (event) => {
+		if (!menu.contains(event.target)) {
+			closeRowContextMenu();
+		}
+	};
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeRowContextMenu();
+		}
+	};
+	const cleanupHandler = () => closeRowContextMenu();
+	document.addEventListener('mousedown', outsideHandler, true);
+	document.addEventListener('contextmenu', outsideHandler, true);
+	document.addEventListener('keydown', keyHandler, true);
+	document.addEventListener('scroll', cleanupHandler, true);
+	window.addEventListener('resize', cleanupHandler);
+	window.addEventListener('blur', cleanupHandler);
+	rowContextMenuState = {
+		menu,
+		outsideHandler,
+		keyHandler,
+		cleanupHandler
+	};
 }
 
 function openAbilityValuesEditor(context) {

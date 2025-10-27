@@ -122,6 +122,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					vscode.window.showErrorMessage(messageText);
 				});
 			}
+			if (message.type === 'insertRow') {
+				const insertMessage: KvEditorInsertRowMessage | undefined = message.payload;
+				this.handleInsertRow(document, insertMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'reorderColumns') {
 				const reorderMessage: KvEditorColumnReorderMessage | undefined = message.payload;
 				this.handleReorderColumns(document, reorderMessage).catch((error: unknown) => {
@@ -1625,6 +1633,101 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private handleInsertRow(document: vscode.TextDocument, message?: KvEditorInsertRowMessage): Promise<void> {
+		return this.runSerializedEdit(async () => {
+			if (!message) {
+				return;
+			}
+			const position = message.position === 'before' || message.position === 'after' ? message.position : undefined;
+			if (!position) {
+				return;
+			}
+			const referenceIndex = Number(message.referenceIndex);
+			if (!Number.isFinite(referenceIndex)) {
+				return;
+			}
+			const originalText = document.getText();
+			const kvObject = readKeyValue2(originalText ?? '');
+			const header = Object.keys(kvObject)[0];
+			if (!header) {
+				throw new Error('无法解析 KV 根节点，未执行插入。');
+			}
+			const blockRaw = kvObject[header];
+			if (!blockRaw || typeof blockRaw !== 'object') {
+				throw new Error('当前 KV 结构不支持行插入。');
+			}
+			const block = blockRaw as Record<string, unknown>;
+			const entries = Object.entries(block);
+			const rowEntries = entries
+				.map(([key, value], index) => ({ key, value, index }))
+				.filter((entry) => this.isPlainObject(entry.value));
+			const totalRows = rowEntries.length;
+			const referenceId = typeof message.referenceId === 'string' ? message.referenceId.trim() : '';
+			let referenceInfo = referenceId ? rowEntries.find((entry) => entry.key === referenceId) : undefined;
+			let referenceRowPosition = referenceInfo ? rowEntries.findIndex((entry) => entry.key === referenceInfo?.key) : -1;
+			if (!referenceInfo && totalRows) {
+				const clampedIndex = Math.max(0, Math.min(totalRows - 1, Math.floor(referenceIndex)));
+				referenceInfo = rowEntries[clampedIndex];
+				referenceRowPosition = clampedIndex;
+			}
+			let insertionEntryIndex = entries.length;
+			let insertionRowIndex = totalRows;
+			if (referenceInfo && referenceRowPosition >= 0) {
+				if (position === 'before') {
+					insertionEntryIndex = referenceInfo.index;
+					insertionRowIndex = referenceRowPosition;
+				} else {
+					insertionEntryIndex = referenceInfo.index + 1;
+					insertionRowIndex = referenceRowPosition + 1;
+				}
+			} else if (!totalRows) {
+				insertionEntryIndex = entries.length;
+				insertionRowIndex = 0;
+			} else {
+				const fallback = rowEntries[rowEntries.length - 1];
+				const fallbackPosition = rowEntries.length - 1;
+				if (position === 'before') {
+					insertionEntryIndex = fallback.index;
+					insertionRowIndex = fallbackPosition;
+				} else {
+					insertionEntryIndex = fallback.index + 1;
+					insertionRowIndex = fallbackPosition + 1;
+				}
+			}
+			insertionEntryIndex = Math.max(0, Math.min(entries.length, insertionEntryIndex));
+			const maxRowIndex = Math.max(0, totalRows);
+			insertionRowIndex = Math.max(0, Math.min(maxRowIndex, insertionRowIndex));
+			const newRowKey = this.generateUniqueRowKey(block);
+			const newEntries = entries.slice();
+			newEntries.splice(insertionEntryIndex, 0, [newRowKey, {}]);
+			const reorderedBlock: Record<string, unknown> = {};
+			newEntries.forEach(([key, value]) => {
+				reorderedBlock[key] = value;
+			});
+			kvObject[header] = reorderedBlock;
+			const newContent = writeKeyValue(kvObject);
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+			const edit = new vscode.WorkspaceEdit();
+			edit.replace(document.uri, fullRange, newContent);
+			const applied = await vscode.workspace.applyEdit(edit);
+			if (!applied) {
+				throw new Error('写入 KV 文本失败。');
+			}
+			try {
+				this.shiftFormulaRowIndices(document, insertionRowIndex, 1);
+			} catch (error) {
+				console.warn('[kvEditorProvider] Failed to shift formula row indices after insertion:', error);
+			}
+			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+			if (autoSaveMode && autoSaveMode !== 'off') {
+				const saved = await document.save();
+				if (!saved) {
+					throw new Error('保存 KV 文件失败。');
+				}
+			}
+		});
+	}
+
 	private async handleReorderColumns(document: vscode.TextDocument, payload: KvEditorColumnReorderMessage | undefined): Promise<void> {
 		if (!payload) {
 			return;
@@ -2459,6 +2562,101 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		return reordered;
 	}
 
+	private generateUniqueRowKey(block: Record<string, unknown>): string {
+		const existingKeys = new Set(Object.keys(block).map((key) => key.toLowerCase()));
+		let counter = 1;
+		while (counter < Number.MAX_SAFE_INTEGER) {
+			const candidate = `NewEntry${counter}`;
+			if (!existingKeys.has(candidate.toLowerCase())) {
+				return candidate;
+			}
+			counter += 1;
+		}
+		return `NewEntry${Date.now()}`;
+	}
+
+	private shiftFormulaRowIndices(document: vscode.TextDocument, insertionIndex: number, delta: number): void {
+		if (!Number.isInteger(insertionIndex) || delta === 0) {
+			return;
+		}
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return;
+		}
+		const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+		if (!documentKey) {
+			return;
+		}
+		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
+		const formulas = settings.formulas;
+		if (!formulas) {
+			return;
+		}
+		const resolved = this.resolveFormulaDocumentStorageEntry(documentKey, document.uri, formulas);
+		if (!resolved) {
+			return;
+		}
+		const storageKey = resolved.key;
+		const documentFormulas = resolved.formulas;
+		const entries = Object.entries(documentFormulas);
+		if (!entries.length) {
+			return;
+		}
+		const sortedEntries = entries.slice().sort((a, b) => {
+			const indexA = this.getFormulaIndexFromKey(a[0]);
+			const indexB = this.getFormulaIndexFromKey(b[0]);
+			if (indexA === undefined && indexB === undefined) {
+				return a[0].localeCompare(b[0]);
+			}
+			if (indexA === undefined) {
+				return delta > 0 ? -1 : 1;
+			}
+			if (indexB === undefined) {
+				return delta > 0 ? 1 : -1;
+			}
+			return delta > 0 ? indexB - indexA : indexA - indexB;
+		});
+		let changed = false;
+		const updated: Record<string, Record<string, string>> = {};
+		for (const [rowKey, columnMap] of sortedEntries) {
+			const indexValue = this.getFormulaIndexFromKey(rowKey);
+			if (indexValue === undefined || indexValue < insertionIndex) {
+				if (!updated[rowKey]) {
+					updated[rowKey] = { ...columnMap };
+				}
+				continue;
+			}
+			const newIndex = indexValue + delta;
+			const newKey = `index:${Math.max(0, newIndex)}`;
+			if (newKey !== rowKey) {
+				changed = true;
+			}
+			updated[newKey] = { ...columnMap };
+		}
+		if (!changed) {
+			return;
+		}
+		const formulasCopy = { ...formulas };
+		if (Object.keys(updated).length) {
+			formulasCopy[storageKey] = updated;
+		} else if (formulasCopy[storageKey]) {
+			delete formulasCopy[storageKey];
+		}
+		settings.formulas = Object.keys(formulasCopy).length ? formulasCopy : undefined;
+		this.writeUserSettings(workspaceFolder, settings);
+	}
+
+	private getFormulaIndexFromKey(rowKey: string): number | undefined {
+		if (!rowKey.startsWith('index:')) {
+			return undefined;
+		}
+		const numeric = Number(rowKey.slice(6));
+		if (!Number.isFinite(numeric)) {
+			return undefined;
+		}
+		return Math.max(0, Math.floor(numeric));
+	}
+
 }
 
 interface KvEditorPayload {
@@ -2543,6 +2741,12 @@ interface KvEditorReorderMessage {
 	sourceId: string;
 	sourceIndex: number;
 	targetIndex: number;
+}
+
+interface KvEditorInsertRowMessage {
+	referenceId?: string;
+	referenceIndex: number;
+	position: 'before' | 'after';
 }
 
 interface KvEditorColumnReorderMessage {

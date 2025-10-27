@@ -1,15 +1,16 @@
 # VS Code Dota2 Tools – Copilot Instructions
 
 ## Big Picture
-- Extension entry `src/extension.ts` localizes strings, spins up the status bar, runs `init(context)`, registers ~30 `dota2tools.*` commands, then instantiates the global `FeiShu` client for sheet sync.
-- `src/init.ts` loops `moduleList` and respects user config `dota2-tools.A1.module_list`; expect modules to re-run whenever workspace folders or config change.
-- Folder roles: `command/` command bodies, `module/` long-lived services, `listener/` fs watchers, `TreeDataProvider/` & `CustomTextEditorProvider/` VS Code views/editors, `utils/` shared helpers, `resource/` + `kv/` + `webview/` static datasets consumed by UI.
+- **Extension entry** `src/extension.ts` localizes strings, spins up the status bar, runs `init(context)`, registers ~30 `dota2tools.*` commands, then instantiates the global `FeiShu` client for sheet sync.
+- **Module loader** `src/init.ts` loops `moduleList` and respects user config `dota2-tools.A1.module_list`; expect modules to re-run whenever workspace folders or config change.
+- **Folder roles**: `command/` command bodies, `module/` long-lived services, `listener/` fs watchers, `TreeDataProvider/` & `CustomTextEditorProvider/` VS Code views/editors, `utils/` shared helpers, `resource/` + `kv/` + `webview/` static datasets consumed by UI.
+- **Domain**: This extension automates Dota 2 custom game development workflows—Excel↔KV conversion, API documentation browsing, icon/asset pickers, localization merging, and cloud sheet syncing via Feishu/Lark.
 
 ## Module Lifecycle
-- Extend `moduleList` only with idempotent initializers; map feature toggles in `skipModuleList` and surface new keys through `package.json` + `package.nls*.json` + `src/declarations/common.d.ts`.
-- Use `EventManager` (`Class/event.ts`) instead of raw VS Code listeners to hook configuration/workspace events and store the listener index for cleanup.
-- `module/statusBar.ts` centralizes progress + logging; call `showStatusBarMessage` / `refreshStatusBarMessage` (and `changeStatusBarState`) rather than touching the item directly.
-- Before re-registering disposables (watchers, providers) expose a `stop...` helper and invoke it; `init.ts` expects modules to handle repeated activation gracefully.
+- **Extending modules**: Add to `moduleList` in `init.ts` only with idempotent initializers; map feature toggles in `skipModuleList` and surface new keys through `package.json` + `package.nls*.json` + `src/declarations/common.d.ts`.
+- **Event handling**: Use `EventManager` (`Class/event.ts`) instead of raw VS Code listeners to hook configuration/workspace events and store the listener index for cleanup—call `EventManager.listenToEvent(EventType.EVENT_ON_DID_CHANGE_CONFIGURATION, callback)` and save the returned index.
+- **Status bar**: `module/statusBar.ts` centralizes progress + logging; call `showStatusBarMessage(text, timeout?)` / `refreshStatusBarMessage(index, text)` (and `changeStatusBarState(StatusBarState.LOADING)`) rather than touching the item directly.
+- **Graceful re-init**: Before re-registering disposables (watchers, providers) expose a `stop...` helper and invoke it; `init.ts` expects modules to handle repeated activation gracefully when workspace folders change.
 
 ## Paths, Data & Localization
 - `module/addonInfo.ts` caches `${game}`/`${content}` paths via settings `dota2-tools.addon_path` or `addoninfo.txt`; always call `getGameDir()` / `getContentDir()` and check `isValidFolder()` before filesystem work.
@@ -43,3 +44,6 @@
 - Many commands assume resolved addon directories; when paths are missing, use `showStatusBarMessage` plus friendly `vscode.window` prompts instead of throwing.
 - Prefer helpers in `utils/` (`kvUtils`, `pathUtils`, `getWebviewContent`, `findFile`) over bespoke logic to stay aligned with existing error handling and token resolution.
 - New commands must be registered in `extension.ts` and declared in `package.json` contributions + localization files to appear in the command palette.
+- KV file parsing: `readKeyValue2` in `kvUtils.ts` handles both KV2 and KV3 formats with comment stripping; use `writeKeyValue` for consistent formatting when generating KV output.
+- CSV parsing: `csvUtils.ts` provides `csv2obj` for both horizontal (default) and vertical layouts; ability tables expect double-row format (row 1 = ability metadata, row 2 = AbilitySpecial values).
+

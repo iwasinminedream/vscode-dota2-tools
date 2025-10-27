@@ -425,6 +425,40 @@ body {
 	opacity: 0;
 }
 
+.kv-row-context-menu {
+	position: fixed;
+	min-width: 168px;
+	padding: 4px 0;
+	z-index: 10000;
+	background: var(--vscode-menu-background, var(--vscode-editorWidget-background, #2d2d30));
+	border: 1px solid var(--vscode-menu-border, var(--vscode-editorWidget-border, #3c3c3c));
+	border-radius: 4px;
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.kv-row-context-menu:focus {
+	outline: none;
+}
+
+.kv-row-context-menu-item {
+	width: 100%;
+	padding: 6px 12px;
+	border: none;
+	background: transparent;
+	color: var(--vscode-menu-foreground, var(--vscode-editorWidget-foreground, #d4d4d4));
+	text-align: left;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.kv-row-context-menu-item:hover,
+.kv-row-context-menu-item:focus,
+.kv-row-context-menu-item:focus-visible {
+	background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+	color: var(--vscode-menu-selectionForeground, var(--vscode-editorWidget-foreground, #ffffff));
+	outline: none;
+}
+
 .kv-cell-selected {
 	background: rgba(37, 150, 190, 0.15);
 	box-shadow: inset 0 0 0 2px var(--vscode-focusBorder);
