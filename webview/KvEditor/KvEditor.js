@@ -2,6 +2,7 @@ const vscode = acquireVsCodeApi();
 
 const fileNameEl = document.getElementById('kv-file-name');
 const fileMetaEl = document.getElementById('kv-file-meta');
+const openTextEditorBtn = document.getElementById('kv-open-text-editor');
 const tableSection = document.getElementById('kv-table');
 const emptySection = document.getElementById('kv-empty');
 const errorSection = document.getElementById('kv-error');
@@ -12,6 +13,13 @@ if (emptySection) {
 	emptySection.textContent = 'Loading KV data...';
 }
 setSectionVisibility({ showTable: false, showEmpty: true, showError: false });
+
+// 绑定"用文本编辑器打开"按钮事件
+if (openTextEditorBtn) {
+	openTextEditorBtn.addEventListener('click', () => {
+		vscode.postMessage({ type: 'openTextEditor' });
+	});
+}
 
 const COLUMN_MIN_WIDTH = 100;
 const ROW_NUMBER_COLUMN_KEY = '__rowNumber';

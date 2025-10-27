@@ -185,6 +185,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const requestPayload: OpenScriptFileMessage | undefined = message.payload;
 				void this.handleOpenScriptFile(document, requestPayload);
 			}
+			if (message.type === 'openTextEditor') {
+				void this.handleOpenTextEditor(document);
+			}
 		});
 
 		webviewPanel.onDidDispose(() => {
@@ -1549,6 +1552,18 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			void vscode.window.showErrorMessage(`无法打开脚本文件：${message}`);
+		}
+	}
+
+	private async handleOpenTextEditor(document: vscode.TextDocument): Promise<void> {
+		try {
+			// 关闭当前的自定义编辑器，打开默认的文本编辑器
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			// 用默认编辑器打开文档
+			await vscode.window.showTextDocument(document, { preview: false });
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			void vscode.window.showErrorMessage(`无法打开文本编辑器：${message}`);
 		}
 	}
 

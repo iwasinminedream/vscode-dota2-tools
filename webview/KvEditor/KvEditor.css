@@ -23,6 +23,18 @@ body {
 	background-color: var(--vscode-sideBar-background);
 }
 
+.kv-header-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.kv-header-title {
+	flex: 1;
+	min-width: 0;
+}
+
 .kv-header h2 {
 	margin: 0;
 	font-size: 16px;
@@ -33,6 +45,35 @@ body {
 	margin: 2px 0 0;
 	font-size: 12px;
 	color: var(--vscode-descriptionForeground);
+}
+
+.kv-header-button {
+	flex-shrink: 0;
+	padding: 6px 10px;
+	border: none;
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	cursor: pointer;
+	border-radius: 3px;
+	font-size: 16px;
+	line-height: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.1s ease;
+}
+
+.kv-header-button:hover {
+	background: var(--vscode-button-hoverBackground);
+}
+
+.kv-header-button:active {
+	background: var(--vscode-button-background);
+	opacity: 0.8;
+}
+
+.kv-header-button .codicon {
+	display: inline-block;
 }
 
 .kv-formula-bar {
