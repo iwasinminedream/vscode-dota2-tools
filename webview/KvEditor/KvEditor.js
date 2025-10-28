@@ -94,7 +94,7 @@ if (toggleLocalizedModeBtn) {
 
 const COLUMN_MIN_WIDTH = 100;
 const ROW_NUMBER_COLUMN_KEY = '__rowNumber';
-const ROW_NUMBER_MIN_WIDTH = 56;
+const ROW_NUMBER_MIN_WIDTH = 32;
 
 const FOLDER_TYPE_LABELS = {
 	ability: '技能',

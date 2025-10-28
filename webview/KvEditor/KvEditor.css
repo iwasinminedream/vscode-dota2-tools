@@ -157,7 +157,7 @@ body {
 	position: sticky;
 	top: 0;
 	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
-	z-index: 1;
+	z-index: 10;
 }
 
 .kv-table th,
@@ -266,6 +266,34 @@ body {
 	background: rgba(130, 130, 130, 0.12);
 }
 
+/* 行号列冻结 */
+.kv-table th[data-column="__rowNumber"],
+.kv-table td[data-column="__rowNumber"] {
+	position: sticky;
+	left: 0;
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+	padding: 8px 4px;
+	text-align: center;
+	font-size: 11px;
+}
+
+/* tbody 中的行号列：低于表头 */
+.kv-table tbody td[data-column="__rowNumber"] {
+	z-index: 2;
+}
+
+/* 表头行号列：最高层级，同时冻结横向和纵向 */
+.kv-table thead th[data-column="__rowNumber"] {
+	position: sticky;
+	left: 0;
+	top: 0;
+	z-index: 11;
+}
+
+/* hover 状态下行号列保持原背景色 */
+.kv-table tr:hover td[data-column="__rowNumber"] {
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+}
 
 .kv-table input {
 	width: 100%;
@@ -475,7 +503,6 @@ body {
 
 .kv-row-index-label {
 	display: block;
-	padding: 8px 12px;
 	transition: opacity 0.12s ease;
 	pointer-events: none;
 }
