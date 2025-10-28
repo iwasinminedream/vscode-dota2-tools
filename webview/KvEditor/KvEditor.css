@@ -1829,3 +1829,99 @@ body.kv-texture-menu-open {
 	border-radius: 999px;
 	font-size: 12px;
 }
+
+/* VSCode 风格的 Checkbox */
+.kv-checkbox-wrapper {
+	display: flex !important;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.kv-checkbox-input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.kv-checkbox-indicator {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border: 1px solid var(--vscode-checkbox-border);
+	background: var(--vscode-checkbox-background);
+	border-radius: 3px;
+	color: var(--vscode-checkbox-foreground);
+	font-size: 14px;
+	transition: all 0.1s ease;
+	flex-shrink: 0;
+}
+
+.kv-checkbox-input:checked~.kv-checkbox-indicator {
+	background: var(--vscode-checkbox-background);
+	border-color: var(--vscode-focusBorder, var(--vscode-checkbox-border));
+}
+
+.kv-checkbox-input:not(:checked)~.kv-checkbox-indicator::before {
+	content: '';
+	opacity: 0;
+}
+
+.kv-checkbox-wrapper:hover .kv-checkbox-indicator {
+	border-color: var(--vscode-inputOption-hoverBackground, var(--vscode-focusBorder));
+}
+
+.kv-checkbox-label {
+	flex: 1;
+}
+
+/* VSCode 风格的 Radio */
+.kv-fill-popup-mode {
+	display: flex !important;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	user-select: none;
+	padding: 6px 8px;
+	border-radius: 3px;
+	transition: background 0.1s ease;
+}
+
+.kv-fill-popup-mode:hover {
+	background: var(--vscode-list-hoverBackground);
+}
+
+.kv-radio-input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.kv-radio-indicator {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	font-size: 16px;
+	color: var(--vscode-checkbox-border);
+	transition: color 0.1s ease;
+	flex-shrink: 0;
+}
+
+.kv-radio-input:checked~.kv-radio-indicator {
+	color: var(--vscode-focusBorder);
+}
+
+.kv-radio-input:checked~.kv-radio-indicator::before {
+	content: '\ebb3';
+	/* codicon-circle-filled */
+	font-family: codicon;
+}
+
+.kv-radio-label {
+	flex: 1;
+}

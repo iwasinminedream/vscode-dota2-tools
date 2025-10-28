@@ -1425,15 +1425,20 @@ function openFillPopup() {
 		input.type = 'radio';
 		input.name = 'fill-mode';
 		input.value = mode.value;
+		input.className = 'kv-radio-input';
 		if (index === 0) {
 			input.checked = true;
 		}
+		const indicator = document.createElement('span');
+		indicator.className = 'kv-radio-indicator codicon codicon-circle-large-outline';
 		const span = document.createElement('span');
+		span.className = 'kv-radio-label';
 		span.textContent = mode.label;
 		if (mode.value === 'formula') {
 			item.title = FORMULA_TOOLTIP_HELP;
 		}
 		item.appendChild(input);
+		item.appendChild(indicator);
 		item.appendChild(span);
 		modeList.appendChild(item);
 		modeInputs.push(input);
@@ -4041,13 +4046,17 @@ function requestColumnDescription(columnKey, columnName) {
 
 	// 应用范围（默认：全局）
 	const scopeWrapper = document.createElement('label');
-	scopeWrapper.className = 'kv-column-insert-dialog-label';
+	scopeWrapper.className = 'kv-column-insert-dialog-label kv-checkbox-wrapper';
 	const scopeCheckbox = document.createElement('input');
 	scopeCheckbox.type = 'checkbox';
-	scopeCheckbox.className = 'kv-column-insert-dialog-scope-checkbox';
+	scopeCheckbox.className = 'kv-checkbox-input';
 	scopeCheckbox.checked = false; // 默认全局生效
 	scopeWrapper.appendChild(scopeCheckbox);
+	const checkIndicator = document.createElement('span');
+	checkIndicator.className = 'kv-checkbox-indicator codicon codicon-check';
+	scopeWrapper.appendChild(checkIndicator);
 	const scopeText = document.createElement('span');
+	scopeText.className = 'kv-checkbox-label';
 	scopeText.textContent = '仅在当前文件生效';
 	scopeWrapper.appendChild(scopeText);
 	form.appendChild(scopeWrapper);
