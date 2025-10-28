@@ -6224,6 +6224,16 @@ function matchesTextureMenuKeyword(icon, keyword) {
 	if (textureNameLower.includes(keyword)) {
 		return true;
 	}
+
+	// 对于物品图标，同时匹配带和不带 item_ 前缀的情况
+	if (icon.kind === 'item') {
+		const withPrefix = textureNameLower.startsWith('item_') ? textureNameLower : 'item_' + textureNameLower;
+		const withoutPrefix = textureNameLower.startsWith('item_') ? textureNameLower.substring(5) : textureNameLower;
+		if (withPrefix.includes(keyword) || withoutPrefix.includes(keyword)) {
+			return true;
+		}
+	}
+
 	const variants = new Set();
 	variants.add(keyword);
 	const underscoreNormalized = keyword.includes('_') ? keyword.replace(/_/g, ' ') : keyword;
@@ -6319,7 +6329,12 @@ function renderTextureMenuGrid() {
 				button.setAttribute('aria-label', icon.label || icon.textureName);
 			}
 			button.title = `${icon.textureName}\n${icon.relativePath}`;
-			if (icon.textureName.toLowerCase() === currentValue) {
+			// 比较时考虑物品图标的 item_ 前缀
+			let iconValueForComparison = icon.textureName.toLowerCase();
+			if (icon.kind === 'item' && !iconValueForComparison.startsWith('item_')) {
+				iconValueForComparison = 'item_' + iconValueForComparison;
+			}
+			if (iconValueForComparison === currentValue) {
 				button.classList.add('kv-texture-menu-item-selected');
 			}
 			button.addEventListener('click', () => handleTextureSelection(icon));
@@ -6335,7 +6350,11 @@ function handleTextureSelection(icon) {
 		return;
 	}
 	const input = textureMenuState.context.input;
-	const newValue = icon.textureName;
+	// 对于物品图标，确保有 item_ 前缀
+	let newValue = icon.textureName;
+	if (icon.kind === 'item' && !newValue.startsWith('item_')) {
+		newValue = 'item_' + newValue;
+	}
 	const currentValue = readElementValue(input, undefined);
 	if (currentValue === newValue) {
 		closeTextureMenu();
