@@ -1178,17 +1178,17 @@ body.kv-column-options-editor-open {
 
 .kv-column-options-row {
 	display: grid;
-	grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) minmax(180px, 1.2fr) auto;
+	grid-template-columns: minmax(200px, 2fr) minmax(100px, 0.5fr) minmax(100px, 0.5fr) auto;
 	gap: 8px;
 	align-items: center;
-	padding: 12px;
+	/* padding: 12px;
 	border: 1px solid var(--vscode-panel-border);
 	border-radius: 6px;
-	background: var(--vscode-editor-background);
+	background: var(--vscode-editor-background); */
 }
 
 .kv-column-options-input {
-	width: 100%;
+	/* width: 100%; */
 }
 
 .kv-column-options-actions {
