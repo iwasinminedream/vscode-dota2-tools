@@ -188,6 +188,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			if (message.type === 'openTextEditor') {
 				void this.handleOpenTextEditor(document);
 			}
+			if (message.type === 'saveCompactMode') {
+				const saveMessage: KvEditorSaveCompactModeMessage | undefined = message.payload;
+				this.handleSaveCompactMode(document, saveMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 		});
 
 		webviewPanel.onDidDispose(() => {
@@ -211,6 +219,17 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		const formulas = workspaceFolder && documentKey
 			? this.buildFormulaPayload(workspaceFolder, documentKey, parsed.rows, document.uri)
 			: [];
+
+		// 加载精简模式设置
+		let compactMode: boolean | undefined;
+		if (workspaceFolder && documentKey) {
+			const settings = this.getUserSettings(workspaceFolder);
+			const fileSettings = settings.files[documentKey];
+			if (fileSettings && typeof fileSettings.compactMode === 'boolean') {
+				compactMode = fileSettings.compactMode;
+			}
+		}
+
 		return {
 			fileName: path.basename(document.uri.fsPath),
 			documentKey,
@@ -224,6 +243,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			texturePreviews: this.buildTexturePreviews(document, parsed.rows, webview, entry),
 			scriptSupport: this.buildScriptSupport(folderType),
 			formulas,
+			compactMode,
 		};
 	}
 
@@ -2059,6 +2079,33 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		this.writeUserSettings(workspaceFolder, settings);
 	}
 
+	private async handleSaveCompactMode(
+		document: vscode.TextDocument,
+		message?: KvEditorSaveCompactModeMessage,
+	): Promise<void> {
+		if (!message || typeof message !== 'object' || typeof message.compactMode !== 'boolean') {
+			return;
+		}
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return;
+		}
+		const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+		if (!documentKey) {
+			return;
+		}
+
+		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
+		const existingEntry = settings.files[documentKey];
+
+		// 更新精简模式设置
+		settings.files[documentKey] = existingEntry
+			? { ...existingEntry, compactMode: message.compactMode }
+			: { compactMode: message.compactMode };
+
+		this.writeUserSettings(workspaceFolder, settings);
+	}
+
 	private loadColumnLayout(document: vscode.TextDocument): KvEditorColumnLayout | undefined {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 		if (!workspaceFolder) {
@@ -2094,6 +2141,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		for (const [key, value] of Object.entries(source.files) as Array<[string, KvEditorUserFileSettings]>) {
 			files[key] = {
 				columnWidths: value.columnWidths ? { ...value.columnWidths } : undefined,
+				compactMode: value.compactMode,
 			};
 		}
 		const result: KvEditorUserSettings = { files };
@@ -2137,8 +2185,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 				const recordEntry = entry as Record<string, unknown>;
 				const columnWidths = this.sanitizeColumnWidthMap(recordEntry.columnWidths);
+				const compactMode = typeof recordEntry.compactMode === 'boolean' ? recordEntry.compactMode : undefined;
+
 				if (columnWidths && Object.keys(columnWidths).length) {
-					result.files[key] = { columnWidths };
+					result.files[key] = { columnWidths, compactMode };
+				} else if (compactMode !== undefined) {
+					result.files[key] = { compactMode };
 				}
 			}
 		}
@@ -2170,16 +2222,30 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	private serializeUserSettings(settings: KvEditorUserSettings): string {
 		const files: Record<string, KvEditorUserFileSettings> = {};
 		for (const [key, value] of Object.entries(settings.files) as Array<[string, KvEditorUserFileSettings]>) {
-			if (!value.columnWidths || !Object.keys(value.columnWidths).length) {
+			const hasColumnWidths = value.columnWidths && Object.keys(value.columnWidths).length > 0;
+			const hasCompactMode = typeof value.compactMode === 'boolean';
+
+			if (!hasColumnWidths && !hasCompactMode) {
 				continue;
 			}
-			const sorted = Object.keys(value.columnWidths)
-				.sort()
-				.reduce<Record<string, number>>((acc, column) => {
-					acc[column] = value.columnWidths![column];
-					return acc;
-				}, {});
-			files[key] = { columnWidths: sorted };
+
+			const fileEntry: KvEditorUserFileSettings = {};
+
+			if (hasColumnWidths) {
+				const sorted = Object.keys(value.columnWidths!)
+					.sort()
+					.reduce<Record<string, number>>((acc, column) => {
+						acc[column] = value.columnWidths![column];
+						return acc;
+					}, {});
+				fileEntry.columnWidths = sorted;
+			}
+
+			if (hasCompactMode) {
+				fileEntry.compactMode = value.compactMode;
+			}
+
+			files[key] = fileEntry;
 		}
 		const payload: Record<string, unknown> = { files };
 		if (settings.formulas) {
@@ -2870,6 +2936,7 @@ interface KvEditorPayload {
 	texturePreviews: Record<string, TexturePreviewPayload>;
 	scriptSupport: KvEditorScriptSupport;
 	formulas: KvEditorFormulaPayloadEntry[];
+	compactMode?: boolean;
 }
 
 interface ParsedKvTable {
@@ -3076,6 +3143,10 @@ interface KvEditorSaveColumnWidthsMessage {
 	widths: Record<string, number>;
 }
 
+interface KvEditorSaveCompactModeMessage {
+	compactMode: boolean;
+}
+
 interface KvEditorUserSettings {
 	files: Record<string, KvEditorUserFileSettings>;
 	formulas?: KvEditorFormulaStorage;
@@ -3083,6 +3154,7 @@ interface KvEditorUserSettings {
 
 interface KvEditorUserFileSettings {
 	columnWidths?: Record<string, number>;
+	compactMode?: boolean;
 }
 
 interface KvEditorSaveColumnOptionsMessage {

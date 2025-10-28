@@ -47,6 +47,12 @@ body {
 	color: var(--vscode-descriptionForeground);
 }
 
+.kv-header-actions {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
 .kv-header-button {
 	flex-shrink: 0;
 	padding: 6px 10px;
@@ -70,6 +76,12 @@ body {
 .kv-header-button:active {
 	background: var(--vscode-button-background);
 	opacity: 0.8;
+}
+
+.kv-header-button.active {
+	background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+	color: var(--vscode-button-secondaryForeground, var(--vscode-button-foreground));
+	box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
 }
 
 .kv-header-button .codicon {
@@ -835,6 +847,15 @@ body {
 
 .kv-ability-values-cell-empty {
 	color: var(--vscode-descriptionForeground);
+}
+
+.kv-ability-values-compact {
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--vscode-foreground);
+	white-space: pre-wrap;
+	word-break: break-word;
+	padding: 2px 0;
 }
 
 body.kv-ability-editor-open {

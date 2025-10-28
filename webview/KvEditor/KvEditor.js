@@ -3,6 +3,7 @@ const vscode = acquireVsCodeApi();
 const fileNameEl = document.getElementById('kv-file-name');
 const fileMetaEl = document.getElementById('kv-file-meta');
 const openTextEditorBtn = document.getElementById('kv-open-text-editor');
+const toggleCompactModeBtn = document.getElementById('kv-toggle-compact-mode');
 const tableSection = document.getElementById('kv-table');
 const emptySection = document.getElementById('kv-empty');
 const errorSection = document.getElementById('kv-error');
@@ -18,6 +19,39 @@ setSectionVisibility({ showTable: false, showEmpty: true, showError: false });
 if (openTextEditorBtn) {
 	openTextEditorBtn.addEventListener('click', () => {
 		vscode.postMessage({ type: 'openTextEditor' });
+	});
+}
+
+// 精简模式状态管理
+let compactMode = false;
+
+// 绑定精简模式切换按钮
+if (toggleCompactModeBtn) {
+	const updateButtonState = () => {
+		if (compactMode) {
+			toggleCompactModeBtn.classList.add('active');
+			toggleCompactModeBtn.title = '精简模式已开启，点击关闭';
+		} else {
+			toggleCompactModeBtn.classList.remove('active');
+			toggleCompactModeBtn.title = '精简模式已关闭，点击开启';
+		}
+	};
+	updateButtonState();
+
+	toggleCompactModeBtn.addEventListener('click', () => {
+		compactMode = !compactMode;
+		updateButtonState();
+
+		// 保存到后端
+		vscode.postMessage({
+			type: 'saveCompactMode',
+			payload: { compactMode }
+		});
+
+		// 立即重新渲染表格
+		if (latestPayload) {
+			renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+		}
 	});
 }
 
@@ -2745,6 +2779,26 @@ function populateAbilityValuesCell(td, entries, hasAbilityField) {
 		console.warn('[kv-editor] failed to stringify ability entries', error);
 		delete td.dataset.abilityEntries;
 	}
+
+	// 精简模式：显示为纯文本单行
+	if (compactMode) {
+		const compactText = sanitizedEntries.map(entry => {
+			const parts = [`${entry.key}: ${entry.value}`];
+			(entry.modifiers || []).forEach(mod => {
+				parts.push(`${mod.key}: ${mod.value}`);
+			});
+			return parts.join(', ');
+		}).join(' | ');
+
+		const compactDiv = document.createElement('div');
+		compactDiv.className = 'kv-ability-values-compact';
+		compactDiv.textContent = compactText || (hasAbilityField ? '(空)' : '');
+		compactDiv.title = compactText;
+		td.appendChild(compactDiv);
+		return { entries: sanitizedEntries, displayValue: compactText };
+	}
+
+	// 详细模式：原有的多行显示逻辑
 	const list = document.createElement('div');
 	list.className = 'kv-ability-values-list';
 	const displayLines = [];
@@ -5875,6 +5929,21 @@ function render(payload) {
 		currentDocumentKey = nextDocumentKey;
 	}
 	latestPayload = payload;
+
+	// 加载精简模式设置
+	if (typeof payload.compactMode === 'boolean') {
+		compactMode = payload.compactMode;
+		if (toggleCompactModeBtn) {
+			if (compactMode) {
+				toggleCompactModeBtn.classList.add('active');
+				toggleCompactModeBtn.title = '精简模式已开启，点击关闭';
+			} else {
+				toggleCompactModeBtn.classList.remove('active');
+				toggleCompactModeBtn.title = '精简模式已关闭，点击开启';
+			}
+		}
+	}
+
 	applyFormulaDefinitions(payload.formulas);
 	// 初始加载时重新计算公式，如果发现值不一致则同步到文件
 	recalculateFormulas({ emitUpdates: true });
