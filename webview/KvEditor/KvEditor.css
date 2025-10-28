@@ -618,6 +618,12 @@ body {
 	outline: 1px solid var(--vscode-focusBorder);
 }
 
+.kv-column-insert-dialog-textarea {
+	resize: vertical;
+	min-height: 60px;
+	line-height: 1.4;
+}
+
 .kv-column-insert-dialog-error {
 	margin-bottom: 12px;
 	padding: 8px;

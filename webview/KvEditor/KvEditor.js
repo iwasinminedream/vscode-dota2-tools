@@ -4,6 +4,7 @@ const fileNameEl = document.getElementById('kv-file-name');
 const fileMetaEl = document.getElementById('kv-file-meta');
 const openTextEditorBtn = document.getElementById('kv-open-text-editor');
 const toggleCompactModeBtn = document.getElementById('kv-toggle-compact-mode');
+const toggleLocalizedModeBtn = document.getElementById('kv-toggle-localized-mode');
 const tableSection = document.getElementById('kv-table');
 const emptySection = document.getElementById('kv-empty');
 const errorSection = document.getElementById('kv-error');
@@ -24,6 +25,12 @@ if (openTextEditorBtn) {
 
 // 精简模式状态管理
 let compactMode = false;
+
+// 本地化模式状态管理
+let localizedMode = false;
+
+// 列描述配置
+let columnDescriptions = {};
 
 // 绑定精简模式切换按钮
 if (toggleCompactModeBtn) {
@@ -46,6 +53,36 @@ if (toggleCompactModeBtn) {
 		vscode.postMessage({
 			type: 'saveCompactMode',
 			payload: { compactMode }
+		});
+
+		// 立即重新渲染表格
+		if (latestPayload) {
+			renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+		}
+	});
+}
+
+// 绑定本地化模式切换按钮
+if (toggleLocalizedModeBtn) {
+	const updateButtonState = () => {
+		if (localizedMode) {
+			toggleLocalizedModeBtn.classList.add('active');
+			toggleLocalizedModeBtn.title = '本地化模式已开启，显示描述';
+		} else {
+			toggleLocalizedModeBtn.classList.remove('active');
+			toggleLocalizedModeBtn.title = '本地化模式已关闭，显示原文';
+		}
+	};
+	updateButtonState();
+
+	toggleLocalizedModeBtn.addEventListener('click', () => {
+		localizedMode = !localizedMode;
+		updateButtonState();
+
+		// 保存到后端
+		vscode.postMessage({
+			type: 'saveLocalizedMode',
+			payload: { localizedMode }
 		});
 
 		// 立即重新渲染表格
@@ -2069,7 +2106,14 @@ function handleElementChange(element, fieldConfig) {
 
 // 获取多选项的显示文案
 function getOptionLabel(fieldConfig, value) {
-	return fieldConfig?.options?.find((option) => option.value === value)?.label ?? value;
+	const option = fieldConfig?.options?.find((option) => option.value === value);
+	if (!option) return value;
+	// 根据本地化模式调整显示：localedMode 为 true 则显示 label，否则显示 value（并在需要时显示 label 作为辅文）
+	if (typeof localizedMode !== 'undefined' && localizedMode) {
+		return option.label || option.value;
+	}
+	// 非本地化模式时优先显示原文
+	return option.value;
 }
 
 // 渲染下拉选择的标签展示
@@ -2095,7 +2139,17 @@ function updateSelectDisplay(select, display, fieldConfig) {
 	values.forEach((value) => {
 		const tag = document.createElement('span');
 		tag.className = 'kv-select-tag';
-		tag.textContent = getOptionLabel(fieldConfig, value);
+		// 适配本地化显示：当 localizedMode 为 false 时，在必要时显示 "value (label)"
+		const option = fieldConfig?.options?.find((opt) => opt.value === value);
+		if (localizedMode) {
+			tag.textContent = option?.label || option?.value || value;
+		} else {
+			if (option && option.label && option.label !== option.value) {
+				tag.textContent = `${option.value} (${option.label})`;
+			} else {
+				tag.textContent = option?.value || value;
+			}
+		}
 		display.appendChild(tag);
 	});
 }
@@ -2227,16 +2281,29 @@ function openMultiSelectDropdown(context) {
 		const textWrapper = document.createElement('div');
 		textWrapper.className = 'kv-quickpick-text';
 		const hasCustomLabel = option.label && option.label !== option.value;
-		const primaryText = option.description || (hasCustomLabel ? option.label : option.value);
-		const showDetail = primaryText !== option.value;
+
+		// 根据本地化模式决定显示内容：
+		// localizedMode === true -> 显示 label/description 为主，原文为辅
+		// localizedMode === false -> 显示 value 为主，label 为辅（如果存在）
+		let primaryText;
+		let detailText;
+		if (localizedMode) {
+			primaryText = option.label || option.value;
+			// 优先显示 description 作为细节，否则显示原文（当 label 与 value 不同时）
+			detailText = option.description || (option.label && option.label !== option.value ? option.value : undefined);
+		} else {
+			primaryText = option.value;
+			detailText = (option.label && option.label !== option.value) ? option.label : (option.description || undefined);
+		}
+
 		const labelEl = document.createElement('div');
 		labelEl.className = 'kv-quickpick-label';
 		labelEl.textContent = primaryText;
 		textWrapper.appendChild(labelEl);
-		if (showDetail) {
+		if (detailText) {
 			const detailEl = document.createElement('div');
 			detailEl.className = 'kv-quickpick-detail';
-			detailEl.textContent = option.value;
+			detailEl.textContent = detailText;
 			textWrapper.appendChild(detailEl);
 		}
 		item.appendChild(textWrapper);
@@ -2973,8 +3040,14 @@ function renderTable(columns, rows, columnOptions) {
 			}
 			const nameEl = document.createElement('span');
 			nameEl.className = 'kv-column-name';
-			nameEl.textContent = headerLabel;
-			nameEl.title = headerLabel;
+
+			// 获取列的描述配置
+			const columnDesc = columnDescriptions[column];
+			const displayLabel = (localizedMode && columnDesc?.label) ? columnDesc.label : headerLabel;
+			const displayTooltip = (columnDesc?.description) ? columnDesc.description : headerLabel;
+
+			nameEl.textContent = displayLabel;
+			nameEl.title = displayTooltip;
 
 			// 为列标题添加右键菜单（跳过 id 列）
 			if (columnIndex > 0) {
@@ -3920,6 +3993,165 @@ function requestColumnDeletion(columnKey) {
 	});
 }
 
+function requestColumnDescription(columnKey, columnName) {
+	if (!columnKey || typeof columnKey !== 'string') {
+		return;
+	}
+
+	const currentDesc = columnDescriptions[columnKey] || {};
+
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-column-insert-dialog-overlay';
+
+	const form = document.createElement('form');
+	form.className = 'kv-column-insert-dialog';
+
+	const title = document.createElement('div');
+	title.className = 'kv-column-insert-dialog-title';
+	title.textContent = `为列 "${columnName}" 添加描述`;
+	form.appendChild(title);
+
+	// 标签输入
+	const labelWrapper = document.createElement('label');
+	labelWrapper.textContent = '显示标签';
+	labelWrapper.className = 'kv-column-insert-dialog-label';
+
+	const labelInput = document.createElement('input');
+	labelInput.type = 'text';
+	labelInput.className = 'kv-column-insert-dialog-input';
+	labelInput.placeholder = '本地化显示名称（可选）';
+	labelInput.value = currentDesc.label || '';
+
+	labelWrapper.appendChild(labelInput);
+	form.appendChild(labelWrapper);
+
+	// 描述输入
+	const descWrapper = document.createElement('label');
+	descWrapper.textContent = 'Tooltip 描述';
+	descWrapper.className = 'kv-column-insert-dialog-label';
+
+	const descInput = document.createElement('textarea');
+	descInput.className = 'kv-column-insert-dialog-input kv-column-insert-dialog-textarea';
+	descInput.placeholder = '鼠标悬停时显示的描述（可选）';
+	descInput.value = currentDesc.description || '';
+	descInput.rows = 3;
+
+	descWrapper.appendChild(descInput);
+	form.appendChild(descWrapper);
+
+	// 应用范围（默认：全局）
+	const scopeWrapper = document.createElement('label');
+	scopeWrapper.className = 'kv-column-insert-dialog-label';
+	const scopeCheckbox = document.createElement('input');
+	scopeCheckbox.type = 'checkbox';
+	scopeCheckbox.className = 'kv-column-insert-dialog-scope-checkbox';
+	scopeCheckbox.checked = false; // 默认全局生效
+	scopeWrapper.appendChild(scopeCheckbox);
+	const scopeText = document.createElement('span');
+	scopeText.textContent = '仅在当前文件生效';
+	scopeWrapper.appendChild(scopeText);
+	form.appendChild(scopeWrapper);
+
+	const actions = document.createElement('div');
+	actions.className = 'kv-column-insert-dialog-actions';
+
+	const cancelBtn = document.createElement('button');
+	cancelBtn.type = 'button';
+	cancelBtn.className = 'kv-button kv-button-secondary';
+	cancelBtn.textContent = '取消';
+	actions.appendChild(cancelBtn);
+
+	const submitBtn = document.createElement('button');
+	submitBtn.type = 'submit';
+	submitBtn.className = 'kv-button kv-button-primary';
+	submitBtn.textContent = '保存';
+	actions.appendChild(submitBtn);
+
+	form.appendChild(actions);
+	dialog.appendChild(form);
+
+	const closeDialog = () => {
+		if (dialog.parentElement) {
+			dialog.parentElement.removeChild(dialog);
+		}
+	};
+
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+
+		const label = labelInput.value.trim();
+		const description = descInput.value.trim();
+
+		// 如果都为空，删除描述
+		if (!label && !description) {
+			delete columnDescriptions[columnKey];
+		} else {
+			columnDescriptions[columnKey] = {
+				label: label || undefined,
+				description: description || undefined
+			};
+		}
+
+		// 保存到后端（scope: 'file' 或 'global'）并在对话框内显示保存结果
+		submitBtn.disabled = true;
+		vscode.postMessage({
+			type: 'saveColumnDescription',
+			payload: {
+				columnKey,
+				label: label || undefined,
+				description: description || undefined,
+				scope: scopeCheckbox.checked ? 'file' : 'global'
+			}
+		});
+
+		// 显示保存提示
+		const statusEl = document.createElement('div');
+		statusEl.className = 'kv-column-save-status';
+		statusEl.textContent = scopeCheckbox.checked ? '已保存到当前文件' : '已保存到工作区默认配置';
+		statusEl.style.marginTop = '8px';
+		statusEl.style.color = '#3c763d';
+		actions.appendChild(statusEl);
+
+		// 立即局部刷新表格（payload 最终会由扩展端返回并触发完整刷新）
+		if (latestPayload) {
+			renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+		}
+
+		// 0.9s 后关闭对话框
+		setTimeout(() => {
+			closeDialog();
+		}, 900);
+	});
+
+	cancelBtn.addEventListener('click', closeDialog);
+
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeDialog();
+		}
+	};
+
+	document.addEventListener('keydown', keyHandler, true);
+	dialog.addEventListener('click', (event) => {
+		if (event.target === dialog) {
+			closeDialog();
+		}
+	});
+
+	const originalRemove = dialog.remove;
+	dialog.remove = function () {
+		document.removeEventListener('keydown', keyHandler, true);
+		originalRemove.call(this);
+	};
+
+	document.body.appendChild(dialog);
+	requestAnimationFrame(() => {
+		labelInput.focus();
+		labelInput.select();
+	});
+}
+
 function openColumnContextMenu(invocationEvent, context) {
 	const resolvedContext = context ?? {};
 	if (invocationEvent) {
@@ -3966,11 +4198,27 @@ function openColumnContextMenu(invocationEvent, context) {
 		menu.appendChild(button);
 	});
 
+	// 添加分隔线
+	const separator1 = document.createElement('div');
+	separator1.className = 'kv-context-menu-separator';
+	menu.appendChild(separator1);
+
+	// 添加描述按钮
+	const descButton = document.createElement('button');
+	descButton.type = 'button';
+	descButton.className = 'kv-column-context-menu-item';
+	descButton.textContent = '添加描述';
+	descButton.addEventListener('click', () => {
+		requestColumnDescription(columnKey, resolvedContext.columnName || columnKey);
+		closeColumnContextMenu();
+	});
+	menu.appendChild(descButton);
+
 	// 添加删除列选项（id 列不能删除）
 	if (columnKey !== 'id') {
-		const separator = document.createElement('div');
-		separator.className = 'kv-context-menu-separator';
-		menu.appendChild(separator);
+		const separator2 = document.createElement('div');
+		separator2.className = 'kv-context-menu-separator';
+		menu.appendChild(separator2);
 
 		const deleteButton = document.createElement('button');
 		deleteButton.type = 'button';
@@ -6147,6 +6395,11 @@ function render(payload) {
 	}
 	latestPayload = payload;
 
+	// 加载列描述配置
+	if (payload.columnDescriptions && typeof payload.columnDescriptions === 'object') {
+		columnDescriptions = { ...payload.columnDescriptions };
+	}
+
 	// 加载精简模式设置
 	if (typeof payload.compactMode === 'boolean') {
 		compactMode = payload.compactMode;
@@ -6157,6 +6410,20 @@ function render(payload) {
 			} else {
 				toggleCompactModeBtn.classList.remove('active');
 				toggleCompactModeBtn.title = '精简模式已关闭，点击开启';
+			}
+		}
+	}
+
+	// 加载本地化模式设置
+	if (typeof payload.localizedMode === 'boolean') {
+		localizedMode = payload.localizedMode;
+		if (toggleLocalizedModeBtn) {
+			if (localizedMode) {
+				toggleLocalizedModeBtn.classList.add('active');
+				toggleLocalizedModeBtn.title = '本地化模式已开启，显示描述';
+			} else {
+				toggleLocalizedModeBtn.classList.remove('active');
+				toggleLocalizedModeBtn.title = '本地化模式已关闭，显示原文';
 			}
 		}
 	}

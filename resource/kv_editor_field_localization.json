@@ -1,0 +1,86 @@
+{
+	"BaseClass": {
+		"label": "基类"
+	},
+	"ScriptFile": {
+		"label": "脚本"
+	},
+	"AbilityValues": {
+		"label": "技能数值"
+	},
+	"Model": {
+		"label": "模型"
+	},
+	"AbilityTextureName": {
+		"label": "技能图标"
+	},
+	"MaxLevel": {
+		"label": "最大等级"
+	},
+	"AbilityBehavior": {
+		"label": "技能行为"
+	},
+	"AbilityCooldown": {
+		"label": "冷却时间"
+	},
+	"AbilityUnitTargetTeam": {
+		"label": "目标队伍"
+	},
+	"AbilityUnitTargetType": {
+		"label": "目标类型"
+	},
+	"AbilityUnitTargetFlags": {
+		"label": "目标标记"
+	},
+	"AbilityUnitDamageType": {
+		"label": "伤害类型"
+	},
+	"AbilityManaCost": {
+		"label": "魔法消耗"
+	},
+	"AbilityCastRange": {
+		"label": "施法距离"
+	},
+	"AbilityChannelTime": {
+		"label": "持续施法时间"
+	},
+	"AbilityCastAnimation": {
+		"label": "施法动作"
+	},
+	"AbilityCastPoint": {
+		"label": "施法前摇"
+	},
+	"AbilitySharedCooldown": {
+		"label": "共享冷却"
+	},
+	"ItemKillable": {
+		"label": "可被摧毁"
+	},
+	"ItemSellable": {
+		"label": "可出售"
+	},
+	"ItemPurchasable": {
+		"label": "可购买"
+	},
+	"ItemDroppable": {
+		"label": "可丢下"
+	},
+	"ItemStackable": {
+		"label": "可堆叠"
+	},
+	"ItemShareability": {
+		"label": "共享性"
+	},
+	"ItemPermanent": {
+		"label": "永久物品"
+	},
+	"ItemInitialCharges": {
+		"label": "初始数量"
+	},
+	"CastOnPickup": {
+		"label": "拾取时使用"
+	},
+	"ItemDisplayCharges": {
+		"label": "显示数量"
+	}
+}
