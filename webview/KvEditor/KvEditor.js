@@ -2999,7 +2999,7 @@ function renderTable(columns, rows, columnOptions) {
 			optionsButton.className = 'kv-column-options-button';
 			optionsButton.title = `编辑 ${headerLabel} 下拉选项`;
 			optionsButton.setAttribute('aria-label', `编辑 ${headerLabel} 下拉选项`);
-			optionsButton.innerHTML = '<span class="codicon codicon-list-unordered"></span>';
+			optionsButton.innerHTML = '<span class="codicon codicon-fold-down"></span>';
 			optionsButton.addEventListener('mousedown', (event) => event.stopPropagation());
 			optionsButton.addEventListener('click', (event) => {
 				event.preventDefault();
