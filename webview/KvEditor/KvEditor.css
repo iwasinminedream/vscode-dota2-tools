@@ -201,7 +201,11 @@ body {
 
 .kv-row-drag-btn {
 	position: absolute;
-	inset: 0;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 20px;
+	height: 20px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -212,6 +216,7 @@ body {
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.12s ease, color 0.12s ease;
+	border-radius: 3px;
 }
 
 .kv-row-drag-btn:active {
@@ -225,6 +230,10 @@ body {
 	opacity: 1;
 	pointer-events: auto;
 	color: var(--vscode-editor-foreground);
+}
+
+.kv-row-drag-btn:hover {
+	background: var(--vscode-toolbar-hoverBackground);
 }
 
 .kv-row.kv-row-drop-target td {

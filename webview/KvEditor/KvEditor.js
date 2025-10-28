@@ -3054,19 +3054,6 @@ function renderTable(columns, rows, columnOptions) {
 			nameEl.textContent = displayLabel;
 			nameEl.title = displayTooltip;
 
-			// 为列标题添加右键菜单（跳过 id 列）
-			if (columnIndex > 0) {
-				nameEl.addEventListener('contextmenu', (event) => {
-					openColumnContextMenu(event, {
-						targetElement: nameEl,
-						columnKey: column,
-						columnIndex,
-						columnName: headerLabel
-					});
-				});
-				nameEl.style.cursor = 'context-menu';
-			}
-
 			wrapper.appendChild(letterButton);
 			const titleRow = document.createElement('div');
 			titleRow.className = 'kv-column-header-title-row';
@@ -3092,6 +3079,19 @@ function renderTable(columns, rows, columnOptions) {
 			titleRow.appendChild(optionsButton);
 			wrapper.appendChild(titleRow);
 			th.appendChild(wrapper);
+
+			// 为列标题添加右键菜单（在整个 th 上响应，跳过 id 列）
+			if (columnIndex > 0) {
+				th.addEventListener('contextmenu', (event) => {
+					openColumnContextMenu(event, {
+						targetElement: th,
+						columnKey: column,
+						columnIndex,
+						columnName: headerLabel
+					});
+				});
+				th.style.cursor = 'context-menu';
+			}
 		}
 		if (columnIndex >= 0) {
 			th.addEventListener('dragover', (event) => handleColumnDragOver(event, th, column, columnIndex));
