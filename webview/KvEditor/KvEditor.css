@@ -547,6 +547,22 @@ body {
 	outline: none;
 }
 
+.kv-context-menu-item-danger {
+	color: var(--vscode-errorForeground, #f48771);
+}
+
+.kv-context-menu-item-danger:hover,
+.kv-context-menu-item-danger:focus {
+	background: var(--vscode-inputValidation-errorBackground, rgba(220, 38, 38, 0.2));
+	color: var(--vscode-errorForeground, #f48771);
+}
+
+.kv-context-menu-separator {
+	height: 1px;
+	margin: 4px 0;
+	background: var(--vscode-menu-separatorBackground, var(--vscode-panel-border, rgba(255, 255, 255, 0.1)));
+}
+
 /* 列插入对话框样式 */
 .kv-column-insert-dialog-overlay {
 	position: fixed;
@@ -610,6 +626,17 @@ body {
 	color: var(--vscode-errorForeground, #f48771);
 	font-size: 12px;
 	border-radius: 3px;
+}
+
+.kv-column-delete-message {
+	margin-bottom: 12px;
+	padding: 12px;
+	background: var(--vscode-inputValidation-warningBackground, rgba(255, 165, 0, 0.1));
+	border: 1px solid var(--vscode-inputValidation-warningBorder, rgba(255, 165, 0, 0.3));
+	color: var(--vscode-input-foreground, #d4d4d4);
+	font-size: 13px;
+	border-radius: 3px;
+	line-height: 1.5;
 }
 
 .kv-column-insert-dialog-actions {
@@ -898,6 +925,17 @@ body.kv-column-options-editor-open {
 
 .kv-button-primary:hover:not(:disabled) {
 	background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+}
+
+.kv-button-danger {
+	background: var(--vscode-inputValidation-errorBackground, rgba(220, 38, 38, 0.9));
+	color: var(--vscode-button-foreground, #ffffff);
+	border-color: var(--vscode-inputValidation-errorBorder, rgba(220, 38, 38, 1));
+}
+
+.kv-button-danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.9);
+	border-color: rgba(239, 68, 68, 1);
 }
 
 .kv-button-secondary {

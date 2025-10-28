@@ -3829,6 +3829,97 @@ function requestColumnInsertion(position, referenceKey, referenceIndex) {
 	});
 }
 
+function requestColumnDeletion(columnKey) {
+	if (!columnKey || typeof columnKey !== 'string') {
+		return;
+	}
+
+	// id 列不能删除
+	if (columnKey === 'id') {
+		return;
+	}
+
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-column-insert-dialog-overlay';
+
+	const form = document.createElement('form');
+	form.className = 'kv-column-insert-dialog';
+
+	const title = document.createElement('div');
+	title.className = 'kv-column-insert-dialog-title';
+	title.textContent = '确认删除列';
+	form.appendChild(title);
+
+	const message = document.createElement('div');
+	message.className = 'kv-column-delete-message';
+	message.textContent = `确定要删除列 "${columnKey}" 吗？此操作不可恢复。`;
+	form.appendChild(message);
+
+	const actions = document.createElement('div');
+	actions.className = 'kv-column-insert-dialog-actions';
+
+	const cancelBtn = document.createElement('button');
+	cancelBtn.type = 'button';
+	cancelBtn.className = 'kv-button kv-button-secondary';
+	cancelBtn.textContent = '取消';
+	actions.appendChild(cancelBtn);
+
+	const submitBtn = document.createElement('button');
+	submitBtn.type = 'submit';
+	submitBtn.className = 'kv-button kv-button-primary kv-button-danger';
+	submitBtn.textContent = '删除';
+	actions.appendChild(submitBtn);
+
+	form.appendChild(actions);
+	dialog.appendChild(form);
+
+	const closeDialog = () => {
+		if (dialog.parentElement) {
+			dialog.parentElement.removeChild(dialog);
+		}
+	};
+
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+
+		vscode.postMessage({
+			type: 'deleteColumn',
+			payload: {
+				columnKey,
+			},
+		});
+
+		closeDialog();
+	});
+
+	cancelBtn.addEventListener('click', closeDialog);
+
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeDialog();
+		}
+	};
+
+	document.addEventListener('keydown', keyHandler, true);
+	dialog.addEventListener('click', (event) => {
+		if (event.target === dialog) {
+			closeDialog();
+		}
+	});
+
+	const originalRemove = dialog.remove;
+	dialog.remove = function () {
+		document.removeEventListener('keydown', keyHandler, true);
+		originalRemove.call(this);
+	};
+
+	document.body.appendChild(dialog);
+	requestAnimationFrame(() => {
+		submitBtn.focus();
+	});
+}
+
 function openColumnContextMenu(invocationEvent, context) {
 	const resolvedContext = context ?? {};
 	if (invocationEvent) {
@@ -3874,6 +3965,23 @@ function openColumnContextMenu(invocationEvent, context) {
 		});
 		menu.appendChild(button);
 	});
+
+	// 添加删除列选项（id 列不能删除）
+	if (columnKey !== 'id') {
+		const separator = document.createElement('div');
+		separator.className = 'kv-context-menu-separator';
+		menu.appendChild(separator);
+
+		const deleteButton = document.createElement('button');
+		deleteButton.type = 'button';
+		deleteButton.className = 'kv-column-context-menu-item kv-context-menu-item-danger';
+		deleteButton.textContent = '删除列';
+		deleteButton.addEventListener('click', () => {
+			requestColumnDeletion(columnKey);
+			closeColumnContextMenu();
+		});
+		menu.appendChild(deleteButton);
+	}
 
 	menu.addEventListener('contextmenu', (event) => event.preventDefault());
 	document.body.appendChild(menu);

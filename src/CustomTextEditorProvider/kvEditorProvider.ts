@@ -138,6 +138,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				});
 				return;
 			}
+			if (message.type === 'deleteColumn') {
+				const deleteMessage: KvEditorDeleteColumnMessage | undefined = message.payload;
+				this.handleDeleteColumn(document, deleteMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'reorderColumns') {
 				const reorderMessage: KvEditorColumnReorderMessage | undefined = message.payload;
 				this.handleReorderColumns(document, reorderMessage).catch((error: unknown) => {
@@ -1869,6 +1877,81 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		});
 	}
 
+	private handleDeleteColumn(document: vscode.TextDocument, message?: KvEditorDeleteColumnMessage): Promise<void> {
+		return this.runSerializedEdit(async () => {
+			if (!message) {
+				return;
+			}
+			const columnKey = typeof message.columnKey === 'string' ? message.columnKey.trim() : '';
+
+			if (!columnKey) {
+				return;
+			}
+
+			// id 列不能删除
+			if (columnKey === 'id') {
+				throw new Error('id 列不能删除。');
+			}
+
+			const originalText = document.getText();
+			const kvObject = readKeyValue2(originalText ?? '');
+			const header = Object.keys(kvObject)[0];
+			if (!header) {
+				throw new Error('无法解析 KV 根节点，未执行删除。');
+			}
+			const blockRaw = kvObject[header];
+			if (!blockRaw || typeof blockRaw !== 'object') {
+				throw new Error('当前 KV 结构不支持列删除。');
+			}
+			const block = blockRaw as Record<string, unknown>;
+			const entries = Object.entries(block);
+
+			// 验证列名是否存在
+			const parsed = this.parseKv(originalText);
+			if (!parsed.columns.includes(columnKey)) {
+				throw new Error(`列 "${columnKey}" 不存在。`);
+			}
+
+			// 从每一行中删除指定列
+			const updatedBlock: Record<string, unknown> = {};
+			for (const [rowKey, rowValue] of entries) {
+				if (!this.isPlainObject(rowValue)) {
+					updatedBlock[rowKey] = rowValue;
+					continue;
+				}
+
+				const rowRecord = rowValue as Record<string, unknown>;
+				const newRowRecord: Record<string, unknown> = {};
+
+				// 复制除了要删除的列之外的所有列
+				for (const [key, value] of Object.entries(rowRecord)) {
+					if (key !== columnKey) {
+						newRowRecord[key] = value;
+					}
+				}
+
+				updatedBlock[rowKey] = newRowRecord;
+			}
+
+			kvObject[header] = updatedBlock;
+			const newContent = writeKeyValue(kvObject);
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+			const edit = new vscode.WorkspaceEdit();
+			edit.replace(document.uri, fullRange, newContent);
+			const applied = await vscode.workspace.applyEdit(edit);
+			if (!applied) {
+				throw new Error('写入 KV 文本失败。');
+			}
+			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+			if (autoSaveMode && autoSaveMode !== 'off') {
+				const saved = await document.save();
+				if (!saved) {
+					throw new Error('保存 KV 文件失败。');
+				}
+			}
+		});
+	}
+
 	private buildInitialRowValue(
 		rowEntries: Array<{ key: string; value: unknown; index: number; }>,
 		referenceEntry: { key: string; value: unknown; index: number; } | undefined,
@@ -3019,6 +3102,10 @@ interface KvEditorInsertColumnMessage {
 	referenceIndex: number;
 	position: 'before' | 'after';
 	columnName: string;
+}
+
+interface KvEditorDeleteColumnMessage {
+	columnKey: string;
 }
 
 interface KvEditorColumnReorderMessage {
