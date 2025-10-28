@@ -4056,6 +4056,98 @@ function requestRowInsertion(position, rowId, rowIndex) {
 	});
 }
 
+function requestRowDeletion(rowId, rowIndex) {
+	if (!Number.isFinite(rowIndex)) {
+		return;
+	}
+	const normalizedRowId = typeof rowId === 'string' && rowId.length ? rowId : undefined;
+
+	if (!normalizedRowId) {
+		return;
+	}
+
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-column-insert-dialog-overlay';
+
+	const form = document.createElement('form');
+	form.className = 'kv-column-insert-dialog';
+
+	const title = document.createElement('div');
+	title.className = 'kv-column-insert-dialog-title';
+	title.textContent = '确认删除行';
+	form.appendChild(title);
+
+	const message = document.createElement('div');
+	message.className = 'kv-column-delete-message';
+	message.textContent = `确定要删除行 "${normalizedRowId}" 吗？此操作不可恢复。`;
+	form.appendChild(message);
+
+	const actions = document.createElement('div');
+	actions.className = 'kv-column-insert-dialog-actions';
+
+	const cancelBtn = document.createElement('button');
+	cancelBtn.type = 'button';
+	cancelBtn.className = 'kv-button kv-button-secondary';
+	cancelBtn.textContent = '取消';
+	actions.appendChild(cancelBtn);
+
+	const submitBtn = document.createElement('button');
+	submitBtn.type = 'submit';
+	submitBtn.className = 'kv-button kv-button-primary kv-button-danger';
+	submitBtn.textContent = '删除';
+	actions.appendChild(submitBtn);
+
+	form.appendChild(actions);
+	dialog.appendChild(form);
+
+	const closeDialog = () => {
+		if (dialog.parentElement) {
+			dialog.parentElement.removeChild(dialog);
+		}
+	};
+
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+
+		vscode.postMessage({
+			type: 'deleteRow',
+			payload: {
+				rowId: normalizedRowId,
+				rowIndex: Number(rowIndex),
+			},
+		});
+
+		closeDialog();
+	});
+
+	cancelBtn.addEventListener('click', closeDialog);
+
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			closeDialog();
+		}
+	};
+
+	document.addEventListener('keydown', keyHandler, true);
+	dialog.addEventListener('click', (event) => {
+		if (event.target === dialog) {
+			closeDialog();
+		}
+	});
+
+	const originalRemove = dialog.remove;
+	dialog.remove = function () {
+		document.removeEventListener('keydown', keyHandler, true);
+		originalRemove.call(this);
+	};
+
+	document.body.appendChild(dialog);
+	requestAnimationFrame(() => {
+		submitBtn.focus();
+	});
+}
+
 function openRowContextMenu(invocationEvent, context) {
 	const resolvedContext = context ?? {};
 	if (invocationEvent) {
@@ -4089,6 +4181,23 @@ function openRowContextMenu(invocationEvent, context) {
 		});
 		menu.appendChild(button);
 	});
+
+	// 添加分隔线
+	const separator = document.createElement('div');
+	separator.className = 'kv-context-menu-separator';
+	menu.appendChild(separator);
+
+	// 添加删除行选项
+	const deleteButton = document.createElement('button');
+	deleteButton.type = 'button';
+	deleteButton.className = 'kv-row-context-menu-item kv-context-menu-item-danger';
+	deleteButton.textContent = '删除行';
+	deleteButton.addEventListener('click', () => {
+		requestRowDeletion(rowId, normalizedIndex);
+		closeRowContextMenu();
+	});
+	menu.appendChild(deleteButton);
+
 	menu.addEventListener('contextmenu', (event) => event.preventDefault());
 	document.body.appendChild(menu);
 	const anchorElement = resolvedContext?.targetElement instanceof HTMLElement ? resolvedContext.targetElement : null;
