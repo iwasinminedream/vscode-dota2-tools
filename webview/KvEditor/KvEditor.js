@@ -141,6 +141,7 @@ let fillHandleState = null;
 let fillPreviewCells = [];
 let fillPopupState = null;
 let columnDragState = null;
+let autofillPopupState = null;
 
 const FORMULA_ERROR_VALUE = '#ERROR!';
 const FORMULA_CYCLE_VALUE = '#CYCLE!';
@@ -3710,6 +3711,7 @@ function closeAbilityValuesEditor() {
 	if (!abilityValuesEditorState) {
 		return;
 	}
+	closeAutofillPopup();
 	const { overlay, keyHandler } = abilityValuesEditorState;
 	if (overlay && overlay.parentElement) {
 		overlay.parentElement.removeChild(overlay);
@@ -4501,6 +4503,175 @@ function openRowContextMenu(invocationEvent, context) {
 	};
 }
 
+function closeAutofillPopup() {
+	if (!autofillPopupState) {
+		return;
+	}
+	const { element, keyHandler, outsideHandler } = autofillPopupState;
+	if (element && element.parentElement) {
+		element.remove();
+	}
+	if (keyHandler) {
+		document.removeEventListener('keydown', keyHandler, true);
+	}
+	if (outsideHandler) {
+		document.removeEventListener('mousedown', outsideHandler, true);
+	}
+	autofillPopupState = null;
+}
+
+function openAutofillPopup(context) {
+	if (!context || !context.input) {
+		return;
+	}
+	closeAutofillPopup();
+
+	const currentValue = context.input.value || '';
+	const baseValue = parseFloat(currentValue) || 0;
+
+	const popup = document.createElement('div');
+	popup.className = 'kv-autofill-popup';
+
+	const title = document.createElement('div');
+	title.className = 'kv-autofill-popup-title';
+	title.textContent = '自动填充';
+	popup.appendChild(title);
+
+	// 基础值
+	const baseField = document.createElement('div');
+	baseField.className = 'kv-autofill-popup-field';
+	const baseLabel = document.createElement('label');
+	baseLabel.textContent = '基础值';
+	const baseInput = document.createElement('input');
+	baseInput.type = 'number';
+	baseInput.step = 'any';
+	baseInput.value = String(baseValue);
+	baseField.appendChild(baseLabel);
+	baseField.appendChild(baseInput);
+	popup.appendChild(baseField);
+
+	// 升级间隔
+	const stepField = document.createElement('div');
+	stepField.className = 'kv-autofill-popup-field';
+	const stepLabel = document.createElement('label');
+	stepLabel.textContent = '升级间隔';
+	const stepInput = document.createElement('input');
+	stepInput.type = 'number';
+	stepInput.step = 'any';
+	stepInput.value = '1';
+	stepField.appendChild(stepLabel);
+	stepField.appendChild(stepInput);
+	popup.appendChild(stepField);
+
+	// 等级数
+	const levelsField = document.createElement('div');
+	levelsField.className = 'kv-autofill-popup-field';
+	const levelsLabel = document.createElement('label');
+	levelsLabel.textContent = '等级数';
+	const levelsInput = document.createElement('input');
+	levelsInput.type = 'number';
+	levelsInput.min = '1';
+	levelsInput.value = '4';
+	levelsField.appendChild(levelsLabel);
+	levelsField.appendChild(levelsInput);
+	popup.appendChild(levelsField);
+
+	// 预览
+	const preview = document.createElement('div');
+	preview.className = 'kv-autofill-popup-preview';
+	preview.textContent = '预览: ';
+	popup.appendChild(preview);
+
+	// 更新预览
+	const updatePreview = () => {
+		const base = parseFloat(baseInput.value) || 0;
+		const step = parseFloat(stepInput.value) || 0;
+		const levels = parseInt(levelsInput.value) || 1;
+		const values = [];
+		for (let i = 0; i < levels; i++) {
+			values.push(base + step * i);
+		}
+		preview.textContent = '预览: ' + values.join(' ');
+	};
+
+	baseInput.addEventListener('input', updatePreview);
+	stepInput.addEventListener('input', updatePreview);
+	levelsInput.addEventListener('input', updatePreview);
+	updatePreview();
+
+	// 按钮
+	const actions = document.createElement('div');
+	actions.className = 'kv-autofill-popup-actions';
+
+	const cancelButton = document.createElement('button');
+	cancelButton.type = 'button';
+	cancelButton.className = 'kv-button kv-button-secondary';
+	cancelButton.textContent = '取消';
+	actions.appendChild(cancelButton);
+
+	const applyButton = document.createElement('button');
+	applyButton.type = 'button';
+	applyButton.className = 'kv-button kv-button-primary';
+	applyButton.textContent = '应用';
+	actions.appendChild(applyButton);
+
+	popup.appendChild(actions);
+
+	// 事件处理
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			closeAutofillPopup();
+		}
+	};
+
+	const outsideHandler = (event) => {
+		if (!popup.contains(event.target)) {
+			closeAutofillPopup();
+		}
+	};
+
+	cancelButton.addEventListener('click', () => closeAutofillPopup());
+
+	applyButton.addEventListener('click', () => {
+		const base = parseFloat(baseInput.value) || 0;
+		const step = parseFloat(stepInput.value) || 0;
+		const levels = parseInt(levelsInput.value) || 1;
+		const values = [];
+		for (let i = 0; i < levels; i++) {
+			values.push(base + step * i);
+		}
+		context.input.value = values.join(' ');
+
+		// 触发 input 事件以保存撤销历史
+		const inputEvent = new Event('input', { bubbles: true });
+		context.input.dispatchEvent(inputEvent);
+
+		closeAutofillPopup();
+	});
+
+	document.addEventListener('keydown', keyHandler, true);
+	document.addEventListener('mousedown', outsideHandler, true);
+
+	document.body.appendChild(popup);
+
+	// 定位弹窗
+	const inputRect = context.input.getBoundingClientRect();
+	popup.style.top = `${inputRect.bottom + 4}px`;
+	popup.style.left = `${inputRect.left}px`;
+
+	autofillPopupState = {
+		element: popup,
+		keyHandler,
+		outsideHandler,
+		targetInput: context.input,
+	};
+
+	// 聚焦到步长输入框
+	requestAnimationFrame(() => stepInput.focus());
+}
+
 function openAbilityValuesEditor(context) {
 	if (!context || !context.rowId) {
 		return;
@@ -4647,6 +4818,8 @@ function renderAbilityValuesEditorEntries() {
 		keyInput.dataset.entryIndex = String(entryIndex);
 		keyInput.value = entry.key;
 		mainRow.appendChild(keyInput);
+		const valueGroup = document.createElement('div');
+		valueGroup.className = 'kv-ability-editor-value-group';
 		const valueInput = document.createElement('input');
 		valueInput.type = 'text';
 		valueInput.className = 'kv-ability-editor-input';
@@ -4654,7 +4827,76 @@ function renderAbilityValuesEditorEntries() {
 		valueInput.dataset.role = 'entry-value';
 		valueInput.dataset.entryIndex = String(entryIndex);
 		valueInput.value = entry.value;
-		mainRow.appendChild(valueInput);
+
+		// 添加撤销历史支持
+		if (!valueInput.dataset.undoHistory) {
+			valueInput.dataset.undoHistory = JSON.stringify([entry.value]);
+			valueInput.dataset.undoIndex = '0';
+		}
+
+		// 处理撤销快捷键
+		valueInput.addEventListener('keydown', (event) => {
+			if (event.key === 'z' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+				event.preventDefault();
+				const history = JSON.parse(valueInput.dataset.undoHistory || '[]');
+				let index = parseInt(valueInput.dataset.undoIndex || '0');
+				if (index > 0) {
+					index--;
+					valueInput.dataset.undoIndex = String(index);
+					valueInput.value = history[index] || '';
+					// 触发 input 事件更新状态
+					const inputEvent = new Event('input', { bubbles: true });
+					valueInput.dispatchEvent(inputEvent);
+				}
+			} else if (event.key === 'z' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
+				event.preventDefault();
+				const history = JSON.parse(valueInput.dataset.undoHistory || '[]');
+				let index = parseInt(valueInput.dataset.undoIndex || '0');
+				if (index < history.length - 1) {
+					index++;
+					valueInput.dataset.undoIndex = String(index);
+					valueInput.value = history[index] || '';
+					// 触发 input 事件更新状态
+					const inputEvent = new Event('input', { bubbles: true });
+					valueInput.dispatchEvent(inputEvent);
+				}
+			}
+		});
+
+		// 保存撤销历史
+		valueInput.addEventListener('input', () => {
+			const history = JSON.parse(valueInput.dataset.undoHistory || '[]');
+			let index = parseInt(valueInput.dataset.undoIndex || '0');
+			const currentValue = valueInput.value;
+
+			// 如果当前值与历史中的值不同，则添加到历史
+			if (history[index] !== currentValue) {
+				// 删除当前索引之后的所有历史
+				history.splice(index + 1);
+				// 添加新值
+				history.push(currentValue);
+				// 限制历史记录数量
+				if (history.length > 50) {
+					history.shift();
+				} else {
+					index++;
+				}
+				valueInput.dataset.undoHistory = JSON.stringify(history);
+				valueInput.dataset.undoIndex = String(index);
+			}
+		});
+
+		valueGroup.appendChild(valueInput);
+		const autofillButton = document.createElement('button');
+		autofillButton.type = 'button';
+		autofillButton.className = 'kv-button kv-button-tertiary kv-ability-editor-autofill-btn';
+		autofillButton.title = '自动填充 (基础值 + 升级间隔 × 等级)';
+		autofillButton.innerHTML = '<span class="codicon codicon-wand"></span>';
+		autofillButton.addEventListener('click', () => {
+			openAutofillPopup({ input: valueInput });
+		});
+		valueGroup.appendChild(autofillButton);
+		mainRow.appendChild(valueGroup);
 		const removeEntryButton = document.createElement('button');
 		removeEntryButton.type = 'button';
 		removeEntryButton.className = 'kv-button kv-button-tertiary kv-ability-editor-remove-entry';

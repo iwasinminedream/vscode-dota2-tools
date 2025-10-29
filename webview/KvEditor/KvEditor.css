@@ -1092,6 +1092,42 @@ body.kv-column-options-editor-open {
 	flex-wrap: wrap;
 }
 
+.kv-ability-editor-value-group {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.kv-ability-editor-value-group .kv-ability-editor-input {
+	flex: 1 1 auto;
+}
+
+.kv-ability-editor-autofill-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 4px;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-editor-foreground);
+	cursor: pointer;
+	flex-shrink: 0;
+	border: none;
+}
+
+.kv-ability-editor-autofill-btn:hover {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-ability-editor-autofill-btn .codicon {
+	font-size: 14px;
+	pointer-events: none;
+}
+
 .kv-ability-editor-modifiers {
 	display: flex;
 	flex-direction: column;
@@ -1138,10 +1174,70 @@ body.kv-column-options-editor-open {
 	pointer-events: none;
 }
 
-
 .kv-ability-editor-remove-modifier:hover,
 .kv-ability-editor-remove-entry:hover {
 	background: var(--vscode-inputValidation-errorBackground, rgba(220, 38, 38, 0.2));
+}
+
+/* 自动填充弹窗 */
+.kv-autofill-popup {
+	position: fixed;
+	background: var(--vscode-quickInput-background, var(--vscode-editor-background));
+	border: 1px solid var(--vscode-quickInput-border, var(--vscode-panel-border));
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	padding: 16px;
+	z-index: 10001;
+	min-width: 320px;
+}
+
+.kv-autofill-popup-title {
+	font-weight: 600;
+	margin-bottom: 12px;
+	color: var(--vscode-editor-foreground);
+}
+
+.kv-autofill-popup-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.kv-autofill-popup-field label {
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-autofill-popup-field input {
+	border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+	background: var(--vscode-input-background, var(--vscode-editor-background));
+	color: var(--vscode-input-foreground, var(--vscode-editor-foreground));
+	font: inherit;
+	padding: 6px 8px;
+	border-radius: 3px;
+}
+
+.kv-autofill-popup-field input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-autofill-popup-preview {
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+	padding: 8px;
+	background: var(--vscode-editor-background);
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 3px;
+	margin-bottom: 12px;
+	font-family: var(--vscode-editor-font-family, 'Courier New', monospace);
+}
+
+.kv-autofill-popup-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
 }
 
 .kv-ability-editor-actions {
