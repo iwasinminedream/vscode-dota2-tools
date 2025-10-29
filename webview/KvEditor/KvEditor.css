@@ -1095,7 +1095,7 @@ body.kv-column-options-editor-open {
 .kv-ability-editor-modifiers {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 2px;
 }
 
 .kv-ability-editor-modifier {
@@ -1111,10 +1111,43 @@ body.kv-column-options-editor-open {
 .kv-ability-editor-add-modifier,
 .kv-ability-editor-remove-modifier,
 .kv-ability-editor-remove-entry {
-	align-self: flex-start;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 4px;
+	/* border: none; */
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-editor-foreground);
+	cursor: pointer;
+	flex-shrink: 0;
 }
 
-.kv-ability-editor-remove-entry {
+.kv-ability-editor-add-modifier:hover,
+.kv-ability-editor-remove-modifier:hover,
+.kv-ability-editor-remove-entry:hover {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-ability-editor-add-modifier .codicon,
+.kv-ability-editor-remove-modifier .codicon,
+.kv-ability-editor-remove-entry .codicon {
+	font-size: 14px;
+	pointer-events: none;
+}
+
+
+.kv-ability-editor-remove-modifier:hover,
+.kv-ability-editor-remove-entry:hover {
+	background: var(--vscode-inputValidation-errorBackground, rgba(220, 38, 38, 0.2));
+}
+
+.kv-ability-editor-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 	margin-left: auto;
 }
 
@@ -1205,6 +1238,7 @@ body.kv-column-options-editor-open {
 
 .kv-column-options-action .codicon {
 	font-size: 14px;
+	pointer-events: none;
 }
 
 .kv-column-options-empty {

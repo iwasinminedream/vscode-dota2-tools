@@ -4660,7 +4660,8 @@ function renderAbilityValuesEditorEntries() {
 		removeEntryButton.className = 'kv-button kv-button-tertiary kv-ability-editor-remove-entry';
 		removeEntryButton.dataset.role = 'remove-entry';
 		removeEntryButton.dataset.entryIndex = String(entryIndex);
-		removeEntryButton.textContent = '删除条目';
+		removeEntryButton.title = '删除条目';
+		removeEntryButton.innerHTML = '<span class="codicon codicon-trash"></span>';
 		mainRow.appendChild(removeEntryButton);
 		entryEl.appendChild(mainRow);
 		const modifiersContainer = document.createElement('div');
@@ -4694,7 +4695,8 @@ function renderAbilityValuesEditorEntries() {
 			removeModifierButton.dataset.role = 'remove-modifier';
 			removeModifierButton.dataset.entryIndex = String(entryIndex);
 			removeModifierButton.dataset.modifierIndex = String(modifierIndex);
-			removeModifierButton.textContent = '删除';
+			removeModifierButton.title = '删除';
+			removeModifierButton.innerHTML = '<span class="codicon codicon-trash"></span>';
 			modifierRow.appendChild(removeModifierButton);
 			modifiersContainer.appendChild(modifierRow);
 		});
@@ -4704,7 +4706,8 @@ function renderAbilityValuesEditorEntries() {
 		addModifierButton.className = 'kv-button kv-button-tertiary kv-ability-editor-add-modifier';
 		addModifierButton.dataset.role = 'add-modifier';
 		addModifierButton.dataset.entryIndex = String(entryIndex);
-		addModifierButton.textContent = '新增修饰';
+		addModifierButton.title = '新增修饰';
+		addModifierButton.innerHTML = '<span class="codicon codicon-add"></span>';
 		entryEl.appendChild(addModifierButton);
 		entriesContainer.appendChild(entryEl);
 	});
