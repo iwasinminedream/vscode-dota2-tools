@@ -268,7 +268,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 			// 合并内置默认 -> 工作区默认 -> 文件级覆盖
 			const baseDefaults = this.readColumnLocalizationConfig();
-			const workspaceDefaults = userSettings.columnDescriptions ?? {};
+			const workspaceDefaults = this.getColumnOptionOverrides(workspaceFolder).columnDescriptions ?? {};
 			const fileDefaults = fileSettings && fileSettings.columnDescriptions ? fileSettings.columnDescriptions : {};
 			const merged: Record<string, { label?: string; description?: string; }> = {};
 			Object.assign(merged, baseDefaults);
@@ -2369,18 +2369,18 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		if (!workspaceFolder) {
 			throw new Error('无法定位工作区，无法保存列描述。');
 		}
-		const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
-		if (!documentKey) {
-			return;
-		}
 
 		const scope = message.scope === 'file' ? 'file' : 'global';
-		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
 		const label = typeof message.label === 'string' && message.label.trim().length ? message.label.trim() : undefined;
 		const description = typeof message.description === 'string' && message.description.trim().length ? message.description.trim() : undefined;
 
 		if (scope === 'file') {
-			// per-file setting
+			// per-file setting - 保存到 kv_editor_user_setting.json
+			const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+			if (!documentKey) {
+				return;
+			}
+			const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
 			const existingEntry = settings.files[documentKey];
 			const descriptions = existingEntry && existingEntry.columnDescriptions ? { ...existingEntry.columnDescriptions } : {};
 			if (label === undefined && description === undefined) {
@@ -2395,8 +2395,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			settings.files[documentKey] = newEntry;
 			this.writeUserSettings(workspaceFolder, settings);
 		} else {
-			// global (workspace-level) default
-			const global = settings.columnDescriptions ? { ...settings.columnDescriptions } : {};
+			// global (workspace-level) default - 保存到 kv_editor_setting.json
+			const overrides = this.copyColumnOptionOverrides(this.getColumnOptionOverrides(workspaceFolder));
+			const global = overrides.columnDescriptions ? { ...overrides.columnDescriptions } : {};
 			if (label === undefined && description === undefined) {
 				if (global[columnKey]) delete global[columnKey];
 			} else {
@@ -2404,8 +2405,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				if (label !== undefined) global[columnKey].label = label;
 				if (description !== undefined) global[columnKey].description = description;
 			}
-			settings.columnDescriptions = Object.keys(global).length ? global : undefined;
-			this.writeUserSettings(workspaceFolder, settings);
+			overrides.columnDescriptions = Object.keys(global).length ? global : undefined;
+			this.writeColumnOptionOverrides(workspaceFolder, overrides);
 		}
 	}
 
@@ -2855,6 +2856,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				result.formulas = formulas;
 			}
 		}
+		const columnDescriptionsSection = container.columnDescriptions;
+		if (columnDescriptionsSection && typeof columnDescriptionsSection === 'object') {
+			const sanitized = this.sanitizeColumnDescriptionMap(columnDescriptionsSection);
+			if (sanitized && Object.keys(sanitized).length) {
+				result.columnDescriptions = sanitized;
+			}
+		}
 		return result;
 	}
 
@@ -2886,7 +2894,21 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 			}
 		}
-		return formulas ? { columns, formulas } : { columns };
+		let columnDescriptions: Record<string, { label?: string; description?: string; }> | undefined;
+		if (source.columnDescriptions && typeof source.columnDescriptions === 'object') {
+			columnDescriptions = {};
+			for (const [key, value] of Object.entries(source.columnDescriptions)) {
+				columnDescriptions[key] = { ...value };
+			}
+		}
+		const result: KvEditorColumnOptionsFile = { columns };
+		if (formulas) {
+			result.formulas = formulas;
+		}
+		if (columnDescriptions && Object.keys(columnDescriptions).length) {
+			result.columnDescriptions = columnDescriptions;
+		}
+		return result;
 	}
 
 	private writeColumnOptionOverrides(folder: vscode.WorkspaceFolder, overrides: KvEditorColumnOptionsFile): void {
@@ -2965,6 +2987,17 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			if (Object.keys(formulasOutput).length) {
 				output.formulas = formulasOutput;
+			}
+		}
+		if (overrides.columnDescriptions && typeof overrides.columnDescriptions === 'object') {
+			const sorted = Object.keys(overrides.columnDescriptions)
+				.sort((a, b) => a.localeCompare(b))
+				.reduce<Record<string, { label?: string; description?: string; }>>((acc, key) => {
+					acc[key] = overrides.columnDescriptions![key];
+					return acc;
+				}, {});
+			if (Object.keys(sorted).length) {
+				output.columnDescriptions = sorted;
 			}
 		}
 		return JSON.stringify(output, null, 2);
@@ -3592,6 +3625,7 @@ interface KvEditorSaveFormulaMessage {
 interface KvEditorColumnOptionsFile {
 	columns: Record<string, KvEditorColumnOptionsFolderMap>;
 	formulas?: KvEditorFormulaStorage;
+	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
 }
 
 type KvEditorColumnOptionsFolderMap = Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnOption[]>>;
