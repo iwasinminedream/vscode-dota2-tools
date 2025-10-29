@@ -2660,7 +2660,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private getUserSettingsPath(folder: vscode.WorkspaceFolder): string {
-		return path.join(folder.uri.fsPath, '.vscode', 'kv_editor_setting.json');
+		return path.join(folder.uri.fsPath, '.vscode', 'kv_editor_user_setting.json');
 	}
 
 	private getDocumentSettingsKey(uri: vscode.Uri, folder: vscode.WorkspaceFolder): string | undefined {
