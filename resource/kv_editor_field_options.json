@@ -1474,6 +1474,24 @@
 			{
 				"value": "ITEM_PARTIALLY_SHAREABLE",
 				"label": "部分共享"
+			},
+			{
+				"value": "ITEM_FULLY_SHAREABLE_STACKING",
+				"label": "完全共享（可堆叠）"
+			}
+		],
+		"multiple": false,
+		"separator": "|"
+	},
+	"ItemDisassembleRule": {
+		"options": [
+			{
+				"value": "DOTA_ITEM_DISASSEMBLE_ALWAYS",
+				"label": "总是允许"
+			},
+			{
+				"value": "DOTA_ITEM_DISASSEMBLE_NEVER",
+				"label": "从不允许"
 			}
 		],
 		"multiple": false,

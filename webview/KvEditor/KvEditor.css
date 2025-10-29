@@ -1059,11 +1059,11 @@ body.kv-column-options-editor-open {
 .kv-ability-editor-entry {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
-	border: 1px solid var(--vscode-panel-border);
+	gap: 2px;
+	/* border: 1px solid var(--vscode-panel-border);
 	border-radius: 6px;
 	padding: 12px;
-	background: var(--vscode-editor-background);
+	background: var(--vscode-editor-background); */
 }
 
 .kv-ability-editor-input {

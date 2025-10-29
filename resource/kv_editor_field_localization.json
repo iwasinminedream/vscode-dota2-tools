@@ -17,6 +17,15 @@
 	"MaxLevel": {
 		"label": "最大等级"
 	},
+	"RequiredLevel": {
+		"label": "需求等级"
+	},
+	"LevelsBetweenUpgrades": {
+		"label": "升级间隔等级"
+	},
+	"AbilityType": {
+		"label": "技能类型"
+	},
 	"AbilityBehavior": {
 		"label": "技能行为"
 	},
@@ -41,11 +50,29 @@
 	"AbilityCastRange": {
 		"label": "施法距离"
 	},
+	"AbilityCastRangeBuffer": {
+		"label": "施法距离缓冲"
+	},
 	"AbilityChannelTime": {
 		"label": "持续施法时间"
 	},
+	"AbilityChannelledManaCostPerSecond": {
+		"label": "持续施法每秒魔法消耗"
+	},
+	"AbilityDuration": {
+		"label": "持续时间"
+	},
+	"AoERadius": {
+		"label": "范围半径"
+	},
 	"AbilityCastAnimation": {
 		"label": "施法动作"
+	},
+	"AnimationPlaybackRate": {
+		"label": "动作播放速率"
+	},
+	"AnimationIgnoresModelScale": {
+		"label": "动作忽略模型缩放"
 	},
 	"AbilityCastPoint": {
 		"label": "施法前摇"
@@ -77,10 +104,53 @@
 	"ItemInitialCharges": {
 		"label": "初始数量"
 	},
+	"ItemCombinable": {
+		"label": "可合成"
+	},
+	"ItemRecipe": {
+		"label": "合成配方"
+	},
+	"ItemStockMax": {
+		"label": "最大库存"
+	},
+	"ItemStockTime": {
+		"label": "库存恢复时间"
+	},
+	"ItemStockInitial": {
+		"label": "初始库存"
+	},
+	"MaxUpgradeLevel": {
+		"label": "最大升级等级"
+	},
+	"ItemBaseLevel": {
+		"label": "基础等级"
+	},
+	"ItemResult": {
+		"label": "合成结果"
+	},
+	"ItemRequirements": {
+		"label": "合成需求"
+	},
+	"ItemDisassembleRule": {
+		"label": "拆分规则"
+	},
 	"CastOnPickup": {
 		"label": "拾取时使用"
 	},
 	"ItemDisplayCharges": {
 		"label": "显示数量"
+	},
+	"ItemRequiresCharges": {
+		"label": "需要数量",
+		"description": "主动技能需要充能才能使用 - 骨灰"
+	},
+	"ItemDisassemblable": {
+		"label": "可拆分"
+	},
+	"ItemDeclaresPurchase": {
+		"label": "声明购买"
+	},
+	"SpellImmunityType": {
+		"label": "技能免疫类型"
 	}
 }
