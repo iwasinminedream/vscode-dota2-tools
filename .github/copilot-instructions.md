@@ -7,16 +7,17 @@
 - **Domain**: This extension automates Dota 2 custom game development workflows—Excel↔KV conversion, API documentation browsing, icon/asset pickers, localization merging, and cloud sheet syncing via Feishu/Lark.
 
 ## Module Lifecycle
-- **Extending modules**: Add to `moduleList` in `init.ts` only with idempotent initializers; map feature toggles in `skipModuleList` and surface new keys through `package.json` + `package.nls*.json` + `src/declarations/common.d.ts`.
-- **Event handling**: Use `EventManager` (`Class/event.ts`) instead of raw VS Code listeners to hook configuration/workspace events and store the listener index for cleanup—call `EventManager.listenToEvent(EventType.EVENT_ON_DID_CHANGE_CONFIGURATION, callback)` and save the returned index.
-- **Status bar**: `module/statusBar.ts` centralizes progress + logging; call `showStatusBarMessage(text, timeout?)` / `refreshStatusBarMessage(index, text)` (and `changeStatusBarState(StatusBarState.LOADING)`) rather than touching the item directly.
-- **Graceful re-init**: Before re-registering disposables (watchers, providers) expose a `stop...` helper and invoke it; `init.ts` expects modules to handle repeated activation gracefully when workspace folders change.
+- **Extending modules**: Add to `moduleList` in `init.ts` only with idempotent initializers; map feature toggles in `skipModuleList` and surface new keys through `package.json` + `package.nls*.json` + `src/declarations/common.d.ts` (see `ModuleListConfig` interface).
+- **Event handling**: Use `EventManager` (`Class/event.ts`) instead of raw VS Code listeners to hook configuration/workspace events—call `EventManager.listenToEvent(EventType.EVENT_ON_DID_CHANGE_CONFIGURATION, callback)` and save the returned index; cleanup via `EventManager.stopListenToEvent(eventType, index)`.
+- **Status bar**: `module/statusBar.ts` centralizes progress + logging (no automated tests; status bar is primary user feedback); call `showStatusBarMessage(text, timeout?)` / `refreshStatusBarMessage(index, text)` / `changeStatusBarState(StatusBarState.LOADING)` rather than touching the item directly. Messages log to OutputChannel for debugging.
+- **Graceful re-init**: Before re-registering disposables (watchers, providers) expose a `stop...` helper (e.g. `stopWatch()` in listeners) and invoke it; `init.ts` expects modules to handle repeated activation gracefully when workspace folders change.
 
 ## Paths, Data & Localization
-- `module/addonInfo.ts` caches `${game}`/`${content}` paths via settings `dota2-tools.addon_path` or `addoninfo.txt`; always call `getGameDir()` / `getContentDir()` and check `isValidFolder()` before filesystem work.
+- `module/addonInfo.ts` caches `${game}`/`${content}` paths via settings `dota2-tools.addon_path` or auto-discovery of `addoninfo.txt` in workspace; always call `getGameDir()` / `getContentDir()` and check `isValidFolder()` before filesystem work.
 - Helpers like `eachExcelConfig` and `getRootPath()` resolve `${game}`, `${content}`, `${workspace}` tokens before reading from disk; reuse them for new path-aware flows.
 - API notes live under `resource/api_note*.json` and are loaded by `Class/DotaApiNote`; update downstream trees/completions through the callbacks in `apiNoteInit` when mutating note data.
-- String resources live in `package.nls*.json`; use `localize`/`reverseLocalize` (`utils/localize.ts`) and update declaration types when adding settings or messages.
+- String resources live in `package.nls*.json`; use `localize(key)`/`reverseLocalize(value)` (`utils/localize.ts`) for all user-facing text and update declaration types when adding settings or messages.
+- Path validation: Use `pathUtils.ts` helpers (`getPathInfo`, `makeDir`, `dirExists`) for async filesystem checks rather than raw `fs` calls.
 
 ## Automation & Watchers
 - CSV/Excel automation hangs off `listenerAbilityExcel.ts`, `listenerUnitExcel.ts`, and `listenerKV2JS.ts`; they watch `getRootPath()` recursively via `node-watch` and honor toggles in `dota2-tools.A3.listener`.
@@ -41,9 +42,10 @@
 
 ## Conventions & Pitfalls
 - Register disposables on `context.subscriptions`; memoize singleton accessors (e.g. `getDotaApiNoteClass`, `getLuaCompletion`) for cross-module sharing.
-- Many commands assume resolved addon directories; when paths are missing, use `showStatusBarMessage` plus friendly `vscode.window` prompts instead of throwing.
-- Prefer helpers in `utils/` (`kvUtils`, `pathUtils`, `getWebviewContent`, `findFile`) over bespoke logic to stay aligned with existing error handling and token resolution.
-- New commands must be registered in `extension.ts` and declared in `package.json` contributions + localization files to appear in the command palette.
+- Many commands assume resolved addon directories; when paths are missing, use `showStatusBarMessage` plus friendly `vscode.window` prompts (with localized text) instead of throwing.
+- Prefer helpers in `utils/` (`kvUtils`, `pathUtils`, `getWebviewContent`, `findFile`, `csvUtils`) over bespoke logic to stay aligned with existing error handling and token resolution.
+- New commands must be registered in `extension.ts` (with `context.subscriptions.push(vscode.commands.registerCommand(...))`) and declared in `package.json` contributions + localization files to appear in the command palette.
 - KV file parsing: `readKeyValue2` in `kvUtils.ts` handles both KV2 and KV3 formats with comment stripping; use `writeKeyValue` for consistent formatting when generating KV output.
 - CSV parsing: `csvUtils.ts` provides `csv2obj` for both horizontal (default) and vertical layouts; ability tables expect double-row format (row 1 = ability metadata, row 2 = AbilitySpecial values).
+- Error handling: Use `vscode.window.showErrorMessage/showWarningMessage` for critical issues and `showStatusBarMessage` for operational feedback; always localize error messages.
 

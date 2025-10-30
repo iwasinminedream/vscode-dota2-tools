@@ -784,6 +784,36 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 							rowValues[key] = '';
 							continue;
 						}
+						// 特殊处理 Creature 字段 - 扁平化其子字段
+						if (key === 'Creature' && this.isPlainObject(field)) {
+							const creatureBlock = field as Record<string, unknown>;
+							for (const [creatureKey, creatureValue] of Object.entries(creatureBlock)) {
+								// DisableClumpingBehavior 和 UsesGestureBasedAttackAnimation 是标量
+								if (creatureKey === 'DisableClumpingBehavior' || creatureKey === 'UsesGestureBasedAttackAnimation') {
+									if (!columnOrder.includes(creatureKey)) {
+										columnOrder.push(creatureKey);
+									}
+									rowValues[creatureKey] = this.coerceKvScalar(creatureValue);
+									continue;
+								}
+								// AttachWearables 是嵌套的数字索引对象
+								if (creatureKey === 'AttachWearables' && this.isPlainObject(creatureValue)) {
+									if (!columnOrder.includes(creatureKey)) {
+										columnOrder.push(creatureKey);
+									}
+									rowValues[creatureKey] = this.parseAttachWearablesField(creatureValue as Record<string, unknown>);
+									continue;
+								}
+								// 其他 Creature 子字段按标量处理
+								if (!this.isPlainObject(creatureValue)) {
+									if (!columnOrder.includes(creatureKey)) {
+										columnOrder.push(creatureKey);
+									}
+									rowValues[creatureKey] = this.coerceKvScalar(creatureValue);
+								}
+							}
+							continue;
+						}
 						if (this.isPlainObject(field)) {
 							// other nested blocks are skipped for now
 							continue;
@@ -861,6 +891,30 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			});
 		}
 		return entries;
+	}
+
+	/**
+	 * 解析 AttachWearables 字段，将数字索引的对象数组转换为逗号分隔的 ItemDef 列表
+	 * 例如：{ "1": { "ItemDef": "14878" }, "2": { "ItemDef": "22264" } } => "14878,22264"
+	 */
+	private parseAttachWearablesField(field: Record<string, unknown>): string {
+		const itemDefs: string[] = [];
+		// 按数字键排序
+		const sortedKeys = Object.keys(field).sort((a, b) => {
+			const numA = parseInt(a, 10);
+			const numB = parseInt(b, 10);
+			return numA - numB;
+		});
+		for (const key of sortedKeys) {
+			const entry = field[key];
+			if (this.isPlainObject(entry)) {
+				const itemDef = (entry as Record<string, unknown>).ItemDef;
+				if (itemDef !== undefined && itemDef !== null) {
+					itemDefs.push(String(itemDef));
+				}
+			}
+		}
+		return itemDefs.join(',');
 	}
 
 	private buildTexturePreviews(
@@ -1448,6 +1502,68 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		};
 	}
 
+	/**
+	 * 检查一个键是否属于 Creature 字段的子字段
+	 */
+	private isCreatureField(key: string): boolean {
+		return key === 'DisableClumpingBehavior' ||
+			key === 'UsesGestureBasedAttackAnimation' ||
+			key === 'AttachWearables';
+	}
+
+	/**
+	 * 从扁平化的行数据中重建 Creature 结构
+	 * @param row 原始行对象
+	 * @returns 重建后包含 Creature 结构的行对象
+	 */
+	private rebuildCreatureStructure(row: Record<string, unknown>): Record<string, unknown> {
+		const creatureFields: Record<string, unknown> = {};
+		let hasCreatureFields = false;
+
+		for (const key of Object.keys(row)) {
+			if (this.isCreatureField(key)) {
+				hasCreatureFields = true;
+				const value = row[key];
+
+				// AttachWearables 需要从逗号分隔的字符串重建为数字索引对象
+				if (key === 'AttachWearables') {
+					const itemDefs = String(value).split(',').map(s => s.trim()).filter(s => s.length > 0);
+					if (itemDefs.length > 0) {
+						const attachWearables: Record<string, Record<string, string>> = {};
+						itemDefs.forEach((itemDef, index) => {
+							attachWearables[String(index + 1)] = { ItemDef: itemDef };
+						});
+						creatureFields[key] = attachWearables;
+					}
+				} else {
+					// DisableClumpingBehavior 和 UsesGestureBasedAttackAnimation 直接复制
+					creatureFields[key] = value;
+				}
+			}
+		}
+
+		// 如果有 Creature 相关字段，重建结构
+		if (hasCreatureFields) {
+			const newRow: Record<string, unknown> = {};
+
+			// 复制非 Creature 字段
+			for (const [key, value] of Object.entries(row)) {
+				if (!this.isCreatureField(key)) {
+					newRow[key] = value;
+				}
+			}
+
+			// 添加 Creature 结构
+			if (Object.keys(creatureFields).length > 0) {
+				newRow.Creature = creatureFields;
+			}
+
+			return newRow;
+		}
+
+		return row;
+	}
+
 	private handleEditMessage(document: vscode.TextDocument, message?: KvEditorEditMessage): Promise<void> {
 		return this.runSerializedEdit(async () => {
 			if (!message || !message.id || !message.key || message.key === 'id') {
@@ -1470,11 +1586,51 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			const normalizedKey = message.key;
 			const normalizedValue = message.value === undefined || message.value === null ? '' : String(message.value);
 			const record = row as Record<string, unknown>;
-			const previousValue = record[normalizedKey];
-			if ((previousValue === undefined || previousValue === null ? '' : String(previousValue)) === normalizedValue) {
-				return;
+
+			// 如果是编辑 Creature 相关字段，需要特殊处理
+			if (this.isCreatureField(normalizedKey)) {
+				// 确保 Creature 对象存在
+				let creature = record.Creature as Record<string, unknown> | undefined;
+				if (!creature || typeof creature !== 'object') {
+					creature = {};
+					record.Creature = creature;
+				}
+
+				// 更新 Creature 中的字段
+				if (normalizedKey === 'AttachWearables') {
+					// 将逗号分隔的字符串转换为数字索引对象
+					const itemDefs = normalizedValue.split(',').map(s => s.trim()).filter(s => s.length > 0);
+					if (itemDefs.length > 0) {
+						const attachWearables: Record<string, Record<string, string>> = {};
+						itemDefs.forEach((itemDef, index) => {
+							attachWearables[String(index + 1)] = { ItemDef: itemDef };
+						});
+						creature[normalizedKey] = attachWearables;
+					} else {
+						delete creature[normalizedKey];
+					}
+				} else {
+					// DisableClumpingBehavior 和 UsesGestureBasedAttackAnimation
+					if (normalizedValue) {
+						creature[normalizedKey] = normalizedValue;
+					} else {
+						delete creature[normalizedKey];
+					}
+				}
+
+				// 如果 Creature 为空，删除它
+				if (Object.keys(creature).length === 0) {
+					delete record.Creature;
+				}
+			} else {
+				// 普通字段直接更新
+				const previousValue = record[normalizedKey];
+				if ((previousValue === undefined || previousValue === null ? '' : String(previousValue)) === normalizedValue) {
+					return;
+				}
+				record[normalizedKey] = normalizedValue;
 			}
-			record[normalizedKey] = normalizedValue;
+
 			const newContent = writeKeyValue(kvObject);
 			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
 			const edit = new vscode.WorkspaceEdit();
@@ -1520,12 +1676,52 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const normalizedKey = edit.key;
 				const normalizedValue = edit.value === undefined || edit.value === null ? '' : String(edit.value);
 				const record = row as Record<string, unknown>;
-				const previousValue = record[normalizedKey];
-				if ((previousValue === undefined || previousValue === null ? '' : String(previousValue)) === normalizedValue) {
-					continue;
+
+				// 如果是编辑 Creature 相关字段，需要特殊处理
+				if (this.isCreatureField(normalizedKey)) {
+					// 确保 Creature 对象存在
+					let creature = record.Creature as Record<string, unknown> | undefined;
+					if (!creature || typeof creature !== 'object') {
+						creature = {};
+						record.Creature = creature;
+					}
+
+					// 更新 Creature 中的字段
+					if (normalizedKey === 'AttachWearables') {
+						// 将逗号分隔的字符串转换为数字索引对象
+						const itemDefs = normalizedValue.split(',').map(s => s.trim()).filter(s => s.length > 0);
+						if (itemDefs.length > 0) {
+							const attachWearables: Record<string, Record<string, string>> = {};
+							itemDefs.forEach((itemDef, index) => {
+								attachWearables[String(index + 1)] = { ItemDef: itemDef };
+							});
+							creature[normalizedKey] = attachWearables;
+						} else {
+							delete creature[normalizedKey];
+						}
+					} else {
+						// DisableClumpingBehavior 和 UsesGestureBasedAttackAnimation
+						if (normalizedValue) {
+							creature[normalizedKey] = normalizedValue;
+						} else {
+							delete creature[normalizedKey];
+						}
+					}
+
+					// 如果 Creature 为空，删除它
+					if (Object.keys(creature).length === 0) {
+						delete record.Creature;
+					}
+					mutated = true;
+				} else {
+					// 普通字段直接更新
+					const previousValue = record[normalizedKey];
+					if ((previousValue === undefined || previousValue === null ? '' : String(previousValue)) === normalizedValue) {
+						continue;
+					}
+					record[normalizedKey] = normalizedValue;
+					mutated = true;
 				}
-				record[normalizedKey] = normalizedValue;
-				mutated = true;
 			}
 			if (!mutated) {
 				return;
@@ -2061,10 +2257,27 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const rowRecord = rowValue as Record<string, unknown>;
 				const newRowRecord: Record<string, unknown> = {};
 
-				// 复制除了要删除的列之外的所有列
-				for (const [key, value] of Object.entries(rowRecord)) {
-					if (key !== columnKey) {
-						newRowRecord[key] = value;
+				// 如果是 Creature 相关字段，需要从 Creature 对象中删除
+				if (this.isCreatureField(columnKey)) {
+					// 复制所有非 Creature 字段
+					for (const [key, value] of Object.entries(rowRecord)) {
+						if (key === 'Creature' && this.isPlainObject(value)) {
+							const creature = { ...(value as Record<string, unknown>) };
+							delete creature[columnKey];
+							// 如果 Creature 还有其他字段，保留它；否则删除整个 Creature
+							if (Object.keys(creature).length > 0) {
+								newRowRecord[key] = creature;
+							}
+						} else {
+							newRowRecord[key] = value;
+						}
+					}
+				} else {
+					// 普通列：复制除了要删除的列之外的所有列
+					for (const [key, value] of Object.entries(rowRecord)) {
+						if (key !== columnKey) {
+							newRowRecord[key] = value;
+						}
 					}
 				}
 
