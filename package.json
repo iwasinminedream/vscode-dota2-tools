@@ -669,7 +669,7 @@
 							"dota2kv": {
 								"type": "boolean",
 								"default": false,
-								"description": "kv文件视图（开发中）"
+								"description": "kv编辑器"
 							},
 							"error_logs": {
 								"type": "boolean",
