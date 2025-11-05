@@ -502,8 +502,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			// 再应用文件级别的覆盖（优先级最高）
 			if (documentUri && overrides.files) {
 				const documentKey = this.getDocumentSettingsKey(documentUri, workspaceFolder);
-				if (documentKey && overrides.files[documentKey]?.columnOptions) {
-					for (const [column, fileOptions] of Object.entries(overrides.files[documentKey].columnOptions)) {
+				const fileColumnOptions = documentKey ? overrides.files[documentKey]?.columnOptions : undefined;
+				if (fileColumnOptions) {
+					for (const [column, fileOptions] of Object.entries(fileColumnOptions)) {
 						if (!fileOptions?.length) {
 							continue;
 						}
