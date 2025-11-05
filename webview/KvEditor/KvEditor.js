@@ -143,6 +143,11 @@ let fillPopupState = null;
 let columnDragState = null;
 let autofillPopupState = null;
 
+// 行选择状态管理
+let selectedRows = new Set(); // 存储选中的行索引
+let lastSelectedRowIndex = null; // 用于 Shift 多选
+let copiedRowsData = null; // 存储复制的行数据
+
 const FORMULA_ERROR_VALUE = '#ERROR!';
 const FORMULA_CYCLE_VALUE = '#CYCLE!';
 
@@ -157,7 +162,10 @@ let columnWidthSaveHandle = null;
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
+// 行复制粘贴优先于单元格复制粘贴
+document.addEventListener('keydown', handleRowClipboardShortcuts);
 document.addEventListener('keydown', handleClipboardShortcuts);
+document.addEventListener('keydown', handleEscapeClearSelection);
 
 if (formulaValueInput) {
 	formulaValueInput.addEventListener('input', () => {
@@ -980,6 +988,227 @@ function pasteToSelectedCell() {
 	}
 	handleElementChange(selectedCell.element, selectedCell.fieldConfig);
 	selectedCell.value = newValue;
+}
+
+function handleClipboardShortcuts(event) {
+	if (!selectedCell) {
+		return;
+	}
+	const isCopy = event.key?.toLowerCase() === 'c';
+	const isPaste = event.key?.toLowerCase() === 'v';
+	if (!(event.ctrlKey || event.metaKey) || (!isCopy && !isPaste)) {
+		return;
+	}
+	if (isEditableElement(document.activeElement)) {
+		return;
+	}
+	event.preventDefault();
+	if (isCopy) {
+		copySelectedCell();
+	} else {
+		pasteToSelectedCell();
+	}
+}
+
+// 处理行级别的复制粘贴快捷键
+function handleRowClipboardShortcuts(event) {
+	const isCopy = event.key?.toLowerCase() === 'c';
+	const isPaste = event.key?.toLowerCase() === 'v';
+
+	if (!(event.ctrlKey || event.metaKey) || (!isCopy && !isPaste)) {
+		return;
+	}
+
+	// 复制需要有选中的行
+	if (isCopy && selectedRows.size === 0) {
+		return;
+	}
+
+	// 粘贴需要有复制的数据
+	if (isPaste && !copiedRowsData) {
+		return;
+	}
+
+	// 确保不在可编辑元素中
+	if (isEditableElement(document.activeElement)) {
+		return;
+	}
+
+	event.preventDefault();
+	event.stopPropagation();
+
+	if (isCopy) {
+		copySelectedRows();
+	} else if (isPaste) {
+		pasteRows();
+	}
+}
+
+// 切换行选择状态
+function toggleRowSelection(rowIndex, multiSelect = false, rangeSelect = false) {
+	// 清除单元格选择（行选择和单元格选择互斥）
+	if (selectedCell) {
+		clearSelection();
+	}
+
+	if (!multiSelect && !rangeSelect) {
+		// 单选：清除其他选择
+		clearRowSelection();
+		selectedRows.add(rowIndex);
+		lastSelectedRowIndex = rowIndex;
+	} else if (multiSelect) {
+		// Ctrl 多选：切换当前行
+		if (selectedRows.has(rowIndex)) {
+			selectedRows.delete(rowIndex);
+		} else {
+			selectedRows.add(rowIndex);
+		}
+		lastSelectedRowIndex = rowIndex;
+	} else if (rangeSelect && lastSelectedRowIndex !== null) {
+		// Shift 范围选择
+		const start = Math.min(lastSelectedRowIndex, rowIndex);
+		const end = Math.max(lastSelectedRowIndex, rowIndex);
+		for (let i = start; i <= end; i++) {
+			selectedRows.add(i);
+		}
+	}
+
+	updateRowSelectionVisuals();
+}
+
+// 清除行选择
+function clearRowSelection() {
+	selectedRows.clear();
+	lastSelectedRowIndex = null;
+	updateRowSelectionVisuals();
+}
+
+// 更新行选择的视觉效果
+function updateRowSelectionVisuals() {
+	if (!tableSection) {
+		return;
+	}
+
+	const rows = tableSection.querySelectorAll('tbody tr');
+	rows.forEach((row, index) => {
+		if (selectedRows.has(index)) {
+			row.classList.add('kv-row-selected');
+		} else {
+			row.classList.remove('kv-row-selected');
+		}
+	});
+}
+
+// 复制选中的行
+function copySelectedRows() {
+	if (!latestPayload || !Array.isArray(latestPayload.rows) || selectedRows.size === 0) {
+		return;
+	}
+
+	const rowsToCopy = [];
+	const sortedIndices = Array.from(selectedRows).sort((a, b) => a - b);
+
+	for (const rowIndex of sortedIndices) {
+		if (rowIndex >= 0 && rowIndex < latestPayload.rows.length) {
+			const row = latestPayload.rows[rowIndex];
+			// 深拷贝行数据
+			const rowCopy = {
+				id: row.id,
+				values: { ...row.values },
+			};
+
+			// 复制 abilityValues 如果存在
+			if (row.abilityValues) {
+				rowCopy.abilityValues = cloneAbilityValuesEntries(row.abilityValues);
+			}
+
+			rowsToCopy.push(rowCopy);
+		}
+	}
+
+	if (rowsToCopy.length > 0) {
+		copiedRowsData = rowsToCopy;
+		console.log(`已复制 ${rowsToCopy.length} 行数据`);
+
+		// 可选：显示提示信息
+		if (tableSection) {
+			showTemporaryMessage(`已复制 ${rowsToCopy.length} 行`, 1000);
+		}
+	}
+}
+
+// 粘贴行
+function pasteRows() {
+	if (!copiedRowsData || copiedRowsData.length === 0) {
+		return;
+	}
+
+	// 确定插入位置：如果有选中的行，在最后一个选中行之后插入；否则在表格末尾插入
+	let insertAfterIndex = -1;
+	if (selectedRows.size > 0) {
+		insertAfterIndex = Math.max(...Array.from(selectedRows));
+	} else if (latestPayload && latestPayload.rows) {
+		insertAfterIndex = latestPayload.rows.length - 1;
+	}
+
+	console.log(`[pasteRows] 准备粘贴 ${copiedRowsData.length} 行:`, copiedRowsData);
+	console.log(`[pasteRows] 插入位置: ${insertAfterIndex + 1}`);
+
+	// 发送批量插入请求
+	vscode.postMessage({
+		type: 'bulkInsertRows',
+		payload: {
+			insertAfterIndex,
+			rows: copiedRowsData,
+		},
+	});
+
+	console.log(`粘贴 ${copiedRowsData.length} 行到位置 ${insertAfterIndex + 1}`);
+
+	// 显示提示信息
+	if (tableSection) {
+		showTemporaryMessage(`已粘贴 ${copiedRowsData.length} 行`, 1000);
+	}
+}
+
+// 显示临时提示消息
+function showTemporaryMessage(message, duration = 2000) {
+	const existingMessage = document.querySelector('.kv-temp-message');
+	if (existingMessage) {
+		existingMessage.remove();
+	}
+
+	const messageEl = document.createElement('div');
+	messageEl.className = 'kv-temp-message';
+	messageEl.textContent = message;
+	messageEl.style.cssText = `
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		background: var(--vscode-notifications-background, #2d2d30);
+		color: var(--vscode-notifications-foreground, #cccccc);
+		padding: 10px 16px;
+		border-radius: 4px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+		z-index: 10000;
+		font-size: 13px;
+		animation: kv-message-slide-in 0.2s ease-out;
+	`;
+
+	document.body.appendChild(messageEl);
+
+	setTimeout(() => {
+		messageEl.style.animation = 'kv-message-fade-out 0.2s ease-out';
+		setTimeout(() => messageEl.remove(), 200);
+	}, duration);
+}
+
+// 处理 Escape 键清除行选择
+function handleEscapeClearSelection(event) {
+	if (event.key === 'Escape' && selectedRows.size > 0) {
+		event.preventDefault();
+		clearRowSelection();
+	}
 }
 
 function handleClipboardShortcuts(event) {
@@ -3215,19 +3444,11 @@ function renderTable(columns, rows, columnOptions) {
 				indexLabel.className = 'kv-row-index-label';
 				indexLabel.textContent = String(rowIndex + 1);
 				td.appendChild(indexLabel);
-				td.addEventListener('click', () => {
-					selectCell(td, {
-						column,
-						columnLetter,
-						columnName,
-						rowId: row.id ?? '',
-						rowIndex,
-						editable: false,
-						element: null,
-						fieldConfig: undefined,
-						usesDropdown: false,
-						value: indexLabel.textContent ?? ''
-					});
+				td.addEventListener('click', (event) => {
+					// 点击行号进行行选择
+					event.preventDefault();
+					event.stopPropagation();
+					toggleRowSelection(rowIndex, event.ctrlKey || event.metaKey, event.shiftKey);
 				});
 				td.addEventListener('contextmenu', (event) => {
 					openRowContextMenu(event, {
@@ -3688,6 +3909,7 @@ function renderTable(columns, rows, columnOptions) {
 	tableSection.innerHTML = '';
 	tableSection.appendChild(table);
 	refreshTableWidth();
+	updateRowSelectionVisuals(); // 恢复行选择的视觉状态
 	restoreSelection(columnLabels, columnLetters, columnOptions);
 	restoreActiveCell();
 	if (pendingMultiSelectReopen) {

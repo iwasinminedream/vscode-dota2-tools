@@ -130,6 +130,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				});
 				return;
 			}
+			if (message.type === 'bulkInsertRows') {
+				const bulkInsertMessage: KvEditorBulkInsertRowsMessage | undefined = message.payload;
+				this.handleBulkInsertRows(document, bulkInsertMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'deleteRow') {
 				const deleteMessage: KvEditorDeleteRowMessage | undefined = message.payload;
 				this.handleDeleteRow(document, deleteMessage).catch((error: unknown) => {
@@ -2047,6 +2055,121 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		});
 	}
 
+	private handleBulkInsertRows(document: vscode.TextDocument, message?: KvEditorBulkInsertRowsMessage): Promise<void> {
+		return this.runSerializedEdit(async () => {
+			if (!message || !message.rows || message.rows.length === 0) {
+				return;
+			}
+
+			console.log(`[handleBulkInsertRows] 接收到 ${message.rows.length} 行数据`, message.rows);
+
+			const insertAfterIndex = Number(message.insertAfterIndex);
+			if (!Number.isFinite(insertAfterIndex)) {
+				return;
+			}
+
+			const originalText = document.getText();
+			const kvObject = readKeyValue2(originalText ?? '');
+			const header = Object.keys(kvObject)[0];
+			if (!header) {
+				throw new Error('无法解析 KV 根节点，未执行批量插入。');
+			}
+			const blockRaw = kvObject[header];
+			if (!blockRaw || typeof blockRaw !== 'object') {
+				throw new Error('当前 KV 结构不支持批量插入。');
+			}
+			const block = blockRaw as Record<string, unknown>;
+			const entries = Object.entries(block);
+			const rowEntries = entries
+				.map(([key, value], index) => ({ key, value, index }))
+				.filter((entry) => this.isPlainObject(entry.value));
+			const totalRows = rowEntries.length;
+
+			// 计算插入位置
+			let insertionEntryIndex = entries.length;
+			let insertionRowIndex = totalRows;
+
+			if (insertAfterIndex >= 0 && insertAfterIndex < totalRows) {
+				const referenceInfo = rowEntries[insertAfterIndex];
+				insertionEntryIndex = referenceInfo.index + 1;
+				insertionRowIndex = insertAfterIndex + 1;
+			}
+
+			insertionEntryIndex = Math.max(0, Math.min(entries.length, insertionEntryIndex));
+
+			const newEntries = entries.slice();
+			let insertedCount = 0;
+
+			console.log(`[handleBulkInsertRows] 开始插入 ${message.rows.length} 行，插入位置: ${insertionEntryIndex}`);
+
+			// 批量插入行
+			for (const rowData of message.rows) {
+				// 生成唯一 key 时需要考虑已插入的行
+				const updatedBlock: Record<string, unknown> = {};
+				newEntries.forEach(([key, value]) => {
+					updatedBlock[key] = value;
+				});
+
+				const newRowKey = this.generateUniqueRowKey(updatedBlock);
+				const newRowValue: Record<string, unknown> = {};
+
+				console.log(`[handleBulkInsertRows] 插入第 ${insertedCount + 1} 行，新 key: ${newRowKey}`);
+
+				// 复制所有字段值
+				if (rowData.values && typeof rowData.values === 'object') {
+					Object.assign(newRowValue, rowData.values);
+				}
+
+				// 处理 AbilitySpecial
+				if (rowData.abilityValues && Array.isArray(rowData.abilityValues)) {
+					const abilitySpecial: Record<string, Record<string, unknown>> = {};
+					rowData.abilityValues.forEach((item: Record<string, unknown>, idx: number) => {
+						const entryKey = String(idx).padStart(2, '0');
+						abilitySpecial[entryKey] = item || {};
+					});
+					newRowValue['AbilitySpecial'] = abilitySpecial;
+				}
+
+				// 处理 Creature 字段（如果存在）
+				this.rebuildCreatureStructure(newRowValue);
+
+				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, newRowValue]);
+				insertedCount++;
+			}
+
+			console.log(`[handleBulkInsertRows] 完成插入，共插入 ${insertedCount} 行`);
+
+			const reorderedBlock: Record<string, unknown> = {};
+			newEntries.forEach(([key, value]) => {
+				reorderedBlock[key] = value;
+			});
+
+			kvObject[header] = reorderedBlock;
+			const newContent = writeKeyValue(kvObject);
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+			const edit = new vscode.WorkspaceEdit();
+			edit.replace(document.uri, fullRange, newContent);
+			const applied = await vscode.workspace.applyEdit(edit);
+			if (!applied) {
+				throw new Error('写入 KV 文本失败。');
+			}
+
+			try {
+				this.shiftFormulaRowIndices(document, insertionRowIndex, insertedCount);
+			} catch (error) {
+				console.warn('[kvEditorProvider] Failed to shift formula row indices after bulk insertion:', error);
+			}
+
+			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+			if (autoSaveMode && autoSaveMode !== 'off') {
+				const saved = await document.save();
+				if (!saved) {
+					throw new Error('保存 KV 文件失败。');
+				}
+			}
+		});
+	}
+
 	private handleDeleteRow(document: vscode.TextDocument, message?: KvEditorDeleteRowMessage): Promise<void> {
 		return this.runSerializedEdit(async () => {
 			if (!message) {
@@ -3646,6 +3769,15 @@ interface KvEditorInsertRowMessage {
 	referenceId?: string;
 	referenceIndex: number;
 	position: 'before' | 'after';
+}
+
+interface KvEditorBulkInsertRowsMessage {
+	insertAfterIndex: number;
+	rows: Array<{
+		id: string;
+		values: Record<string, string>;
+		abilityValues?: Array<Record<string, unknown>>;
+	}>;
 }
 
 interface KvEditorDeleteRowMessage {
