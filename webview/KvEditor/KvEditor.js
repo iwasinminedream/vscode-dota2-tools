@@ -4740,9 +4740,44 @@ function openRowContextMenu(invocationEvent, context) {
 	});
 
 	// 添加分隔线
-	const separator = document.createElement('div');
-	separator.className = 'kv-context-menu-separator';
-	menu.appendChild(separator);
+	const separator1 = document.createElement('div');
+	separator1.className = 'kv-context-menu-separator';
+	menu.appendChild(separator1);
+
+	// 添加复制行选项
+	const copyButton = document.createElement('button');
+	copyButton.type = 'button';
+	copyButton.className = 'kv-row-context-menu-item';
+	copyButton.textContent = '复制行';
+	copyButton.addEventListener('click', () => {
+		// 先清除现有选择，选中当前行，然后复制
+		selectedRows.clear();
+		selectedRows.add(normalizedIndex);
+		lastSelectedRowIndex = normalizedIndex;
+		updateRowSelectionVisuals();
+		copySelectedRows();
+		closeRowContextMenu();
+	});
+	menu.appendChild(copyButton);
+
+	// 添加粘贴行选项
+	const pasteButton = document.createElement('button');
+	pasteButton.type = 'button';
+	pasteButton.className = 'kv-row-context-menu-item';
+	pasteButton.textContent = '粘贴行';
+	pasteButton.disabled = !copiedRowsData || copiedRowsData.length === 0;
+	pasteButton.addEventListener('click', () => {
+		if (copiedRowsData && copiedRowsData.length > 0) {
+			pasteRows();
+		}
+		closeRowContextMenu();
+	});
+	menu.appendChild(pasteButton);
+
+	// 添加分隔线
+	const separator2 = document.createElement('div');
+	separator2.className = 'kv-context-menu-separator';
+	menu.appendChild(separator2);
 
 	// 添加删除行选项
 	const deleteButton = document.createElement('button');
