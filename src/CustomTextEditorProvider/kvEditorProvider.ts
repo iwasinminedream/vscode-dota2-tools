@@ -255,7 +255,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		const parsed = this.parseKv(document.getText());
 		this.enrichRowsWithLocalization(parsed.rows, folderType, document.uri.fsPath, entry);
 		const columnLayout = this.loadColumnLayout(document);
-		const columnOptions = this.getResolvedColumnOptions(folderType, workspaceFolder);
+		const columnOptions = this.getResolvedColumnOptions(folderType, workspaceFolder, document.uri);
 		const formulas = workspaceFolder && documentKey
 			? this.buildFormulaPayload(workspaceFolder, documentKey, parsed.rows, document.uri)
 			: [];
@@ -461,7 +461,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
-	private getResolvedColumnOptions(folderType: KvFolderType, workspaceFolder?: vscode.WorkspaceFolder): KvEditorColumnOptionResolvedMap {
+	private getResolvedColumnOptions(
+		folderType: KvFolderType,
+		workspaceFolder?: vscode.WorkspaceFolder,
+		documentUri?: vscode.Uri
+	): KvEditorColumnOptionResolvedMap {
 		const resolved: KvEditorColumnOptionResolvedMap = {};
 		for (const [column, config] of Object.entries(this.columnOptionConfig)) {
 			const override = config.overrides?.[folderType];
@@ -476,6 +480,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		if (workspaceFolder) {
 			const overrides = this.getColumnOptionOverrides(workspaceFolder);
+
+			// 先应用全局（folderType）级别的覆盖
 			for (const [column, folderMap] of Object.entries(overrides.columns)) {
 				const overrideOptions = this.getColumnOverrideOptionsForFolder(folderMap, folderType);
 				if (!overrideOptions?.length) {
@@ -490,6 +496,28 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 						multiple: false,
 						separator: ',',
 					};
+				}
+			}
+
+			// 再应用文件级别的覆盖（优先级最高）
+			if (documentUri && overrides.files) {
+				const documentKey = this.getDocumentSettingsKey(documentUri, workspaceFolder);
+				if (documentKey && overrides.files[documentKey]?.columnOptions) {
+					for (const [column, fileOptions] of Object.entries(overrides.files[documentKey].columnOptions)) {
+						if (!fileOptions?.length) {
+							continue;
+						}
+						const existing = resolved[column];
+						if (existing) {
+							existing.options = fileOptions.map((option) => ({ ...option }));
+						} else {
+							resolved[column] = {
+								options: fileOptions.map((option) => ({ ...option })),
+								multiple: false,
+								separator: ',',
+							};
+						}
+					}
 				}
 			}
 		}
@@ -3027,23 +3055,67 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		if (!workspaceFolder) {
 			throw new Error('无法定位工作区，无法保存自定义下拉选项。');
 		}
-		const scope = this.resolveColumnOptionsScope(message.folderType);
+
 		const sanitizedOptions = this.sanitizeColumnOptionList(message.options);
-		const overrides = this.copyColumnOptionOverrides(this.getColumnOptionOverrides(workspaceFolder));
-		const columnOverrides = overrides.columns[columnKey] ?? {};
-		if (!sanitizedOptions.length) {
-			if (columnOverrides[scope]) {
-				delete columnOverrides[scope];
+		const isFileScope = message.scope === 'file';
+
+		if (isFileScope) {
+			// 保存到文件级别配置
+			const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+			if (!documentKey) {
+				throw new Error('无法生成文档配置键，无法保存文件级别选项。');
 			}
+
+			const overrides = this.copyColumnOptionOverrides(this.getColumnOptionOverrides(workspaceFolder));
+
+			// 确保 files 对象存在
+			if (!overrides.files) {
+				overrides.files = {};
+			}
+			if (!overrides.files[documentKey]) {
+				overrides.files[documentKey] = {};
+			}
+			if (!overrides.files[documentKey].columnOptions) {
+				overrides.files[documentKey].columnOptions = {};
+			}
+
+			// 保存或删除选项
+			if (!sanitizedOptions.length) {
+				delete overrides.files[documentKey].columnOptions![columnKey];
+				// 清理空对象
+				if (Object.keys(overrides.files[documentKey].columnOptions!).length === 0) {
+					delete overrides.files[documentKey].columnOptions;
+				}
+				if (Object.keys(overrides.files[documentKey]).length === 0) {
+					delete overrides.files[documentKey];
+				}
+			} else {
+				overrides.files[documentKey].columnOptions![columnKey] = sanitizedOptions;
+			}
+
+			this.writeColumnOptionOverrides(workspaceFolder, overrides);
 		} else {
-			columnOverrides[scope] = sanitizedOptions;
+			// 保存到全局（folderType）级别配置
+			const scope = this.resolveColumnOptionsScope(message.folderType);
+			const overrides = this.copyColumnOptionOverrides(this.getColumnOptionOverrides(workspaceFolder));
+			const columnOverrides = overrides.columns[columnKey] ?? {};
+
+			if (!sanitizedOptions.length) {
+				if (columnOverrides[scope]) {
+					delete columnOverrides[scope];
+				}
+			} else {
+				columnOverrides[scope] = sanitizedOptions;
+			}
+
+			if (Object.keys(columnOverrides).length) {
+				overrides.columns[columnKey] = columnOverrides;
+			} else if (overrides.columns[columnKey]) {
+				delete overrides.columns[columnKey];
+			}
+
+			this.writeColumnOptionOverrides(workspaceFolder, overrides);
 		}
-		if (Object.keys(columnOverrides).length) {
-			overrides.columns[columnKey] = columnOverrides;
-		} else if (overrides.columns[columnKey]) {
-			delete overrides.columns[columnKey];
-		}
-		this.writeColumnOptionOverrides(workspaceFolder, overrides);
 	}
 
 	private async handleSaveFormula(
@@ -3131,30 +3203,29 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		const container = raw as Record<string, unknown>;
 		const columnsSection = container.columns;
-		if (!columnsSection || typeof columnsSection !== 'object') {
-			return result;
-		}
-		for (const [columnKey, value] of Object.entries(columnsSection as Record<string, unknown>)) {
-			const normalizedKey = typeof columnKey === 'string' ? columnKey.trim() : '';
-			if (!normalizedKey) {
-				continue;
-			}
-			if (!value || typeof value !== 'object') {
-				continue;
-			}
-			const folderMap: KvEditorColumnOptionsFolderMap = {};
-			for (const [scopeKey, entries] of Object.entries(value as Record<string, unknown>)) {
-				const scope = this.normalizeColumnOptionsScope(scopeKey);
-				if (!scope) {
+		if (columnsSection && typeof columnsSection === 'object') {
+			for (const [columnKey, value] of Object.entries(columnsSection as Record<string, unknown>)) {
+				const normalizedKey = typeof columnKey === 'string' ? columnKey.trim() : '';
+				if (!normalizedKey) {
 					continue;
 				}
-				const sanitized = this.sanitizeColumnOptionList(entries);
-				if (sanitized.length) {
-					folderMap[scope] = sanitized;
+				if (!value || typeof value !== 'object') {
+					continue;
 				}
-			}
-			if (Object.keys(folderMap).length) {
-				result.columns[normalizedKey] = folderMap;
+				const folderMap: KvEditorColumnOptionsFolderMap = {};
+				for (const [scopeKey, entries] of Object.entries(value as Record<string, unknown>)) {
+					const scope = this.normalizeColumnOptionsScope(scopeKey);
+					if (!scope) {
+						continue;
+					}
+					const sanitized = this.sanitizeColumnOptionList(entries);
+					if (sanitized.length) {
+						folderMap[scope] = sanitized;
+					}
+				}
+				if (Object.keys(folderMap).length) {
+					result.columns[normalizedKey] = folderMap;
+				}
 			}
 		}
 		const formulasSection = container.formulas;
@@ -3199,6 +3270,44 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				result.columnDescriptions = sanitized;
 			}
 		}
+
+		// 处理 files 字段（文件级别的列选项）
+		const filesSection = container.files;
+		if (filesSection && typeof filesSection === 'object' && !Array.isArray(filesSection)) {
+			const files: Record<string, KvEditorFileColumnOptions> = {};
+			for (const [documentKey, fileConfig] of Object.entries(filesSection as Record<string, unknown>)) {
+				if (typeof documentKey !== 'string' || !fileConfig || typeof fileConfig !== 'object') {
+					continue;
+				}
+				const fileOptions: KvEditorFileColumnOptions = {};
+				const configObj = fileConfig as Record<string, unknown>;
+
+				// 处理 columnOptions
+				if (configObj.columnOptions && typeof configObj.columnOptions === 'object') {
+					const columnOptions: Record<string, KvEditorColumnOption[]> = {};
+					for (const [columnKey, options] of Object.entries(configObj.columnOptions as Record<string, unknown>)) {
+						if (typeof columnKey !== 'string') {
+							continue;
+						}
+						const sanitized = this.sanitizeColumnOptionList(options);
+						if (sanitized.length) {
+							columnOptions[columnKey] = sanitized;
+						}
+					}
+					if (Object.keys(columnOptions).length) {
+						fileOptions.columnOptions = columnOptions;
+					}
+				}
+
+				if (Object.keys(fileOptions).length) {
+					files[documentKey] = fileOptions;
+				}
+			}
+			if (Object.keys(files).length) {
+				result.files = files;
+			}
+		}
+
 		return result;
 	}
 
@@ -3237,12 +3346,33 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				columnDescriptions[key] = { ...value };
 			}
 		}
+
+		let files: Record<string, KvEditorFileColumnOptions> | undefined;
+		if (source.files && typeof source.files === 'object') {
+			files = {};
+			for (const [documentKey, fileConfig] of Object.entries(source.files)) {
+				const copiedFile: KvEditorFileColumnOptions = {};
+				if (fileConfig.columnOptions) {
+					copiedFile.columnOptions = {};
+					for (const [columnKey, options] of Object.entries(fileConfig.columnOptions)) {
+						copiedFile.columnOptions[columnKey] = options.map((option) => ({ ...option }));
+					}
+				}
+				if (Object.keys(copiedFile).length) {
+					files[documentKey] = copiedFile;
+				}
+			}
+		}
+
 		const result: KvEditorColumnOptionsFile = { columns };
 		if (formulas) {
 			result.formulas = formulas;
 		}
 		if (columnDescriptions && Object.keys(columnDescriptions).length) {
 			result.columnDescriptions = columnDescriptions;
+		}
+		if (files && Object.keys(files).length) {
+			result.files = files;
 		}
 		return result;
 	}
@@ -3336,6 +3466,50 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				output.columnDescriptions = sorted;
 			}
 		}
+
+		// 序列化 files 字段
+		if (overrides.files && typeof overrides.files === 'object') {
+			const documentKeys = Object.keys(overrides.files).sort((a, b) => a.localeCompare(b));
+			const filesOutput: Record<string, Record<string, unknown>> = {};
+			for (const documentKey of documentKeys) {
+				const fileConfig = overrides.files[documentKey];
+				const fileOutput: Record<string, unknown> = {};
+
+				if (fileConfig.columnOptions) {
+					const columnKeys = Object.keys(fileConfig.columnOptions).sort((a, b) => a.localeCompare(b));
+					const columnOptionsOutput: Record<string, unknown[]> = {};
+					for (const columnKey of columnKeys) {
+						const options = fileConfig.columnOptions[columnKey];
+						if (!options || !options.length) {
+							continue;
+						}
+						columnOptionsOutput[columnKey] = options.map((option: KvEditorColumnOption) => {
+							const entry: Record<string, string> = {
+								value: option.value,
+							};
+							if (!option.labelIsFallback) {
+								entry.label = option.label;
+							}
+							if (option.description) {
+								entry.description = option.description;
+							}
+							return entry;
+						});
+					}
+					if (Object.keys(columnOptionsOutput).length) {
+						fileOutput.columnOptions = columnOptionsOutput;
+					}
+				}
+
+				if (Object.keys(fileOutput).length) {
+					filesOutput[documentKey] = fileOutput;
+				}
+			}
+			if (Object.keys(filesOutput).length) {
+				output.files = filesOutput;
+			}
+		}
+
 		return JSON.stringify(output, null, 2);
 	}
 
@@ -3952,6 +4126,7 @@ interface KvEditorSaveColumnOptionsMessage {
 	column: string;
 	folderType?: KvFolderType;
 	options?: KvEditorColumnOptionUpdate[];
+	scope?: 'global' | 'file';
 }
 
 interface KvEditorColumnOptionUpdate {
@@ -3971,6 +4146,11 @@ interface KvEditorColumnOptionsFile {
 	columns: Record<string, KvEditorColumnOptionsFolderMap>;
 	formulas?: KvEditorFormulaStorage;
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
+	files?: Record<string, KvEditorFileColumnOptions>;
+}
+
+interface KvEditorFileColumnOptions {
+	columnOptions?: Record<string, KvEditorColumnOption[]>;
 }
 
 type KvEditorColumnOptionsFolderMap = Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnOption[]>>;

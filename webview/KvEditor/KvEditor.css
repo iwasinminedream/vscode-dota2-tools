@@ -1365,6 +1365,12 @@ body.kv-column-options-editor-open {
 	background: var(--vscode-sideBar-background);
 }
 
+.kv-column-options-footer-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
 .kv-column-options-footer-right {
 	display: flex;
 	align-items: center;

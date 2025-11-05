@@ -4344,13 +4344,13 @@ function requestColumnDescription(columnKey, columnName) {
 	descWrapper.appendChild(descInput);
 	form.appendChild(descWrapper);
 
-	// 应用范围（默认：全局）
+	// 应用范围（默认：仅在当前文件生效）
 	const scopeWrapper = document.createElement('label');
 	scopeWrapper.className = 'kv-column-insert-dialog-label kv-checkbox-wrapper';
 	const scopeCheckbox = document.createElement('input');
 	scopeCheckbox.type = 'checkbox';
 	scopeCheckbox.className = 'kv-checkbox-input';
-	scopeCheckbox.checked = false; // 默认全局生效
+	scopeCheckbox.checked = true; // 默认仅在当前文件生效
 	scopeWrapper.appendChild(scopeCheckbox);
 	const checkIndicator = document.createElement('span');
 	checkIndicator.className = 'kv-checkbox-indicator codicon codicon-check';
@@ -5414,6 +5414,25 @@ function openColumnOptionsEditor(context) {
 	addButton.className = 'kv-button kv-button-secondary';
 	addButton.textContent = '新增选项';
 	footerLeft.appendChild(addButton);
+
+	// 添加"仅在当前文件生效"复选框（VS Code 风格）
+	const scopeCheckboxWrapper = document.createElement('label');
+	scopeCheckboxWrapper.className = 'kv-checkbox-wrapper';
+	scopeCheckboxWrapper.style.cssText = 'margin-left: 16px;';
+	const scopeCheckbox = document.createElement('input');
+	scopeCheckbox.type = 'checkbox';
+	scopeCheckbox.className = 'kv-checkbox-input';
+	scopeCheckbox.checked = true; // 默认勾选
+	scopeCheckboxWrapper.appendChild(scopeCheckbox);
+	const checkIndicator = document.createElement('span');
+	checkIndicator.className = 'kv-checkbox-indicator codicon codicon-check';
+	scopeCheckboxWrapper.appendChild(checkIndicator);
+	const scopeLabel = document.createElement('span');
+	scopeLabel.className = 'kv-checkbox-label';
+	scopeLabel.textContent = '仅在当前文件生效';
+	scopeCheckboxWrapper.appendChild(scopeLabel);
+	footerLeft.appendChild(scopeCheckboxWrapper);
+
 	footer.appendChild(footerLeft);
 	const footerRight = document.createElement('div');
 	footerRight.className = 'kv-column-options-footer-right';
@@ -5446,6 +5465,7 @@ function openColumnOptionsEditor(context) {
 		dialog,
 		listContainer,
 		errorEl,
+		scopeCheckbox,
 		column: context.column,
 		columnName: context.columnName || context.column,
 		folderType: context.folderType || (latestPayload?.folderType ?? 'custom'),
@@ -5711,7 +5731,8 @@ function submitColumnOptionsEditor() {
 		return;
 	}
 	resetColumnOptionsEditorError();
-	const { column, folderType, options } = columnOptionsEditorState;
+	const { column, folderType, options, scopeCheckbox } = columnOptionsEditorState;
+	const isFileScope = scopeCheckbox ? scopeCheckbox.checked : true; // 默认勾选
 	const normalized = options.map((option) => {
 		const value = (option.value || '').trim();
 		const description = (option.description || '').trim();
@@ -5748,6 +5769,7 @@ function submitColumnOptionsEditor() {
 			column,
 			folderType,
 			options: payloadOptions,
+			scope: isFileScope ? 'file' : 'global',
 		},
 	});
 	closeColumnOptionsEditor();
