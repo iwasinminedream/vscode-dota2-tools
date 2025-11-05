@@ -123,6 +123,55 @@
 			margin-top: 16px;
 			opacity: 0.7;
 		}
+		/* VSCode 风格的 Checkbox */
+		.kv-checkbox-wrapper {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			cursor: pointer;
+		}
+		.kv-checkbox-input {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+		.kv-checkbox-indicator {
+			width: 16px;
+			height: 16px;
+			border: 1px solid var(--vscode-checkbox-border, #6b6b6b);
+			background: var(--vscode-checkbox-background, #3c3c3c);
+			border-radius: 3px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			transition: all 0.1s ease;
+		}
+		.kv-checkbox-input:checked ~ .kv-checkbox-indicator {
+			background: var(--vscode-checkbox-selectBackground, #007acc);
+			border-color: var(--vscode-checkbox-selectBorder, #007acc);
+		}
+		.kv-checkbox-input:not(:checked) ~ .kv-checkbox-indicator::before {
+			content: '';
+			display: none;
+		}
+		.kv-checkbox-wrapper:hover .kv-checkbox-indicator {
+			border-color: var(--vscode-checkbox-border, #8b8b8b);
+		}
+		.kv-checkbox-indicator::before {
+			content: '✓';
+			color: var(--vscode-checkbox-selectForeground, #ffffff);
+			font-size: 14px;
+			font-weight: bold;
+			line-height: 1;
+		}
+		.kv-checkbox-wrapper.disabled {
+			cursor: default;
+			opacity: 0.6;
+		}
+		.kv-checkbox-wrapper.disabled .kv-checkbox-indicator {
+			cursor: not-allowed;
+		}
 	</style>
 </head>
 <body>
@@ -204,9 +253,16 @@
 
 				const resolvedCell = document.createElement('td');
 				resolvedCell.className = 'resolve-cell';
+				
+				const checkboxWrapper = document.createElement('label');
+				checkboxWrapper.className = 'kv-checkbox-wrapper';
+				if (!!entry.resolved || state.pending.has(entry.id)) {
+					checkboxWrapper.classList.add('disabled');
+				}
+				
 				const checkbox = document.createElement('input');
 				checkbox.type = 'checkbox';
-				checkbox.className = 'resolved-checkbox';
+				checkbox.className = 'kv-checkbox-input';
 				checkbox.checked = !!entry.resolved;
 				checkbox.disabled = !!entry.resolved || state.pending.has(entry.id);
 				checkbox.addEventListener('change', () => {
@@ -215,6 +271,7 @@
 						return;
 					}
 					checkbox.disabled = true;
+					checkboxWrapper.classList.add('disabled');
 					state.pending.add(entry.id);
 					vscode.postMessage({
 						type: 'toggleResolved',
@@ -222,7 +279,13 @@
 						resolved: true
 					});
 				});
-				resolvedCell.appendChild(checkbox);
+				
+				const checkIndicator = document.createElement('span');
+				checkIndicator.className = 'kv-checkbox-indicator';
+				
+				checkboxWrapper.appendChild(checkbox);
+				checkboxWrapper.appendChild(checkIndicator);
+				resolvedCell.appendChild(checkboxWrapper);
 				tr.appendChild(resolvedCell);
 
 				tbody.appendChild(tr);
