@@ -9,7 +9,12 @@ import { readKeyValue2, writeKeyValue } from '../utils/kvUtils';
 export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		return vscode.window.registerCustomEditorProvider(kvEditorProvider.viewType, new kvEditorProvider(context));
+		return vscode.window.registerCustomEditorProvider(kvEditorProvider.viewType, new kvEditorProvider(context), {
+			webviewOptions: {
+				retainContextWhenHidden: true,
+				enableFindWidget: true,
+			}
+		});
 	}
 
 	private static readonly viewType = 'dota2tools.kv';

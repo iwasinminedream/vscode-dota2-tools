@@ -3254,6 +3254,10 @@ function renderTable(columns, rows, columnOptions) {
 	if (!tableSection) {
 		return;
 	}
+	// 保存当前滚动位置
+	const scrollLeft = tableSection.scrollLeft;
+	const scrollTop = tableSection.scrollTop;
+
 	cleanupColumnDragState();
 	closeRowContextMenu();
 	let preservePending = Boolean(pendingMultiSelectReopen);
@@ -3932,6 +3936,12 @@ function renderTable(columns, rows, columnOptions) {
 			openMultiSelectDropdown({ td, select, display, fieldConfig, columnName });
 		}
 		pendingMultiSelectReopen = null;
+	}
+
+	// 恢复滚动位置
+	if (tableSection) {
+		tableSection.scrollLeft = scrollLeft;
+		tableSection.scrollTop = scrollTop;
 	}
 
 }

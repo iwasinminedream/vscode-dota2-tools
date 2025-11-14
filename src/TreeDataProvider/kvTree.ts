@@ -139,18 +139,25 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 	}
 
 	private buildRootItems(settings: KvEditorSettings): KvTreeItem[] {
-		const items: KvTreeItem[] = [];
+		const folders: KvTreeItem[] = [];
+		const files: KvTreeItem[] = [];
 		for (const entry of settings.entries) {
 			if (!entry.exists) {
 				continue;
 			}
-			items.push(this.createEntryItem(entry));
+			const item = this.createEntryItem(entry);
+			if (entry.isDirectory) {
+				folders.push(item);
+			} else {
+				files.push(item);
+			}
 		}
-		if (!items.length) {
+		if (folders.length === 0 && files.length === 0) {
 			return [this.createPlaceholderItem(localize('kvEditor.folderMissing'))];
 		}
-		items.sort((a, b) => this.getLabelText(a).localeCompare(this.getLabelText(b)));
-		return items;
+		folders.sort((a, b) => this.getLabelText(a).localeCompare(this.getLabelText(b)));
+		files.sort((a, b) => this.getLabelText(a).localeCompare(this.getLabelText(b)));
+		return [...folders, ...files];
 	}
 
 	private createEntryItem(entry: KvEditorEntry): KvTreeItem {
