@@ -67,6 +67,7 @@ async function getLanguageContent(localizationPath: string, languageType: string
 async function readLanguage(path: string): Promise<string> {
 	let lang: string = '';
 	let files: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(vscode.Uri.file(path));
+	files.sort((a, b) => a[0].localeCompare(b[0]));
 	for (let i = 0; i < files.length; i++) {
 		const [fileName, fileType] = files[i];
 		if (Number(fileType) === vscode.FileType.File) {
