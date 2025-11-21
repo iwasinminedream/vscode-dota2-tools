@@ -215,6 +215,80 @@ body {
 	min-height: 60px;
 }
 
+/* 参数编辑区域 */
+.param-item {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+	align-items: center;
+	width: 100%;
+}
+
+.param-item input {
+	padding: 6px 8px;
+	border: 1px solid var(--input-border);
+	background-color: var(--input-bg);
+	color: var(--fg-color);
+	border-radius: 4px;
+	font-family: inherit;
+	font-size: 12px;
+	min-width: 0;
+}
+
+.param-item .param-key {
+	flex: 1 1 35%;
+	min-width: 60px;
+}
+
+.param-item .param-value {
+	flex: 1 1 45%;
+	min-width: 80px;
+}
+
+.delete-param-btn {
+	flex: 0 0 auto;
+	padding: 4px 8px;
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	border: none;
+	cursor: pointer;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.2s;
+	min-width: 32px;
+	height: 28px;
+}
+
+.delete-param-btn:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.btn-small {
+	padding: 4px 8px;
+	font-size: 12px;
+	background: var(--button-bg);
+	color: var(--button-fg);
+	border: none;
+	cursor: pointer;
+	border-radius: 4px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	transition: background-color 0.2s;
+}
+
+.btn-small:hover {
+	background: var(--button-hover-bg);
+}
+
+#paramsContainer {
+	margin-top: 8px;
+	width: 100%;
+	overflow: visible;
+}
+
 /* 对话框 */
 .dialog {
 	position: fixed;

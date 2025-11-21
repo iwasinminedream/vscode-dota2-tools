@@ -85,7 +85,8 @@ class BehaviorTreeEditor {
 		this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
 		this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
 		this.canvas.addEventListener('wheel', (e) => this.onWheel(e));
-		this.canvas.addEventListener('click', (e) => this.onDoubleClick(e));
+		this.canvas.addEventListener('click', (e) => this.onClick(e));
+		this.canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
 
 		// 键盘快捷键
 		document.addEventListener('keydown', (e) => {
@@ -104,6 +105,10 @@ class BehaviorTreeEditor {
 
 	updateData(data) {
 		console.log('updateData received:', data);
+
+		// 记住当前选中节点的ID
+		const selectedNodeId = this.selectedNode ? this.selectedNode.id : null;
+
 		this.treeData = data;
 		document.getElementById('treeNameInput').value = data.name || '';
 
@@ -113,8 +118,32 @@ class BehaviorTreeEditor {
 			this.autoLayout();
 		}
 
+		// 如果之前有选中的节点，在新树中找到对应的节点并重新选中
+		if (selectedNodeId) {
+			const newSelectedNode = this.findNodeById(data.root, selectedNodeId);
+			if (newSelectedNode) {
+				this.selectedNode = newSelectedNode;
+				this.showNodeProperties(newSelectedNode);
+			} else {
+				this.selectedNode = null;
+			}
+		}
+
 		console.log('Rendering tree with root:', this.treeData.root);
 		this.render();
+	}
+
+	findNodeById(node, id) {
+		if (node.id === id) {
+			return node;
+		}
+		if (node.children) {
+			for (const child of node.children) {
+				const found = this.findNodeById(child, id);
+				if (found) return found;
+			}
+		}
+		return null;
 	}
 
 	hasPositionInfo(node) {
@@ -390,7 +419,7 @@ class BehaviorTreeEditor {
 		this.render();
 	}
 
-	onDoubleClick(e) {
+	onClick(e) {
 		const rect = this.canvas.getBoundingClientRect();
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
@@ -399,6 +428,9 @@ class BehaviorTreeEditor {
 		if (node) {
 			this.selectNode(node);
 		}
+	}
+	onDoubleClick(e) {
+		this.openAddNodeDialog();
 	}
 
 	selectNode(node) {
@@ -433,9 +465,43 @@ class BehaviorTreeEditor {
             </div>
         `;
 
+		// 显示 Params 参数
+		if (node.Params || node.params) {
+			const params = node.Params || node.params;
+			html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
+			html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
+			html += '<h4 style="margin: 0;">参数 (Params)</h4>';
+			html += '<button id="addParamBtn" class="btn-small" style="padding: 4px 8px; font-size: 12px;"><i class="codicon codicon-add"></i> 添加参数</button>';
+			html += '</div>';
+			html += '<div id="paramsContainer">';
+
+			if (typeof params === 'object' && params !== null) {
+				for (const [key, value] of Object.entries(params)) {
+					html += `
+						<div class="param-item">
+							<input type="text" class="param-key" value="${key}" data-old-key="${key}" placeholder="参数名">
+							<input type="text" class="param-value" value="${value || ''}" data-param-key="${key}" placeholder="参数值">
+							<button class="delete-param-btn" data-param-key="${key}" title="删除参数">
+								<i class="codicon codicon-trash"></i>
+							</button>
+						</div>
+					`;
+				}
+			}
+			html += '</div>';
+		} else {
+			// 没有 Params，显示添加按钮
+			html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
+			html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
+			html += '<h4 style="margin: 0;">参数 (Params)</h4>';
+			html += '<button id="addParamBtn" class="btn-small" style="padding: 4px 8px; font-size: 12px;"><i class="codicon codicon-add"></i> 添加参数</button>';
+			html += '</div>';
+			html += '<div id="paramsContainer"><p style="color: var(--vscode-descriptionForeground); font-size: 12px;">暂无参数</p></div>';
+		}
+
 		// 显示其他自定义属性
 		const customProps = Object.keys(node).filter(key =>
-			!['id', 'key', 'type', 'name', 'description', 'children', 'x', 'y'].includes(key)
+			!['id', 'key', 'type', 'name', 'description', 'children', 'x', 'y', 'Params', 'params'].includes(key)
 		);
 
 		if (customProps.length > 0) {
@@ -474,12 +540,102 @@ class BehaviorTreeEditor {
 			node.description = e.target.value;
 		});
 
+		// 添加参数按钮
+		const addParamBtn = document.getElementById('addParamBtn');
+		if (addParamBtn) {
+			addParamBtn.addEventListener('click', () => {
+				this.addParameter(node);
+			});
+		}
+
+		// 参数输入框事件
+		document.querySelectorAll('.param-key').forEach((input) => {
+			const oldKey = input.getAttribute('data-old-key');
+
+			input.addEventListener('change', (e) => {
+				const newKey = e.target.value.trim();
+				if (newKey && newKey !== oldKey) {
+					if (!node.Params && !node.params) {
+						node.Params = {};
+					}
+					// 使用 Params 或 params（根据已有的字段）
+					const paramsObj = node.Params || node.params;
+					const value = paramsObj[oldKey];
+					delete paramsObj[oldKey];
+					paramsObj[newKey] = value;
+					// 更新 data-old-key 属性
+					e.target.setAttribute('data-old-key', newKey);
+					// 更新对应的 value 输入框的 data-param-key
+					const valueInput = e.target.parentElement.querySelector('.param-value');
+					if (valueInput) {
+						valueInput.setAttribute('data-param-key', newKey);
+					}
+				}
+			});
+		});
+
+		// 参数值输入框事件
+		document.querySelectorAll('.param-value').forEach((input) => {
+			input.addEventListener('input', (e) => {
+				if (!node.Params && !node.params) {
+					node.Params = {};
+				}
+				const paramsObj = node.Params || node.params;
+				const paramKey = e.target.getAttribute('data-param-key');
+				if (paramKey) {
+					paramsObj[paramKey] = e.target.value;
+				}
+			});
+		});
+
+		// 删除参数按钮
+		document.querySelectorAll('.delete-param-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				const key = btn.getAttribute('data-param-key');
+				this.deleteParameter(node, key);
+			});
+		});
+
 		document.querySelectorAll('.custom-prop').forEach(input => {
 			input.addEventListener('input', (e) => {
 				const propName = e.target.getAttribute('data-prop');
 				node[propName] = e.target.value;
 			});
 		});
+	}
+
+	addParameter(node) {
+		if (!node.Params && !node.params) {
+			// 使用 Params（大写P）作为默认
+			node.Params = {};
+		}
+		const paramsObj = node.Params || node.params;
+
+		// 生成新参数名
+		let newKey = 'NewParam';
+		let counter = 1;
+		while (paramsObj[newKey]) {
+			newKey = `NewParam${counter}`;
+			counter++;
+		}
+
+		paramsObj[newKey] = '';
+		this.showNodeProperties(node);
+	}
+
+	deleteParameter(node, key) {
+		const paramsObj = node.Params || node.params;
+		if (paramsObj && paramsObj[key] !== undefined) {
+			delete paramsObj[key];
+
+			// 如果 Params 为空对象，可以选择保留或删除
+			if (Object.keys(paramsObj).length === 0) {
+				if (node.Params) delete node.Params;
+				if (node.params) delete node.params;
+			}
+
+			this.showNodeProperties(node);
+		}
 	}
 
 	closePropertiesPanel() {

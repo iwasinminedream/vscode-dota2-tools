@@ -250,7 +250,12 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 		// 复制其他自定义属性
 		for (const key in node) {
 			if (!['id', 'key', 'type', 'name', 'description', 'children', 'x', 'y'].includes(key)) {
-				nodeData[key] = node[key];
+				const value = node[key];
+				// 跳过空对象（如空的 Params）
+				if (typeof value === 'object' && value !== null && Object.keys(value).length === 0) {
+					continue;
+				}
+				nodeData[key] = value;
 			}
 		}
 

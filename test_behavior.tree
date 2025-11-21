@@ -17,23 +17,58 @@
 					"Type"		"Condition"
 					"Name"		"检查生命值"
 					"Description"	"判断生命值是否低于50%"
+					"Threshold"	"1"
+					"Params"
+					{
+						"HealthPercent"	"50"
+						"CheckInterval"	"1.0"
+					}
+					"Children"
+					{
+						"Heal"
+						{
+							"Type"		"Action"
+							"Name"		"治疗"
+							"Description"	"恢复生命值"
+							"Params"
+							{
+								"HealAmount"	"100"
+								"Duration"	"2.0"
+							}
+						}
+					}
 				}
 				"FindTarget"
 				{
 					"Type"		"Selector"
 					"Name"		"寻找目标"
 					"Description"	"选择一个可用目标"
+					"Params"
+					{
+						"SearchRadius"	"1000"
+						"MaxTargets"	"5"
+					}
 					"Children"
 					{
 						"FindEnemy"
 						{
 							"Type"		"Action"
 							"Name"		"寻找敌人"
+							"Params"
+							{
+								"TeamFilter"	"enemy"
+								"MinDistance"	"300"
+							}
 						}
 						"FindAlly"
 						{
 							"Type"		"Action"
 							"Name"		"寻找队友"
+							"Params"
+							{
+								"TeamFilter"	"ally"
+								"NeedHelp"	"true"
+							}
 						}
 					}
 				}
@@ -42,6 +77,11 @@
 					"Type"		"Action"
 					"Name"		"执行动作"
 					"Description"	"对目标执行特定动作"
+					"Params"
+					{
+						"ActionType"	"attack"
+						"Priority"	"high"
+					}
 				}
 			}
 		}
