@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { FeiShu } from './Class/FeiShu';
 import { EventManager, EventType } from './Class/event';
+import { BehaviorTreeProvider } from './CustomTextEditorProvider/behaviorTreeProvider';
 import { lazayboyProvider } from './CustomTextEditorProvider/lazayboyProvider';
 import { combineLocalization } from './command/cmdCombineLocalization';
 import { copyWearable } from './command/cmdCopyWearable';
@@ -87,6 +88,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.import_localization', () => localizationImportTool()));
 	// context.subscriptions.push(vmdlEditorProvider.register(context));
 	context.subscriptions.push(lazayboyProvider.register());
+	context.subscriptions.push(BehaviorTreeProvider.register(context));
 	// context.subscriptions.push(kvEditorProvider.register(context));
 }
 

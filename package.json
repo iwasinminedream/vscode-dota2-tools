@@ -39,6 +39,16 @@
 						"filenamePattern": "*.txt"
 					}
 				]
+			},
+			{
+				"viewType": "dota2tools.behaviorTree",
+				"displayName": "Behavior Tree Editor",
+				"priority": "default",
+				"selector": [
+					{
+						"filenamePattern": "*.tree"
+					}
+				]
 			}
 		],
 		"languages": [

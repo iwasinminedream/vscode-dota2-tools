@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行为树编辑器</title>
+    <link rel="stylesheet" href="{{CODICON_CSS_URI}}">
+    <link rel="stylesheet" href="BehaviorTree.css">
+    <script>
+        console.log('BehaviorTree HTML loaded');
+        window.addEventListener('error', function(e) {
+            console.error('Window error:', e.error, e.message, e.filename, e.lineno);
+        });
+    </script>
+</head>
+<body>
+    <div id="app">
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button id="saveBtn" class="btn btn-primary" title="保存 (Ctrl+S)">
+                    <i class="codicon codicon-save"></i> 保存
+                </button>
+                <button id="addNodeBtn" class="btn" title="添加节点">
+                    <i class="codicon codicon-add"></i> 添加节点
+                </button>
+                <button id="deleteNodeBtn" class="btn btn-danger" title="删除选中节点 (Delete)">
+                    <i class="codicon codicon-trash"></i> 删除
+                </button>
+            </div>
+            <div class="toolbar-group">
+                <button id="zoomInBtn" class="btn" title="放大">
+                    <i class="codicon codicon-zoom-in"></i>
+                </button>
+                <button id="zoomOutBtn" class="btn" title="缩小">
+                    <i class="codicon codicon-zoom-out"></i>
+                </button>
+                <button id="fitBtn" class="btn" title="适应画布">
+                    <i class="codicon codicon-screen-normal"></i> 适应
+                </button>
+            </div>
+            <div class="toolbar-group">
+                <label class="tree-name-label">
+                    树名称: 
+                    <input type="text" id="treeNameInput" class="tree-name-input" placeholder="行为树名称">
+                </label>
+            </div>
+            <div class="toolbar-group" style="margin-left: auto;">
+                <button id="openTextBtn" class="btn" title="用文本编辑器打开（拆分右侧）">
+                    <i class="codicon codicon-go-to-file"></i> 文本模式
+                </button>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+            </div>
+
+            <div class="properties-panel" id="propertiesPanel">
+                <div class="panel-header">
+                    <h3>属性面板</h3>
+                    <button id="closePanelBtn" class="close-btn">×</button>
+                </div>
+                <div class="panel-content" id="propertiesContent">
+                    <p class="empty-state">请选择一个节点</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加节点对话框 -->
+    <div id="addNodeDialog" class="dialog" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>添加节点</h3>
+                <button class="close-btn" onclick="closeAddNodeDialog()">×</button>
+            </div>
+            <div class="dialog-body">
+                <div class="form-group">
+                    <label>节点类型:</label>
+                    <select id="nodeTypeSelect">
+                        <option value="Sequence">Sequence (序列)</option>
+                        <option value="Selector">Selector (选择器)</option>
+                        <option value="Parallel">Parallel (并行)</option>
+                        <option value="Condition">Condition (条件)</option>
+                        <option value="Action">Action (动作)</option>
+                        <option value="Decorator">Decorator (装饰器)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>英文标识符 (Key):</label>
+                    <input type="text" id="nodeKeyInput" placeholder="例如: Heal, Attack, CheckHealth">
+                </div>
+                <div class="form-group">
+                    <label>中文名称 (Name):</label>
+                    <input type="text" id="nodeNameInput" placeholder="例如: 治疗, 攻击, 检查生命值">
+                </div>
+                <div class="form-group">
+                    <label>描述 (可选):</label>
+                    <textarea id="nodeDescInput" placeholder="请输入节点描述" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn" onclick="closeAddNodeDialog()">取消</button>
+                <button class="btn btn-primary" onclick="confirmAddNode()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="BehaviorTree.js"></script>
+</body>
+</html>
