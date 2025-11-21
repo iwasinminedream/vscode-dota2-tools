@@ -56,6 +56,9 @@ class BehaviorTreeEditor {
 		this.currentTypeFilter = 'all';
 		this.currentSearchText = '';
 
+		// 剪贴板
+		this.clipboard = null;
+
 		this.initCanvas();
 		this.initEventListeners();
 		this.notifyReady();
@@ -115,6 +118,12 @@ class BehaviorTreeEditor {
 			} else if (e.ctrlKey && e.key === 'y') {
 				e.preventDefault();
 				this.redo();
+			} else if (e.ctrlKey && e.key === 'c') {
+				e.preventDefault();
+				this.copyNode();
+			} else if (e.ctrlKey && e.key === 'v') {
+				e.preventDefault();
+				this.pasteNode();
 			} else if (e.key === 'Delete' && this.selectedNode) {
 				this.deleteSelectedNode();
 			}
@@ -861,6 +870,112 @@ class BehaviorTreeEditor {
 		removeFromParent(this.treeData.root);
 		this.closePropertiesPanel();
 		this.render();
+	}
+
+	/**
+	 * 复制选中的节点
+	 */
+	copyNode() {
+		if (!this.selectedNode) {
+			vscode.postMessage({
+				type: 'info',
+				message: '请先选择要复制的节点'
+			});
+			return;
+		}
+
+		// 深拷贝节点（包含所有子节点）
+		this.clipboard = this.deepCopyNode(this.selectedNode);
+
+		vscode.postMessage({
+			type: 'info',
+			message: `已复制节点: ${this.selectedNode.name}`
+		});
+	}
+
+	/**
+	 * 粘贴节点到选中节点下
+	 */
+	pasteNode() {
+		if (!this.clipboard) {
+			vscode.postMessage({
+				type: 'info',
+				message: '剪贴板为空，请先复制节点'
+			});
+			return;
+		}
+
+		if (!this.selectedNode) {
+			vscode.postMessage({
+				type: 'error',
+				message: '请先选择一个父节点'
+			});
+			return;
+		}
+
+		// 保存历史快照
+		this.saveToHistory();
+
+		// 深拷贝剪贴板内容（避免引用问题）
+		const newNode = this.deepCopyNode(this.clipboard);
+
+		// 重新分配ID
+		this.reassignNodeIds(newNode);
+
+		// 添加到选中节点的子节点
+		if (!this.selectedNode.children) {
+			this.selectedNode.children = [];
+		}
+		this.selectedNode.children.push(newNode);
+
+		// 自动布局并渲染
+		this.autoLayout();
+		this.render();
+
+		vscode.postMessage({
+			type: 'info',
+			message: `已粘贴节点: ${newNode.name}`
+		});
+	}
+
+	/**
+	 * 深拷贝节点（递归）
+	 */
+	deepCopyNode(node) {
+		// 复制节点属性，但排除位置信息
+		const copy = {};
+		for (const key in node) {
+			if (key !== 'x' && key !== 'y' && key !== 'children') {
+				copy[key] = node[key];
+			}
+		}
+
+		// 深拷贝子节点
+		if (node.children && node.children.length > 0) {
+			copy.children = node.children.map(child => this.deepCopyNode(child));
+		}
+
+		return copy;
+	}
+
+	/**
+	 * 重新分配节点ID（递归）
+	 */
+	reassignNodeIds(node) {
+		node.id = this.generateId();
+
+		if (node.children && node.children.length > 0) {
+			for (const child of node.children) {
+				this.reassignNodeIds(child);
+			}
+		}
+	}
+
+	/**
+	 * 生成唯一ID
+	 */
+	generateId() {
+		return 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 	}
 
 	zoomIn() {
