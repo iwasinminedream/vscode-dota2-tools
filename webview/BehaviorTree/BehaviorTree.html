@@ -6,6 +6,7 @@
     <title>行为树编辑器</title>
     <link rel="stylesheet" href="{{CODICON_CSS_URI}}">
     <link rel="stylesheet" href="BehaviorTree.css">
+    <link rel="stylesheet" href="BehaviorTree-template.css">
     <script>
         console.log('BehaviorTree HTML loaded');
         window.addEventListener('error', function(e) {
@@ -22,6 +23,9 @@
                 </button>
                 <button id="addNodeBtn" class="btn" title="添加节点">
                     <i class="codicon codicon-add"></i> 添加节点
+                </button>
+                <button id="addFromTemplateBtn" class="btn" title="从模板添加节点">
+                    <i class="codicon codicon-file-code"></i> 模板
                 </button>
                 <button id="deleteNodeBtn" class="btn btn-danger" title="删除选中节点 (Delete)">
                     <i class="codicon codicon-trash"></i> 删除
@@ -103,6 +107,72 @@
             <div class="dialog-footer">
                 <button class="btn" onclick="closeAddNodeDialog()">取消</button>
                 <button class="btn btn-primary" onclick="confirmAddNode()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模板选择对话框 -->
+    <div id="templateDialog" class="dialog" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>选择模板</h3>
+                <button class="close-btn" onclick="closeTemplateDialog()">×</button>
+            </div>
+            <div class="dialog-body">
+                <div id="templateList" class="template-list">
+                    <p class="empty-state">正在加载模板...</p>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn" onclick="closeTemplateDialog()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 保存模板对话框 -->
+    <div id="saveTemplateDialog" class="dialog" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>保存为模板</h3>
+                <button class="close-btn" onclick="closeSaveTemplateDialog()">×</button>
+            </div>
+            <div class="dialog-body">
+                <div class="form-group">
+                    <label>模板名称:</label>
+                    <input type="text" id="templateNameInput" placeholder="例如: 治疗技能">
+                </div>
+                <div class="form-group">
+                    <label>模板描述 (可选):</label>
+                    <textarea id="templateDescInput" rows="3" placeholder="请输入模板描述"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="templateIncludeChildren" class="vscode-checkbox" checked>
+                        <span class="checkbox-indicator"></span>
+                        <span class="checkbox-text">包含子节点</span>
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn" onclick="closeSaveTemplateDialog()">取消</button>
+                <button class="btn btn-primary" onclick="confirmSaveTemplate()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认删除对话框 -->
+    <div id="confirmDialog" class="dialog" style="display: none;">
+        <div class="dialog-content" style="min-width: 300px;">
+            <div class="dialog-header">
+                <h3>确认操作</h3>
+                <button class="close-btn" onclick="closeConfirmDialog()">×</button>
+            </div>
+            <div class="dialog-body">
+                <p id="confirmMessage">确定要执行此操作吗？</p>
+            </div>
+            <div class="dialog-footer">
+                <button class="btn" onclick="closeConfirmDialog()">取消</button>
+                <button class="btn btn-danger" onclick="confirmAction()">确定</button>
             </div>
         </div>
     </div>

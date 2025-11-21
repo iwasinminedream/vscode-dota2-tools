@@ -120,6 +120,38 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 				case 'error':
 					vscode.window.showErrorMessage(message.message);
 					break;
+
+				case 'saveTemplate':
+					this.saveTemplate(message.template).then(() => {
+						vscode.window.showInformationMessage(`模板 "${message.template.name}" 已保存`);
+						// 发送更新后的模板列表
+						this.getTemplates().then(templates => {
+							webviewPanel.webview.postMessage({ type: 'templatesUpdated', templates });
+						});
+					}).catch(error => {
+						vscode.window.showErrorMessage(`保存模板失败: ${error}`);
+					});
+					break;
+
+				case 'getTemplates':
+					this.getTemplates().then(templates => {
+						webviewPanel.webview.postMessage({ type: 'templatesUpdated', templates });
+					}).catch(error => {
+						vscode.window.showErrorMessage(`获取模板失败: ${error}`);
+					});
+					break;
+
+				case 'deleteTemplate':
+					this.deleteTemplate(message.templateName).then(() => {
+						vscode.window.showInformationMessage(`模板 "${message.templateName}" 已删除`);
+						// 发送更新后的模板列表
+						this.getTemplates().then(templates => {
+							webviewPanel.webview.postMessage({ type: 'templatesUpdated', templates });
+						});
+					}).catch(error => {
+						vscode.window.showErrorMessage(`删除模板失败: ${error}`);
+					});
+					break;
 			}
 		});
 
@@ -269,5 +301,87 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 		}
 
 		return nodeData;
+	}
+
+	/**
+	 * 获取模板配置文件路径
+	 */
+	private getTemplateConfigPath(): vscode.Uri | undefined {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if (!workspaceFolders || workspaceFolders.length === 0) {
+			return undefined;
+		}
+		return vscode.Uri.joinPath(workspaceFolders[0].uri, '.vscode', 'behavior-tree-templates.json');
+	}
+
+	/**
+	 * 获取所有模板
+	 */
+	private async getTemplates(): Promise<any[]> {
+		const configPath = this.getTemplateConfigPath();
+		if (!configPath) {
+			return [];
+		}
+
+		try {
+			const data = await vscode.workspace.fs.readFile(configPath);
+			const config = JSON.parse(Buffer.from(data).toString('utf8'));
+			return config.templates || [];
+		} catch (error) {
+			// 文件不存在或解析失败，返回空数组
+			return [];
+		}
+	}
+
+	/**
+	 * 保存模板
+	 */
+	private async saveTemplate(template: any): Promise<void> {
+		const configPath = this.getTemplateConfigPath();
+		if (!configPath) {
+			throw new Error('未找到工作区');
+		}
+
+		const templates = await this.getTemplates();
+
+		// 检查是否已存在同名模板
+		const existingIndex = templates.findIndex((t: any) => t.name === template.name);
+		if (existingIndex >= 0) {
+			// 替换已存在的模板
+			templates[existingIndex] = template;
+		} else {
+			// 添加新模板
+			templates.push(template);
+		}
+
+		const config = { templates };
+		const content = JSON.stringify(config, null, '\t');
+
+		// 确保目录存在
+		const dirPath = vscode.Uri.joinPath(configPath, '..');
+		try {
+			await vscode.workspace.fs.createDirectory(dirPath);
+		} catch (error) {
+			// 目录可能已存在，忽略错误
+		}
+
+		await vscode.workspace.fs.writeFile(configPath, Buffer.from(content, 'utf8'));
+	}
+
+	/**
+	 * 删除模板
+	 */
+	private async deleteTemplate(templateName: string): Promise<void> {
+		const configPath = this.getTemplateConfigPath();
+		if (!configPath) {
+			throw new Error('未找到工作区');
+		}
+
+		const templates = await this.getTemplates();
+		const filteredTemplates = templates.filter((t: any) => t.name !== templateName);
+
+		const config = { templates: filteredTemplates };
+		const content = JSON.stringify(config, null, '\t');
+		await vscode.workspace.fs.writeFile(configPath, Buffer.from(content, 'utf8'));
 	}
 }

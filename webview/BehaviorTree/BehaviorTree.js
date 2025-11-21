@@ -51,6 +51,9 @@ class BehaviorTreeEditor {
 		this.maxHistorySize = 50;
 		this.isUndoRedoing = false;
 
+		// 模板数据
+		this.templates = [];
+
 		this.initCanvas();
 		this.initEventListeners();
 		this.notifyReady();
@@ -72,6 +75,7 @@ class BehaviorTreeEditor {
 		// 工具栏按钮
 		document.getElementById('saveBtn').addEventListener('click', () => this.save());
 		document.getElementById('addNodeBtn').addEventListener('click', () => this.openAddNodeDialog());
+		document.getElementById('addFromTemplateBtn').addEventListener('click', () => this.openTemplateDialog());
 		document.getElementById('deleteNodeBtn').addEventListener('click', () => this.deleteSelectedNode());
 		document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
 		document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
@@ -544,6 +548,10 @@ class BehaviorTreeEditor {
 			}
 		}
 
+		// 添加保存为模板按钮
+		html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
+		html += '<button id="saveAsTemplateBtn" class="btn" style="width: 100%;"><i class="codicon codicon-save"></i> 保存为模板</button>';
+
 		panel.innerHTML = html;
 
 		// 绑定事件
@@ -647,6 +655,18 @@ class BehaviorTreeEditor {
 				node[propName] = e.target.value;
 			});
 		});
+
+		// 保存为模板按钮
+		const saveAsTemplateBtn = document.getElementById('saveAsTemplateBtn');
+		console.log('Looking for saveAsTemplateBtn:', saveAsTemplateBtn);
+		if (saveAsTemplateBtn) {
+			saveAsTemplateBtn.addEventListener('click', () => {
+				console.log('Save as template clicked for node:', node);
+				this.saveNodeAsTemplate(node);
+			});
+		} else {
+			console.warn('saveAsTemplateBtn not found in DOM');
+		}
 	}
 
 	addParameter(node) {
@@ -857,6 +877,208 @@ class BehaviorTreeEditor {
 		this.autoLayout();
 		this.render();
 	}
+
+	// ========== 模板相关方法 ==========
+
+	/**
+	 * 打开模板选择对话框
+	 */
+	openTemplateDialog() {
+		if (!this.selectedNode) {
+			vscode.postMessage({
+				type: 'error',
+				message: '请先选择一个父节点'
+			});
+			return;
+		}
+
+		this.parentToAdd = this.selectedNode;
+
+		// 请求获取模板列表
+		vscode.postMessage({ type: 'getTemplates' });
+
+		document.getElementById('templateDialog').style.display = 'flex';
+	}
+
+	/**
+	 * 更新模板列表显示
+	 */
+	updateTemplateList() {
+		const listContainer = document.getElementById('templateList');
+
+		if (this.templates.length === 0) {
+			listContainer.innerHTML = '<p class="empty-state">暂无模板，可以在选中节点后点击"保存为模板"创建</p>';
+			return;
+		}
+
+		let html = '';
+		for (const template of this.templates) {
+			html += `
+				<div class="template-item">
+					<div class="template-info">
+						<div class="template-name">${template.name}</div>
+						<div class="template-desc">${template.description || '无描述'}</div>
+						<div class="template-meta">类型: ${template.node.type} | 键名: ${template.node.key}</div>
+					</div>
+					<div class="template-actions">
+						<button class="btn btn-primary btn-small" onclick="editor.addNodeFromTemplate('${template.name}')">
+							<i class="codicon codicon-add"></i> 使用
+						</button>
+						<button class="btn btn-danger btn-small" onclick="editor.deleteTemplate('${template.name}')">
+							<i class="codicon codicon-trash"></i>
+						</button>
+					</div>
+				</div>
+			`;
+		}
+
+		listContainer.innerHTML = html;
+	}
+
+	/**
+	 * 保存节点为模板
+	 */
+	saveNodeAsTemplate(node) {
+		console.log('saveNodeAsTemplate called with node:', node);
+
+		// 保存当前节点引用供对话框使用
+		this.nodeToSaveAsTemplate = node;
+
+		// 打开保存模板对话框
+		document.getElementById('saveTemplateDialog').style.display = 'flex';
+		document.getElementById('templateNameInput').value = node.name || '';
+		document.getElementById('templateDescInput').value = node.description || '';
+		document.getElementById('templateNameInput').focus();
+	}
+
+	/**
+	 * 确认保存模板
+	 */
+	confirmSaveTemplate() {
+		const node = this.nodeToSaveAsTemplate;
+		if (!node) return;
+
+		const templateName = document.getElementById('templateNameInput').value.trim();
+		const templateDesc = document.getElementById('templateDescInput').value.trim();
+		const includeChildren = document.getElementById('templateIncludeChildren').checked;
+
+		if (!templateName) {
+			vscode.postMessage({ type: 'error', message: '请输入模板名称' });
+			return;
+		}
+
+		// 复制节点数据（深拷贝，移除位置和ID信息）
+		const nodeCopy = JSON.parse(JSON.stringify(node));
+		delete nodeCopy.id;
+		delete nodeCopy.x;
+		delete nodeCopy.y;
+
+		// 如果不包含子节点，删除 children
+		if (!includeChildren) {
+			delete nodeCopy.children;
+		}
+
+		// 递归移除子节点的ID和位置
+		const removeIds = (n) => {
+			delete n.id;
+			delete n.x;
+			delete n.y;
+			if (n.children) {
+				n.children.forEach(child => removeIds(child));
+			}
+		};
+		removeIds(nodeCopy);
+
+		const template = {
+			name: templateName,
+			description: templateDesc,
+			node: nodeCopy,
+			createdAt: new Date().toISOString()
+		};
+
+		console.log('Sending saveTemplate message:', template);
+
+		// 发送到后端保存
+		vscode.postMessage({
+			type: 'saveTemplate',
+			template: template
+		});
+
+		// 关闭对话框
+		closeSaveTemplateDialog();
+		this.nodeToSaveAsTemplate = null;
+	}
+
+	/**
+	 * 从模板添加节点
+	 */
+	addNodeFromTemplate(templateName) {
+		const template = this.templates.find(t => t.name === templateName);
+		if (!template) {
+			vscode.postMessage({ type: 'error', message: '模板不存在' });
+			return;
+		}
+
+		// 保存历史快照
+		this.saveToHistory();
+
+		// 深拷贝模板节点
+		const newNode = JSON.parse(JSON.stringify(template.node));
+
+		// 生成新的ID和位置
+		const generateIds = (node, parentId) => {
+			node.id = parentId ? `${parentId}_${node.key}` : node.key;
+			if (node.children) {
+				node.children.forEach(child => generateIds(child, node.id));
+			}
+		};
+
+		generateIds(newNode, this.parentToAdd.id);
+
+		// 设置位置
+		newNode.x = this.parentToAdd.x;
+		newNode.y = this.parentToAdd.y + CANVAS_CONFIG.VERTICAL_SPACING;
+
+		// 添加到父节点
+		if (!this.parentToAdd.children) {
+			this.parentToAdd.children = [];
+		}
+		this.parentToAdd.children.push(newNode);
+
+		// 重新布局和渲染
+		this.autoLayout();
+		this.render();
+
+		// 关闭对话框
+		closeTemplateDialog();
+	}
+
+	/**
+	 * 删除模板
+	 */
+	deleteTemplate(templateName) {
+		// 保存要删除的模板名
+		this.templateToDelete = templateName;
+
+		// 显示确认对话框
+		document.getElementById('confirmMessage').textContent = `确定要删除模板 "${templateName}" 吗？`;
+		document.getElementById('confirmDialog').style.display = 'flex';
+	}
+
+	/**
+	 * 确认删除操作
+	 */
+	confirmDeleteTemplate() {
+		if (!this.templateToDelete) return;
+
+		vscode.postMessage({
+			type: 'deleteTemplate',
+			templateName: this.templateToDelete
+		});
+
+		this.templateToDelete = null;
+		closeConfirmDialog();
+	}
 }
 
 // 全局函数
@@ -925,5 +1147,35 @@ window.addEventListener('message', (event) => {
 			return;
 		}
 		editor.updateData(message.data);
+	} else if (message.type === 'templatesUpdated') {
+		if (editor) {
+			editor.templates = message.templates || [];
+			editor.updateTemplateList();
+		}
 	}
 });
+
+// 模板对话框相关函数
+function closeTemplateDialog() {
+	document.getElementById('templateDialog').style.display = 'none';
+}
+
+function closeSaveTemplateDialog() {
+	document.getElementById('saveTemplateDialog').style.display = 'none';
+}
+
+function confirmSaveTemplate() {
+	if (editor) {
+		editor.confirmSaveTemplate();
+	}
+}
+
+function closeConfirmDialog() {
+	document.getElementById('confirmDialog').style.display = 'none';
+}
+
+function confirmAction() {
+	if (editor) {
+		editor.confirmDeleteTemplate();
+	}
+}

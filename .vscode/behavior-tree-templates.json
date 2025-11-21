@@ -1,0 +1,39 @@
+{
+	"templates": [
+		{
+			"name": "治疗技能",
+			"description": "检查生命值并恢复的完整节点",
+			"node": {
+				"key": "HealSkill",
+				"type": "Sequence",
+				"name": "治疗技能",
+				"description": "检查生命值低于阈值时执行治疗",
+				"children": [
+					{
+						"key": "CheckHealth",
+						"type": "Condition",
+						"name": "检查生命值",
+						"description": "判断生命值是否低于阈值",
+						"Params": {
+							"HealthPercent": "50",
+							"CheckInterval": "1.0"
+						},
+						"children": []
+					},
+					{
+						"key": "Heal",
+						"type": "Action",
+						"name": "治疗",
+						"description": "恢复生命值",
+						"Params": {
+							"HealAmount": "100",
+							"Duration": "2.0"
+						},
+						"children": []
+					}
+				]
+			},
+			"createdAt": "2025-11-21T00:00:00.000Z"
+		}
+	]
+}
