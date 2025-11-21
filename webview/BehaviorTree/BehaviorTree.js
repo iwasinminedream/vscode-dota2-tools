@@ -45,6 +45,12 @@ class BehaviorTreeEditor {
 		this.isNodeDragging = false;
 		this.draggedNode = null;
 
+		// 历史记录（撤销/恢复）
+		this.history = [];
+		this.historyIndex = -1;
+		this.maxHistorySize = 50;
+		this.isUndoRedoing = false;
+
 		this.initCanvas();
 		this.initEventListeners();
 		this.notifyReady();
@@ -80,6 +86,10 @@ class BehaviorTreeEditor {
 			}
 		});
 
+		document.getElementById('treeNameInput').addEventListener('change', (e) => {
+			this.saveToHistory();
+		});
+
 		// 画布交互
 		this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
 		this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -93,6 +103,12 @@ class BehaviorTreeEditor {
 			if (e.ctrlKey && e.key === 's') {
 				e.preventDefault();
 				this.save();
+			} else if (e.ctrlKey && e.key === 'z') {
+				e.preventDefault();
+				this.undo();
+			} else if (e.ctrlKey && e.key === 'y') {
+				e.preventDefault();
+				this.redo();
 			} else if (e.key === 'Delete' && this.selectedNode) {
 				this.deleteSelectedNode();
 			}
@@ -127,6 +143,11 @@ class BehaviorTreeEditor {
 			} else {
 				this.selectedNode = null;
 			}
+		}
+
+		// 初次加载后保存到历史
+		if (this.history.length === 0) {
+			this.saveToHistory();
 		}
 
 		console.log('Rendering tree with root:', this.treeData.root);
@@ -395,6 +416,11 @@ class BehaviorTreeEditor {
 	}
 
 	onMouseUp(e) {
+		// 如果正在拖拽节点，保存历史
+		if (this.isNodeDragging && this.draggedNode) {
+			this.saveToHistory();
+		}
+
 		this.isDragging = false;
 		this.isNodeDragging = false;
 		this.draggedNode = null;
@@ -522,6 +548,7 @@ class BehaviorTreeEditor {
 
 		// 绑定事件
 		document.getElementById('propType').addEventListener('change', (e) => {
+			this.saveToHistory();
 			node.type = e.target.value;
 			this.render();
 		});
@@ -531,13 +558,25 @@ class BehaviorTreeEditor {
 			this.render();
 		});
 
+		document.getElementById('propKey').addEventListener('change', (e) => {
+			this.saveToHistory();
+		});
+
 		document.getElementById('propName').addEventListener('input', (e) => {
 			node.name = e.target.value;
 			this.render();
 		});
 
+		document.getElementById('propName').addEventListener('change', (e) => {
+			this.saveToHistory();
+		});
+
 		document.getElementById('propDesc').addEventListener('input', (e) => {
 			node.description = e.target.value;
+		});
+
+		document.getElementById('propDesc').addEventListener('change', (e) => {
+			this.saveToHistory();
 		});
 
 		// 添加参数按钮
@@ -555,6 +594,8 @@ class BehaviorTreeEditor {
 			input.addEventListener('change', (e) => {
 				const newKey = e.target.value.trim();
 				if (newKey && newKey !== oldKey) {
+					this.saveToHistory();
+
 					if (!node.Params && !node.params) {
 						node.Params = {};
 					}
@@ -586,6 +627,10 @@ class BehaviorTreeEditor {
 					paramsObj[paramKey] = e.target.value;
 				}
 			});
+
+			input.addEventListener('change', (e) => {
+				this.saveToHistory();
+			});
 		});
 
 		// 删除参数按钮
@@ -605,6 +650,8 @@ class BehaviorTreeEditor {
 	}
 
 	addParameter(node) {
+		this.saveToHistory();
+
 		if (!node.Params && !node.params) {
 			// 使用 Params（大写P）作为默认
 			node.Params = {};
@@ -624,6 +671,8 @@ class BehaviorTreeEditor {
 	}
 
 	deleteParameter(node, key) {
+		this.saveToHistory();
+
 		const paramsObj = node.Params || node.params;
 		if (paramsObj && paramsObj[key] !== undefined) {
 			delete paramsObj[key];
@@ -670,6 +719,88 @@ class BehaviorTreeEditor {
 		});
 	}
 
+	// 保存当前状态到历史记录
+	saveToHistory() {
+		if (this.isUndoRedoing) return;
+		if (!this.treeData) return;
+
+		// 深拷贝当前树数据
+		const snapshot = JSON.parse(JSON.stringify(this.treeData));
+
+		// 如果不在最后一个状态，删除后面的历史
+		if (this.historyIndex < this.history.length - 1) {
+			this.history = this.history.slice(0, this.historyIndex + 1);
+		}
+
+		// 添加新快照
+		this.history.push(snapshot);
+
+		// 限制历史记录大小
+		if (this.history.length > this.maxHistorySize) {
+			this.history.shift();
+		} else {
+			this.historyIndex++;
+		}
+
+		console.log(`History saved. Index: ${this.historyIndex}, Total: ${this.history.length}`);
+	}
+
+	// 撤销
+	undo() {
+		if (this.historyIndex <= 0) {
+			console.log('No more undo steps');
+			return;
+		}
+
+		this.historyIndex--;
+		this.restoreFromHistory();
+		console.log(`Undo. Index: ${this.historyIndex}`);
+	}
+
+	// 恢复
+	redo() {
+		if (this.historyIndex >= this.history.length - 1) {
+			console.log('No more redo steps');
+			return;
+		}
+
+		this.historyIndex++;
+		this.restoreFromHistory();
+		console.log(`Redo. Index: ${this.historyIndex}`);
+	}
+
+	// 从历史记录恢复状态
+	restoreFromHistory() {
+		if (this.historyIndex < 0 || this.historyIndex >= this.history.length) {
+			return;
+		}
+
+		this.isUndoRedoing = true;
+
+		// 深拷贝历史快照
+		const snapshot = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+
+		// 记住当前选中节点的ID
+		const selectedNodeId = this.selectedNode ? this.selectedNode.id : null;
+
+		this.treeData = snapshot;
+		document.getElementById('treeNameInput').value = snapshot.name || '';
+
+		// 尝试恢复选中节点
+		if (selectedNodeId) {
+			const newSelectedNode = this.findNodeById(snapshot.root, selectedNodeId);
+			if (newSelectedNode) {
+				this.selectedNode = newSelectedNode;
+				this.showNodeProperties(newSelectedNode);
+			} else {
+				this.selectedNode = null;
+			}
+		}
+
+		this.render();
+		this.isUndoRedoing = false;
+	}
+
 	openInTextEditor() {
 		vscode.postMessage({
 			type: 'openInTextEditor'
@@ -684,6 +815,9 @@ class BehaviorTreeEditor {
 			});
 			return;
 		}
+
+		// 保存历史快照
+		this.saveToHistory();
 
 		// 从父节点中移除
 		const removeFromParent = (parent) => {
@@ -755,6 +889,9 @@ function confirmAddNode() {
 		vscode.postMessage({ type: 'error', message: '请输入中文名称 (Name)' });
 		return;
 	}
+
+	// 保存历史快照
+	editor.saveToHistory();
 
 	const newNode = {
 		id: `${editor.parentToAdd.id}_${key}`,
