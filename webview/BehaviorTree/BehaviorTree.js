@@ -53,6 +53,8 @@ class BehaviorTreeEditor {
 
 		// 模板数据
 		this.templates = [];
+		this.currentTypeFilter = 'all';
+		this.currentSearchText = '';
 
 		this.initCanvas();
 		this.initEventListeners();
@@ -911,14 +913,30 @@ class BehaviorTreeEditor {
 			return;
 		}
 
+		// 获取排序后的模板
+		const sortedTemplates = this.getSortedTemplates();
+
 		let html = '';
-		for (const template of this.templates) {
+		for (const template of sortedTemplates) {
+			const typeColor = NODE_TYPES[template.node.type]?.color || '#666';
+			const typeLabel = NODE_TYPES[template.node.type]?.label || template.node.type;
+			const childCount = this.countTemplateNodes(template.node);
+
 			html += `
-				<div class="template-item">
+				<div class="template-item" data-type="${template.node.type}" 
+					 data-name="${template.name}" 
+					 data-desc="${template.description || ''}" 
+					 data-key="${template.node.key}">
 					<div class="template-info">
 						<div class="template-name">${template.name}</div>
 						<div class="template-desc">${template.description || '无描述'}</div>
-						<div class="template-meta">类型: ${template.node.type} | 键名: ${template.node.key}</div>
+						<div class="template-meta">
+							<span class="type-badge-inline" style="background-color: ${typeColor};">${typeLabel}</span>
+							<span class="meta-divider">|</span>
+							<span>键名: ${template.node.key}</span>
+							<span class="meta-divider">|</span>
+							<span>${childCount} 个节点</span>
+						</div>
 					</div>
 					<div class="template-actions">
 						<button class="btn btn-primary btn-small" onclick="editor.addNodeFromTemplate('${template.name}')">
@@ -933,6 +951,147 @@ class BehaviorTreeEditor {
 		}
 
 		listContainer.innerHTML = html;
+
+		// 应用当前过滤
+		this.filterTemplates();
+	}
+
+	/**
+	 * 统计模板节点数量（递归计算）
+	 */
+	countTemplateNodes(node) {
+		let count = 1;
+		if (node.children && node.children.length > 0) {
+			for (const child of node.children) {
+				count += this.countTemplateNodes(child);
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * 获取排序后的模板列表
+	 */
+	getSortedTemplates() {
+		const select = document.getElementById('templateSortSelect');
+		if (!select) return this.templates;
+
+		const sortType = select.value;
+		const sorted = [...this.templates];
+
+		switch (sortType) {
+			case 'name-asc':
+				sorted.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+				break;
+			case 'name-desc':
+				sorted.sort((a, b) => b.name.localeCompare(a.name, 'zh-CN'));
+				break;
+			case 'type-asc':
+				sorted.sort((a, b) => a.node.type.localeCompare(b.node.type));
+				break;
+			case 'date-asc':
+				sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+				break;
+			case 'date-desc':
+				sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+				break;
+		}
+
+		return sorted;
+	}
+
+	/**
+	 * 排序模板（重新渲染）
+	 */
+	sortTemplates() {
+		this.updateTemplateList();
+	}
+
+	/**
+	 * 切换类型筛选
+	 */
+	toggleTemplateType(type) {
+		this.currentTypeFilter = type;
+
+		// 更新按钮激活状态
+		const buttons = document.querySelectorAll('.type-filter-btn');
+		buttons.forEach(btn => {
+			if (btn.getAttribute('data-type') === type) {
+				btn.classList.add('active');
+			} else {
+				btn.classList.remove('active');
+			}
+		});
+
+		this.filterTemplates();
+	}
+
+	/**
+	 * 实时过滤模板
+	 */
+	filterTemplates() {
+		const searchInput = document.getElementById('templateSearchInput');
+		const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+		this.currentSearchText = searchText;
+
+		const allItems = document.querySelectorAll('.template-item');
+		let visibleCount = 0;
+
+		allItems.forEach(item => {
+			const itemType = item.getAttribute('data-type');
+			const itemName = item.getAttribute('data-name').toLowerCase();
+			const itemDesc = item.getAttribute('data-desc').toLowerCase();
+			const itemKey = item.getAttribute('data-key').toLowerCase();
+
+			// 类型筛选
+			let typeMatch = this.currentTypeFilter === 'all' || itemType === this.currentTypeFilter;
+
+			// 搜索文本匹配（多字段：名称、描述、键名、类型）
+			let textMatch = true;
+			if (searchText !== '') {
+				const keywords = searchText.split(' ').filter(k => k !== '');
+				textMatch = keywords.every(keyword =>
+					itemName.includes(keyword) ||
+					itemDesc.includes(keyword) ||
+					itemKey.includes(keyword) ||
+					itemType.toLowerCase().includes(keyword)
+				);
+			}
+
+			// 显示/隐藏
+			if (typeMatch && textMatch) {
+				item.style.display = '';
+				visibleCount++;
+			} else {
+				item.style.display = 'none';
+			}
+		});
+
+		// 显示空状态提示
+		const listContainer = document.getElementById('templateList');
+		const existingEmpty = listContainer.querySelector('.filter-empty-state');
+
+		if (visibleCount === 0 && allItems.length > 0) {
+			if (!existingEmpty) {
+				const emptyMsg = document.createElement('p');
+				emptyMsg.className = 'filter-empty-state empty-state';
+				emptyMsg.textContent = '没有匹配的模板';
+				listContainer.appendChild(emptyMsg);
+			}
+		} else if (existingEmpty) {
+			existingEmpty.remove();
+		}
+	}
+
+	/**
+	 * 清除搜索
+	 */
+	clearTemplateSearch() {
+		const searchInput = document.getElementById('templateSearchInput');
+		if (searchInput) {
+			searchInput.value = '';
+			this.filterTemplates();
+		}
 	}
 
 	/**

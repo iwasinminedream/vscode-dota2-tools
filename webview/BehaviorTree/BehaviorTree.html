@@ -119,6 +119,50 @@
                 <button class="close-btn" onclick="closeTemplateDialog()">×</button>
             </div>
             <div class="dialog-body">
+                <!-- 搜索和筛选栏 -->
+                <div class="template-filter-bar">
+                    <div class="template-search-box">
+                        <span class="codicon codicon-search"></span>
+                        <input type="text" id="templateSearchInput" placeholder="搜索模板（名称、描述、类型、键名）" oninput="editor.filterTemplates()">
+                        <button class="clear-search-btn" onclick="editor.clearTemplateSearch()" title="清除搜索">
+                            <span class="codicon codicon-close"></span>
+                        </button>
+                    </div>
+                    <div class="template-type-filters">
+                        <button class="type-filter-btn active" data-type="all" onclick="editor.toggleTemplateType('all')">
+                            <span class="codicon codicon-filter"></span> 全部
+                        </button>
+                        <button class="type-filter-btn" data-type="Sequence" onclick="editor.toggleTemplateType('Sequence')">
+                            <span class="type-badge" style="background-color: #2196F3;"></span> Sequence
+                        </button>
+                        <button class="type-filter-btn" data-type="Selector" onclick="editor.toggleTemplateType('Selector')">
+                            <span class="type-badge" style="background-color: #FF9800;"></span> Selector
+                        </button>
+                        <button class="type-filter-btn" data-type="Parallel" onclick="editor.toggleTemplateType('Parallel')">
+                            <span class="type-badge" style="background-color: #4CAF50;"></span> Parallel
+                        </button>
+                        <button class="type-filter-btn" data-type="Condition" onclick="editor.toggleTemplateType('Condition')">
+                            <span class="type-badge" style="background-color: #00BCD4;"></span> Condition
+                        </button>
+                        <button class="type-filter-btn" data-type="Action" onclick="editor.toggleTemplateType('Action')">
+                            <span class="type-badge" style="background-color: #F44336;"></span> Action
+                        </button>
+                        <button class="type-filter-btn" data-type="Decorator" onclick="editor.toggleTemplateType('Decorator')">
+                            <span class="type-badge" style="background-color: #E91E63;"></span> Decorator
+                        </button>
+                    </div>
+                    <div class="template-sort-bar">
+                        <label>排序:</label>
+                        <select id="templateSortSelect" onchange="editor.sortTemplates()">
+                            <option value="name-asc">名称 A-Z</option>
+                            <option value="name-desc">名称 Z-A</option>
+                            <option value="type-asc">类型 A-Z</option>
+                            <option value="date-desc" selected>最新创建</option>
+                            <option value="date-asc">最早创建</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- 模板列表 -->
                 <div id="templateList" class="template-list">
                     <p class="empty-state">正在加载模板...</p>
                 </div>
