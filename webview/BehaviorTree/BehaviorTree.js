@@ -542,7 +542,7 @@ class BehaviorTreeEditor {
 
 		// 显示其他自定义属性
 		const customProps = Object.keys(node).filter(key =>
-			!['id', 'key', 'type', 'name', 'description', 'children', 'x', 'y', 'Params', 'params'].includes(key)
+			!['id', 'key', 'type', 'name', 'description', 'children', 'x', 'y', 'Params', 'params', 'Index'].includes(key)
 		);
 
 		if (customProps.length > 0) {

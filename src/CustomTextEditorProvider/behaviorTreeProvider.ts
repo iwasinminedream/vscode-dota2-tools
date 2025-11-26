@@ -294,9 +294,21 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 		// 处理子节点
 		if (node.children && node.children.length > 0) {
 			nodeData.Children = {};
-			for (const child of node.children) {
+
+			// 按照X坐标排序子节点（从左到右）
+			const sortedChildren = [...node.children].sort((a, b) => {
+				const xA = a.x !== undefined ? a.x : 0;
+				const xB = b.x !== undefined ? b.x : 0;
+				return xA - xB;
+			});
+
+			for (let i = 0; i < sortedChildren.length; i++) {
+				const child = sortedChildren[i];
+				const childData = this.buildNodeData(child);
+				// 添加Index字段标记顺序（从1开始，按X坐标排序）
+				childData.Index = (i + 1).toString();
 				// 使用key作为KV键名
-				nodeData.Children[child.key] = this.buildNodeData(child);
+				nodeData.Children[child.key] = childData;
 			}
 		}
 
