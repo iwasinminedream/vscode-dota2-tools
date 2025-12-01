@@ -32,6 +32,9 @@ let localizedMode = false;
 // 列描述配置
 let columnDescriptions = {};
 
+// 冻结列管理
+const frozenColumns = new Set();
+
 // 绑定精简模式切换按钮
 if (toggleCompactModeBtn) {
 	const updateButtonState = () => {
@@ -3306,6 +3309,18 @@ function renderTable(columns, rows, columnOptions) {
 	table.appendChild(colgroup);
 	const thead = document.createElement('thead');
 	const headRow = document.createElement('tr');
+	// 计算冻结列的累积left值
+	let cumulativeLeft = 0;
+	const frozenColumnsInOrder = [];
+	for (const col of displayColumns) {
+		if (frozenColumns.has(col) && col !== ROW_NUMBER_COLUMN_KEY) {
+			frozenColumnsInOrder.push(col);
+		}
+	}
+
+	// 找出最右侧的冻结列
+	const lastFrozenColumn = frozenColumnsInOrder.length > 0 ? frozenColumnsInOrder[frozenColumnsInOrder.length - 1] : null;
+
 	for (const column of displayColumns) {
 		const th = document.createElement('th');
 		const headerLabel = columnLabels.get(column) ?? column;
@@ -3314,6 +3329,23 @@ function renderTable(columns, rows, columnOptions) {
 		th.dataset.columnIndex = String(columnIndex);
 		th.style.width = `${getColumnWidth(column, headerLabel)}px`;
 		th.style.minWidth = `${getMinColumnWidth(column)}px`;
+
+		// 应用冻结列样式
+		if (frozenColumns.has(column) && column !== ROW_NUMBER_COLUMN_KEY) {
+			th.dataset.frozen = 'true';
+			// 标记最右侧的冻结列
+			if (column === lastFrozenColumn) {
+				th.dataset.frozenLast = 'true';
+			}
+			const frozenIndex = frozenColumnsInOrder.indexOf(column);
+			let leftPos = ROW_NUMBER_MIN_WIDTH; // 从行号列宽度开始
+			for (let i = 0; i < frozenIndex; i++) {
+				const prevCol = frozenColumnsInOrder[i];
+				const prevLabel = columnLabels.get(prevCol) ?? prevCol;
+				leftPos += getColumnWidth(prevCol, prevLabel);
+			}
+			th.style.left = `${leftPos}px`;
+		}
 		if (column === ROW_NUMBER_COLUMN_KEY) {
 			th.textContent = '#';
 		} else {
@@ -3422,6 +3454,23 @@ function renderTable(columns, rows, columnOptions) {
 			td.dataset.rowId = row.id ?? '';
 			td.dataset.rowIndex = String(rowIndex);
 			td.style.width = `${getColumnWidth(column, columnLabels.get(column) ?? column)}px`;
+
+			// 应用冻结列样式
+			if (frozenColumns.has(column) && column !== ROW_NUMBER_COLUMN_KEY) {
+				td.dataset.frozen = 'true';
+				// 标记最右侧的冻结列
+				if (column === lastFrozenColumn) {
+					td.dataset.frozenLast = 'true';
+				}
+				const frozenIndex = frozenColumnsInOrder.indexOf(column);
+				let leftPos = ROW_NUMBER_MIN_WIDTH;
+				for (let i = 0; i < frozenIndex; i++) {
+					const prevCol = frozenColumnsInOrder[i];
+					const prevLabel = columnLabels.get(prevCol) ?? prevCol;
+					leftPos += getColumnWidth(prevCol, prevLabel);
+				}
+				td.style.left = `${leftPos}px`;
+			}
 			const columnLetter = columnLetters.get(column) ?? column;
 			const columnName = columnLabels.get(column) ?? column;
 			const fieldConfig = columnOptions?.[column];
@@ -4486,8 +4535,8 @@ function openColumnContextMenu(invocationEvent, context) {
 		return;
 	}
 
-	// 不允许在行号列和 id 列上右键
-	if (columnKey === ROW_NUMBER_COLUMN_KEY || columnKey === 'id') {
+	// 不允许在行号列上右键
+	if (columnKey === ROW_NUMBER_COLUMN_KEY) {
 		return;
 	}
 
@@ -4500,44 +4549,119 @@ function openColumnContextMenu(invocationEvent, context) {
 	menu.className = 'kv-column-context-menu';
 	menu.setAttribute('role', 'menu');
 
-	const options = [
-		{ label: '向左插入列', position: 'before' },
-		{ label: '向右插入列', position: 'after' }
-	];
-
-	options.forEach((option) => {
-		const button = document.createElement('button');
-		button.type = 'button';
-		button.className = 'kv-column-context-menu-item';
-		button.textContent = option.label;
-		button.addEventListener('click', () => {
-			requestColumnInsertion(option.position, columnKey, columnIndex);
+	// id 列只显示冻结选项
+	if (columnKey === 'id') {
+		// 添加冻结/取消冻结选项
+		const isFrozen = frozenColumns.has(columnKey);
+		const freezeButton = document.createElement('button');
+		freezeButton.type = 'button';
+		freezeButton.className = 'kv-column-context-menu-item';
+		freezeButton.textContent = isFrozen ? '取消冻结列' : '冻结列';
+		freezeButton.addEventListener('click', () => {
+			let frozenColumnKey = null;
+			if (isFrozen) {
+				// 取消冻结：清空所有冻结列
+				frozenColumns.clear();
+			} else {
+				// 冻结：只冻结id列
+				frozenColumns.clear();
+				frozenColumns.add('id');
+				frozenColumnKey = 'id';
+			}
+			// 保存冻结状态（只保存最右侧列的key）
+			vscode.postMessage({
+				type: 'saveFrozenColumns',
+				payload: { frozenColumns: frozenColumnKey }
+			});
+			// 重新渲染表格以应用冻结效果
+			if (latestPayload) {
+				renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+			}
 			closeColumnContextMenu();
 		});
-		menu.appendChild(button);
-	});
+		menu.appendChild(freezeButton);
+	} else {
+		// 其他列显示完整菜单
+		const options = [
+			{ label: '向左插入列', position: 'before' },
+			{ label: '向右插入列', position: 'after' }
+		];
 
-	// 添加分隔线
-	const separator1 = document.createElement('div');
-	separator1.className = 'kv-context-menu-separator';
-	menu.appendChild(separator1);
+		options.forEach((option) => {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'kv-column-context-menu-item';
+			button.textContent = option.label;
+			button.addEventListener('click', () => {
+				requestColumnInsertion(option.position, columnKey, columnIndex);
+				closeColumnContextMenu();
+			});
+			menu.appendChild(button);
+		});
 
-	// 添加描述按钮
-	const descButton = document.createElement('button');
-	descButton.type = 'button';
-	descButton.className = 'kv-column-context-menu-item';
-	descButton.textContent = '添加描述';
-	descButton.addEventListener('click', () => {
-		requestColumnDescription(columnKey, resolvedContext.columnName || columnKey);
-		closeColumnContextMenu();
-	});
-	menu.appendChild(descButton);
+		// 添加分隔线
+		const separator1 = document.createElement('div');
+		separator1.className = 'kv-context-menu-separator';
+		menu.appendChild(separator1);
 
-	// 添加删除列选项（id 列不能删除）
-	if (columnKey !== 'id') {
+		// 添加冻结/取消冻结选项
+		const isFrozen = frozenColumns.has(columnKey);
+		const freezeButton = document.createElement('button');
+		freezeButton.type = 'button';
+		freezeButton.className = 'kv-column-context-menu-item';
+		freezeButton.textContent = isFrozen ? '取消冻结列' : '冻结列';
+		freezeButton.addEventListener('click', () => {
+			let frozenColumnKey = null;
+			if (isFrozen) {
+				// 取消冻结：清空所有冻结列
+				frozenColumns.clear();
+			} else {
+				// 冻结：清空现有冻结列，然后冻结该列及其左侧所有列（包括id列）
+				frozenColumns.clear();
+				if (latestPayload && latestPayload.columns) {
+					const allColumns = latestPayload.columns;
+					const targetIndex = allColumns.indexOf(columnKey);
+					if (targetIndex >= 0) {
+						for (let i = 0; i <= targetIndex; i++) {
+							frozenColumns.add(allColumns[i]);
+						}
+						// 只保存最右侧冻结列的key
+						frozenColumnKey = columnKey;
+					}
+				}
+			}
+			// 保存冻结状态（只保存最右侧列的key）
+			vscode.postMessage({
+				type: 'saveFrozenColumns',
+				payload: { frozenColumns: frozenColumnKey }
+			});
+			// 重新渲染表格以应用冻结效果
+			if (latestPayload) {
+				renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+			}
+			closeColumnContextMenu();
+		});
+		menu.appendChild(freezeButton);
+
 		const separator2 = document.createElement('div');
 		separator2.className = 'kv-context-menu-separator';
 		menu.appendChild(separator2);
+
+		// 添加描述按钮
+		const descButton = document.createElement('button');
+		descButton.type = 'button';
+		descButton.className = 'kv-column-context-menu-item';
+		descButton.textContent = '添加描述';
+		descButton.addEventListener('click', () => {
+			requestColumnDescription(columnKey, resolvedContext.columnName || columnKey);
+			closeColumnContextMenu();
+		});
+		menu.appendChild(descButton);
+
+		// 添加删除列选项
+		const separator3 = document.createElement('div');
+		separator3.className = 'kv-context-menu-separator';
+		menu.appendChild(separator3);
 
 		const deleteButton = document.createElement('button');
 		deleteButton.type = 'button';
@@ -6981,6 +7105,21 @@ function render(payload) {
 	// 加载列描述配置
 	if (payload.columnDescriptions && typeof payload.columnDescriptions === 'object') {
 		columnDescriptions = { ...payload.columnDescriptions };
+	}
+
+	// 加载冻结列配置（从保存的最右侧列key恢复整个冻结列集合）
+	if (typeof payload.frozenColumns === 'string' && payload.frozenColumns.length > 0) {
+		frozenColumns.clear();
+		if (payload.columns && Array.isArray(payload.columns)) {
+			const targetIndex = payload.columns.indexOf(payload.frozenColumns);
+			if (targetIndex >= 0) {
+				for (let i = 0; i <= targetIndex; i++) {
+					frozenColumns.add(payload.columns[i]);
+				}
+			}
+		}
+	} else if (payload.frozenColumns === null || payload.frozenColumns === undefined || payload.frozenColumns === '') {
+		frozenColumns.clear();
 	}
 
 	// 加载精简模式设置

@@ -295,6 +295,43 @@ body {
 	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
 }
 
+/* 冻结列样式 */
+.kv-table th[data-frozen="true"],
+.kv-table td[data-frozen="true"] {
+	position: sticky;
+	z-index: 3;
+	background: var(--vscode-editor-background);
+}
+
+/* 冻结列表头：同时冻结横向和纵向 */
+.kv-table thead th[data-frozen="true"] {
+	z-index: 10;
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+}
+
+/* 冻结列右侧边界线（仅最右侧冻结列显示） */
+.kv-table th[data-frozen-last="true"]::after,
+.kv-table td[data-frozen-last="true"]::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: var(--vscode-focusBorder);
+	pointer-events: none;
+}
+
+/* hover 状态下冻结列保持背景色 */
+.kv-table tr:hover td[data-frozen="true"] {
+	background: var(--vscode-editor-background);
+}
+
+/* 偶数行冻结列保持背景色（不透明） */
+.kv-table tr:nth-child(even) td[data-frozen="true"] {
+	background: #222a38;
+}
+
 .kv-table input {
 	width: 100%;
 	border: none;

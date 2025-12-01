@@ -233,6 +233,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				});
 				return;
 			}
+			if (message.type === 'saveFrozenColumns') {
+				const saveMessage: KvEditorSaveFrozenColumnsMessage | undefined = message.payload;
+				this.handleSaveFrozenColumns(document, saveMessage).catch((error: unknown) => {
+					const messageText = error instanceof Error ? error.message : String(error);
+					vscode.window.showErrorMessage(messageText);
+				});
+				return;
+			}
 			if (message.type === 'saveColumnDescription') {
 				const saveMessage: KvEditorSaveColumnDescriptionMessage | undefined = message.payload;
 				this.handleSaveColumnDescription(document, saveMessage).catch((error: unknown) => {
@@ -268,6 +276,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		// 加载精简模式设置
 		let compactMode: boolean | undefined;
 		let localizedMode: boolean | undefined;
+		let frozenColumns: string | undefined;
 		let columnDescriptions: Record<string, { label?: string; description?: string; }> | undefined;
 		if (workspaceFolder && documentKey) {
 			const userSettings = this.getUserSettings(workspaceFolder);
@@ -277,6 +286,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			if (fileSettings && typeof fileSettings.localizedMode === 'boolean') {
 				localizedMode = fileSettings.localizedMode;
+			}
+			if (fileSettings && typeof fileSettings.frozenColumns === 'string') {
+				frozenColumns = fileSettings.frozenColumns;
 			}
 
 			// 合并内置默认 -> 工作区默认 -> 文件级覆盖
@@ -308,6 +320,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			compactMode,
 			localizedMode,
 			columnDescriptions,
+			frozenColumns,
 		};
 	}
 
@@ -2724,6 +2737,33 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		this.writeUserSettings(workspaceFolder, settings);
 	}
 
+	private async handleSaveFrozenColumns(
+		document: vscode.TextDocument,
+		message?: KvEditorSaveFrozenColumnsMessage,
+	): Promise<void> {
+		if (!message || typeof message !== 'object') {
+			return;
+		}
+		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		if (!workspaceFolder) {
+			return;
+		}
+		const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+		if (!documentKey) {
+			return;
+		}
+
+		const settings = this.copyUserSettings(this.getUserSettings(workspaceFolder));
+		const existingEntry = settings.files[documentKey];
+
+		// 更新冻结列设置
+		settings.files[documentKey] = existingEntry
+			? { ...existingEntry, frozenColumns: message.frozenColumns || undefined }
+			: { frozenColumns: message.frozenColumns || undefined };
+
+		this.writeUserSettings(workspaceFolder, settings);
+	}
+
 	private async handleSaveColumnDescription(
 		document: vscode.TextDocument,
 		message?: KvEditorSaveColumnDescriptionMessage,
@@ -2818,6 +2858,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				compactMode: value.compactMode,
 				localizedMode: value.localizedMode,
 				columnDescriptions: value.columnDescriptions ? JSON.parse(JSON.stringify(value.columnDescriptions)) : undefined,
+				frozenColumns: value.frozenColumns,
 			};
 		}
 		const result: KvEditorUserSettings = { files };
@@ -2867,6 +2908,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const compactMode = typeof recordEntry.compactMode === 'boolean' ? recordEntry.compactMode : undefined;
 				const localizedMode = typeof recordEntry.localizedMode === 'boolean' ? recordEntry.localizedMode : undefined;
 				const columnDescriptions = this.sanitizeColumnDescriptionMap(recordEntry.columnDescriptions);
+				const frozenColumns = this.sanitizeFrozenColumn(recordEntry.frozenColumns);
 
 				const fileEntry: KvEditorUserFileSettings = {};
 				if (columnWidths && Object.keys(columnWidths).length) {
@@ -2880,6 +2922,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 				if (columnDescriptions && Object.keys(columnDescriptions).length) {
 					fileEntry.columnDescriptions = columnDescriptions;
+				}
+				if (frozenColumns) {
+					fileEntry.frozenColumns = frozenColumns;
 				}
 
 				if (Object.keys(fileEntry).length) {
@@ -2928,8 +2973,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			const hasCompactMode = typeof value.compactMode === 'boolean';
 			const hasLocalizedMode = typeof value.localizedMode === 'boolean';
 			const hasColumnDescriptions = value.columnDescriptions && Object.keys(value.columnDescriptions).length > 0;
+			const hasFrozenColumns = typeof value.frozenColumns === 'string' && value.frozenColumns.length > 0;
 
-			if (!hasColumnWidths && !hasCompactMode) {
+			if (!hasColumnWidths && !hasCompactMode && !hasLocalizedMode && !hasColumnDescriptions && !hasFrozenColumns) {
 				continue;
 			}
 
@@ -2962,6 +3008,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 						return acc;
 					}, {});
 				fileEntry.columnDescriptions = sorted;
+			}
+
+			if (hasFrozenColumns) {
+				fileEntry.frozenColumns = value.frozenColumns;
 			}
 
 			files[key] = fileEntry;
@@ -3028,6 +3078,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		}
 		return Object.keys(result).length ? result : undefined;
+	}
+
+	private sanitizeFrozenColumn(raw: unknown): string | undefined {
+		if (typeof raw === 'string' && raw.length > 0) {
+			return raw;
+		}
+		return undefined;
 	}
 
 	private getUserSettingsPath(folder: vscode.WorkspaceFolder): string {
@@ -3874,6 +3931,7 @@ interface KvEditorPayload {
 	compactMode?: boolean;
 	localizedMode?: boolean;
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
+	frozenColumns?: string;
 }
 
 interface ParsedKvTable {
@@ -4102,6 +4160,10 @@ interface KvEditorSaveCompactModeMessage {
 	compactMode: boolean;
 }
 
+interface KvEditorSaveFrozenColumnsMessage {
+	frozenColumns: string | null;
+}
+
 interface KvEditorSaveLocalizedModeMessage {
 	localizedMode: boolean;
 }
@@ -4126,6 +4188,7 @@ interface KvEditorUserFileSettings {
 	compactMode?: boolean;
 	localizedMode?: boolean;
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
+	frozenColumns?: string;
 }
 
 interface KvEditorSaveColumnOptionsMessage {
