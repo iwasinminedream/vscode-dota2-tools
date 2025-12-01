@@ -109,22 +109,43 @@ class BehaviorTreeEditor {
 
 		// 键盘快捷键
 		document.addEventListener('keydown', (e) => {
+			// 检查是否在输入框中
+			const activeElement = document.activeElement;
+			const isInInput = activeElement && (
+				activeElement.tagName === 'INPUT' ||
+				activeElement.tagName === 'TEXTAREA' ||
+				activeElement.tagName === 'SELECT' ||
+				activeElement.isContentEditable
+			);
+
 			if (e.ctrlKey && e.key === 's') {
 				e.preventDefault();
 				this.save();
 			} else if (e.ctrlKey && e.key === 'z') {
-				e.preventDefault();
-				this.undo();
+				if (isInInput) {
+					// 输入框中使用浏览器原生撤销
+					e.preventDefault();
+					document.execCommand('undo');
+				} else {
+					e.preventDefault();
+					this.undo();
+				}
 			} else if (e.ctrlKey && e.key === 'y') {
-				e.preventDefault();
-				this.redo();
-			} else if (e.ctrlKey && e.key === 'c') {
+				if (isInInput) {
+					// 输入框中使用浏览器原生恢复
+					e.preventDefault();
+					document.execCommand('redo');
+				} else {
+					e.preventDefault();
+					this.redo();
+				}
+			} else if (e.ctrlKey && e.key === 'c' && !isInInput) {
 				e.preventDefault();
 				this.copyNode();
-			} else if (e.ctrlKey && e.key === 'v') {
+			} else if (e.ctrlKey && e.key === 'v' && !isInInput) {
 				e.preventDefault();
 				this.pasteNode();
-			} else if (e.key === 'Delete' && this.selectedNode) {
+			} else if (e.key === 'Delete' && this.selectedNode && !isInInput) {
 				this.deleteSelectedNode();
 			}
 		});
@@ -725,6 +746,12 @@ class BehaviorTreeEditor {
 	}
 
 	openAddNodeDialog() {
+		// 如果没有树数据或没有根节点，创建根节点
+		if (!this.treeData || !this.treeData.root) {
+			this.createRootNode();
+			return;
+		}
+
 		if (!this.selectedNode) {
 			vscode.postMessage({
 				type: 'error',
@@ -739,6 +766,45 @@ class BehaviorTreeEditor {
 		document.getElementById('nodeNameInput').value = '';
 		document.getElementById('nodeDescInput').value = '';
 		document.getElementById('nodeKeyInput').focus();
+	}
+
+	/**
+	 * 创建根节点
+	 */
+	createRootNode() {
+		// 保存历史快照
+		this.saveToHistory();
+
+		const rootNode = {
+			id: 'Root',
+			key: 'Root',
+			type: 'Root',
+			name: '根节点',
+			description: '',
+			children: [],
+			x: this.canvas.width / 2,
+			y: 100
+		};
+
+		if (!this.treeData) {
+			this.treeData = {
+				name: 'NewBehaviorTree',
+				root: rootNode
+			};
+			document.getElementById('treeNameInput').value = this.treeData.name;
+		} else {
+			this.treeData.root = rootNode;
+		}
+
+		// 选中根节点
+		this.selectedNode = rootNode;
+		this.showNodeProperties(rootNode);
+		this.render();
+
+		vscode.postMessage({
+			type: 'info',
+			message: '已创建根节点'
+		});
 	}
 
 	save() {

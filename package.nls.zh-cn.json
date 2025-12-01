@@ -138,7 +138,7 @@
 	"dota2-tools.A8.branch": "当前分支",
 	"dota2-tools.vpdi.path": "目标VPDI文件名",
 	"dota2-tools.vpdi.image_path": "图片文件夹路径",
-	"dota2tools.kvEditor.openFile": "在 Webview 中打开 KV 文件",
+	"dota2tools.kvEditor.openFile": "用KV编辑器打开文件",
 	"dota2-tools.kv_editor_setting": "KV 编辑器",
 	"dota2-tools.kv_editor.paths.description": "为每个 KV 目录或文件指定类型，键支持 ${workspace}、${game}、${content} 占位符。",
 	"dota2-tools.kv_editor.type.ability": "技能数据（启用技能字段选项与图标预览）。",

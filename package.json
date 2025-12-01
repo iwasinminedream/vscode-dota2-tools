@@ -460,12 +460,17 @@
 			],
 			"editor/title/context": [
 				{
-					"when": "resourceExtname == '.txt' || resourceExtname == '.kv'",
+					"when": "(resourceExtname == '.txt' || resourceExtname == '.kv') && config.dota2-tools.A2.display.kv_editor",
+					"command": "dota2tools.kvEditor.openFile",
+					"group": "navigation"
+				},
+				{
+					"when": "(resourceExtname == '.txt' || resourceExtname == '.kv') && config.dota2-tools.A2.display.ability_export",
 					"command": "dota2tools.ability_export",
 					"group": "navigation"
 				},
 				{
-					"when": "resourceExtname == '.txt' || resourceExtname == '.kv'",
+					"when": "(resourceExtname == '.txt' || resourceExtname == '.kv') && config.dota2-tools.A2.display.unit_export",
 					"command": "dota2tools.unit_export",
 					"group": "navigation"
 				},
@@ -582,7 +587,6 @@
 		},
 		"configuration": [
 			{
-				"title": "%dota2-tools.module_list%",
 				"properties": {
 					"dota2-tools.A1.module_list": {
 						"scope": "resource",
@@ -696,7 +700,10 @@
 						"default": {
 							"ability_icon": true,
 							"items_game": true,
-							"vsnd_picker": true
+							"vsnd_picker": true,
+							"kv_editor": true,
+							"ability_export": true,
+							"unit_export": true
 						},
 						"properties": {
 							"ability_icon": {
@@ -713,6 +720,21 @@
 								"type": "boolean",
 								"default": true,
 								"description": "是否显示Dota2 vsnd音效查询按钮"
+							},
+							"kv_editor": {
+								"type": "boolean",
+								"default": true,
+								"description": "是否显示KV编辑器打开按钮"
+							},
+							"ability_export": {
+								"type": "boolean",
+								"default": true,
+								"description": "是否显示技能导出按钮"
+							},
+							"unit_export": {
+								"type": "boolean",
+								"default": true,
+								"description": "是否显示单位导出按钮"
 							}
 						},
 						"additionalProperties": false,

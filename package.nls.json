@@ -130,7 +130,7 @@
 	"dota2-tools.A8.branch": "Current_branch",
 	"dota2-tools.vpdi.path": "VPDI file path",
 	"dota2-tools.vpdi.image_path": "image folder to generate VPDI",
-	"dota2tools.kvEditor.openFile": "Open KV file in webview",
+	"dota2tools.kvEditor.openFile": "Open KV file in KV editor",
 	"dota2-tools.kv_editor_setting": "KV editor",
 	"dota2-tools.kv_editor.paths.description": "Map each KV folder or file path to its content profile. Keys support ${workspace}, ${game}, and ${content} placeholders.",
 	"dota2-tools.kv_editor.type.ability": "Ability data (enables ability field options and icon previews).",
