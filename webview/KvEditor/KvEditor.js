@@ -2866,9 +2866,9 @@ function refreshTableWidth() {
 		const width = columnWidths[column] ?? getColumnWidth(column, headerLabel);
 		totalWidth += width;
 	});
-	const fallbackWidth = tableSection.clientWidth || totalWidth;
+	// 表格宽度只根据列的总宽度设置，不强制撑满容器
 	table.style.minWidth = `${totalWidth}px`;
-	table.style.width = `${Math.max(totalWidth, fallbackWidth)}px`;
+	table.style.width = `${totalWidth}px`;
 }
 
 function resetColumnState() {
