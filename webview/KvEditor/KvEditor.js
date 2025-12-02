@@ -379,7 +379,14 @@ function recalculateFormulas(options = {}) {
 	const cache = new Map();
 	const getRawValue = (columnKey, rowIndex) => {
 		const row = rows[rowIndex];
-		if (!row || !row.values) {
+		if (!row) {
+			return '';
+		}
+		// id 列存储在 row.id 中，不在 row.values 中
+		if (columnKey === 'id') {
+			return row.id ?? '';
+		}
+		if (!row.values) {
 			return '';
 		}
 		const raw = row.values[columnKey];
