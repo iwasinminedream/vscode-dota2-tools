@@ -3,16 +3,18 @@
 ## Big Picture
 - **Extension lifecycle**: `src/extension.ts` boots localization (`localizeInit`) + status bar (`statusBarItemInit`), then hands off to `src/init.ts`, which iterates `moduleList` to load features. Every module must tolerate repeated `init` calls triggered by workspace/config events.
 - **Folder structure**: `command/` (one-shot command handlers), `module/` (long-lived services + webviews/tree providers), `listener/` (file watchers using `node-watch`), `CustomTextEditorProvider/` (custom editors: Lazyboy launcher, KV editor, Behavior Tree editor), `utils/` (shared helpers), `TreeDataProvider/` (tree views), `Class/` (core services like `EventManager`, `FeiShu`).
-- **Static resources**: `resource/` contains Lua/JS/CSS API dumps (JSON), localization templates, items/abilities text files. `images/` holds icons (spellicons, items, heroes). Modules like `module/treeApi.ts` and webviews consume these directly—no external API calls.
-- **VS Code integration**: `package.json` contributes 3 activity-bar containers (`dota2api`, `dota2kv`, `dota2logs`), ~100+ commands, and 3 custom editors (Lazyboy, KV, Behavior Tree). Always keep `package.json` contributions in sync with implementation modules.
+- **Static resources**: `resource/` contains Lua/JS/CSS API dumps (JSON), localization templates, items/abilities text files, and **KV editor configs** (`kv_editor_field_options.json` for dropdown options). `images/` holds icons (spellicons, items, heroes). Modules like `module/treeApi.ts` and webviews consume these directly—no external API calls.
+- **VS Code integration**: `package.json` contributes 3 activity-bar containers (`dota2api`, `dota2kv`, `dota2logs`), ~100+ commands, and 3 custom editors (Lazyboy, KV, Behavior Tree for `.btree` files). Always keep `package.json` contributions in sync with implementation modules.
 - **Workspace assumptions**: Extension targets Dota 2 addon workspaces. `module/addonInfo.ts` auto-discovers `game`/`content` folders by searching for `addoninfo.txt` via `findFile`, falling back to manual config `dota2-tools.addon_path` if auto-detection fails. **Critical**: users must keep actual maps under `maps/` folder for discovery to work.
+- **Documentation**: Feature docs live in `docs/` folder (e.g., `behavior-tree-editor.md`, `row-copy-paste-feature.md`). Reference these when modifying related features.
 
 ## Critical Workflows
 - **Dev build**: `npm run watch` (Task `npm: 0`) runs webpack in watch mode, compiling `src/**/*.ts` → `dist/extension.js`. Use this for live development.
 - **Production build**: `npm run compile` produces optimized webpack bundle before publishing to marketplace.
+- **Incremental publish**: Task `$(cloud-upload) 增量更新` runs `publish_patch.js` for patch version releases.
 - **Tests**: `npm run watch-tests` (Task `npm: 1`) runs `tsc -w` for type checking only—no runtime test framework. Type errors are your feedback.
 - **Debug feedback**: All long-running operations (Feishu sync, Excel export, file parsing) must call `showStatusBarMessage(text, timeout)` or `refreshStatusBarMessage(index, text)` from `module/statusBar.ts` for user-visible progress. Messages appear in status bar + tooltip + output channel.
-- **Webview loading**: HTML files live in `webview/<name>/<name>.html` (note: separate from `src/webview/`). Use `getWebViewContent(webview, extensionUri, webviewName)` from `utils/getWebViewContent.ts` to load and transform URIs for VS Code's CSP. Never use raw `fs.readFileSync` for webview resources.
+- **Webview loading**: HTML files live in `webview/<name>/<name>.html` (note: separate from `src/webview/`). Use `getWebviewContent(webview, extensionUri, webviewName)` from `utils/getWebViewContent.ts` to load and transform URIs for VS Code's CSP. Never use raw `fs.readFileSync` for webview resources.
 
 ## Conventions & Patterns
 - **Event bus**: `EventManager` (`Class/event.ts`) centralizes VS Code events (`onDidChangeConfiguration`, `onDidChangeWorkspaceFolders`). Modules listen via `EventManager.listenToEvent<EventType>(type, callback)` instead of registering duplicate listeners. Returns event ID for cleanup via `stopListenToEvent`.
@@ -27,8 +29,8 @@
 - **Feishu integration** (`module/sheet_cloud.ts` + `Class/FeiShu.ts`): Syncs cloud spreadsheets from Feishu (Lark). Caches tenant access tokens, sheet IDs. Commands: `dota2tools.fetch_all_sheet`, `dota2tools.sheet_cloud_show_branch`. Uses timers (`setInterval`) for polling—clean them up in disposal. Config: `dota2-tools.A8.FeiShu` (App ID/Secret, Branch Folder, per-language sheet IDs).
 - **API explorers** (`module/treeApi.ts`, `TreeDataProvider/*ApiProvider.ts`): Builds tree views for Lua/JS/CSS/Panel APIs. Data sourced from static JSONs in `resource/` (e.g., `dota_script_help2.json`, `cl_panorama_script_help_2.json`). Each tree provider expects localized labels via `localize(<moduleName>)`.
 - **Custom editors**:
-  - `CustomTextEditorProvider/kvEditorProvider.ts` + `module/kvEditor.ts`: Full-featured KV editor with table view, registered for `.kv` and `.txt` files (priority: option). 
-  - `CustomTextEditorProvider/behaviorTreeProvider.ts`: Visual behavior tree editor for `.tree` files (priority: default).
+  - `CustomTextEditorProvider/kvEditorProvider.ts` + `module/kvEditor.ts`: Full-featured KV editor with table view, registered for `.kv` and `.txt` files (priority: option). Column dropdown options defined in `resource/kv_editor_field_options.json`—supports `multiple: true/false` and custom `separator`.
+  - `CustomTextEditorProvider/behaviorTreeProvider.ts`: Visual behavior tree editor for `.btree` files (priority: default). See `docs/behavior-tree-*.md` for usage.
   - `CustomTextEditorProvider/lazayboyProvider.ts`: Launches external app (e.g., Lazyboy model viewer) via `exec`, then disposes webview.
 - **Error logs** (`module/errorLogs.ts`, `TreeDataProvider/ErrorLogProvider.ts`): Parses Dota 2 error logs from user-configured directories, displays in `dota2Logs` tree view. Config: `dota2-tools.A9.logs`.
 - **Status bar** (`module/statusBar.ts`): Owns global status items + output channel. Use `getStatusBarItem()` for main item, `showStatusBarMessage(text, timeout)` for temporary messages. Tooltip shows last 20 messages as Markdown.
@@ -41,5 +43,11 @@
 - **Performance note**: Many modules use synchronous `fs.readFileSync` on large resource files (APIs, items_game.txt). Keep heavy ops out of `activate()` function—lazy-load in module `init` functions to avoid blocking extension startup.
 - **Webview HTML location**: Webview HTML files live in `webview/<name>/` folder (peer to `src/`), NOT `src/webview/`. TypeScript for webviews can be in `src/webview/` for bundling, but HTML/CSS must be in `webview/` for `getWebViewContent` to resolve paths correctly.
 
+## Adding New Features Checklist
+1. **New command**: Add to `src/extension.ts`, register in `package.json` under `contributes.commands`.
+2. **New module**: Add init function to `moduleList` in `src/init.ts`. If user-toggleable, add to `skipModuleList` and `package.json` config.
+3. **New webview**: Create `webview/<name>/<name>.html`, use `getWebviewContent()` helper. TypeScript goes in `src/webview/`.
+4. **New localization string**: Add to both `package.nls.json` (English) and `package.nls.zh-cn.json` (Chinese).
+5. **New custom editor**: Register in `package.json` under `contributes.customEditors`, implement provider in `CustomTextEditorProvider/`.
 
 

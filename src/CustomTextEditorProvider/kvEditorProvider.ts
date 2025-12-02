@@ -517,10 +517,33 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 			}
 
+			// 应用全局级别的 multiple 和 separator 设置
+			if (overrides.columnSettings) {
+				for (const [column, scopeMap] of Object.entries(overrides.columnSettings)) {
+					const existing = resolved[column];
+					if (!existing) {
+						continue;
+					}
+					// 先尝试 folderType 对应的 scope，再 fallback 到 default
+					const settings = scopeMap[folderType] ?? scopeMap['default'];
+					if (settings) {
+						if (typeof settings.multiple === 'boolean') {
+							existing.multiple = settings.multiple;
+						}
+						if (typeof settings.separator === 'string' && settings.separator.length > 0) {
+							existing.separator = settings.separator;
+						}
+					}
+				}
+			}
+
 			// 再应用文件级别的覆盖（优先级最高）
 			if (documentUri && overrides.files) {
 				const documentKey = this.getDocumentSettingsKey(documentUri, workspaceFolder);
-				const fileColumnOptions = documentKey ? overrides.files[documentKey]?.columnOptions : undefined;
+				const fileConfig = documentKey ? overrides.files[documentKey] : undefined;
+				const fileColumnOptions = fileConfig?.columnOptions;
+				const fileColumnSettings = fileConfig?.columnSettings;
+
 				if (fileColumnOptions) {
 					for (const [column, fileOptions] of Object.entries(fileColumnOptions)) {
 						if (!fileOptions?.length) {
@@ -534,6 +557,28 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 								options: fileOptions.map((option) => ({ ...option })),
 								multiple: false,
 								separator: ',',
+							};
+						}
+					}
+				}
+
+				// 应用文件级别的 multiple 和 separator 设置（最高优先级）
+				if (fileColumnSettings) {
+					for (const [column, settings] of Object.entries(fileColumnSettings)) {
+						const existing = resolved[column];
+						if (existing) {
+							if (typeof settings.multiple === 'boolean') {
+								existing.multiple = settings.multiple;
+							}
+							if (typeof settings.separator === 'string' && settings.separator.length > 0) {
+								existing.separator = settings.separator;
+							}
+						} else {
+							// 如果列不存在，创建一个空的配置
+							resolved[column] = {
+								options: [],
+								multiple: settings.multiple ?? false,
+								separator: settings.separator ?? ',',
 							};
 						}
 					}
@@ -1890,12 +1935,40 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		normalized = normalized.replace(/^vscripts\//i, '');
 		normalized = normalized.replace(/\.(lua|ts)$/i, '');
 		const candidatePath = path.join(baseDir, 'scripts', 'vscripts', `${normalized}${extension}`);
+		let fileExists = false;
 		try {
 			await fs.promises.access(candidatePath, fs.constants.F_OK);
-		} catch (error) {
-			void vscode.window.showWarningMessage(`未找到脚本文件：${candidatePath}`);
-			return;
+			fileExists = true;
+		} catch {
+			fileExists = false;
 		}
+
+		// 如果文件不存在，创建该文件
+		if (!fileExists) {
+			const createFile = await vscode.window.showInformationMessage(
+				`脚本文件不存在，是否创建？\n${candidatePath}`,
+				'创建',
+				'取消'
+			);
+			if (createFile !== '创建') {
+				return;
+			}
+
+			try {
+				// 确保目录存在
+				const dirPath = path.dirname(candidatePath);
+				await fs.promises.mkdir(dirPath, { recursive: true });
+
+				// 生成脚本模板内容
+				const scriptContent = this.generateScriptTemplate(normalized, folderType, useTypescript);
+				await fs.promises.writeFile(candidatePath, scriptContent, 'utf8');
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				void vscode.window.showErrorMessage(`创建脚本文件失败：${message}`);
+				return;
+			}
+		}
+
 		try {
 			const scriptDocument = await vscode.workspace.openTextDocument(candidatePath);
 			await vscode.window.showTextDocument(scriptDocument, { preview: false });
@@ -1903,6 +1976,56 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			const message = error instanceof Error ? error.message : String(error);
 			void vscode.window.showErrorMessage(`无法打开脚本文件：${message}`);
 		}
+	}
+
+	private generateScriptTemplate(scriptPath: string, folderType: KvFolderType, useTypescript: boolean): string {
+		// 从路径中提取文件名（不含扩展名）
+		const filename = path.basename(scriptPath);
+		const luaPath = scriptPath.replace(/\\/g, '/');
+
+		// 尝试读取用户自定义模板
+		try {
+			const templateConfig = vscode.workspace.getConfiguration().get('dota2-tools.LuaTemplateFiles') as { ability?: string; item?: string; } | undefined;
+			if (templateConfig) {
+				const templateKey = folderType === 'item' ? 'item' : 'ability';
+				const templateRelPath = templateConfig[templateKey];
+				if (templateRelPath) {
+					const workspaceFolders = vscode.workspace.workspaceFolders;
+					if (workspaceFolders && workspaceFolders.length > 0) {
+						const templatePath = path.join(workspaceFolders[0].uri.fsPath, templateRelPath);
+						if (fs.existsSync(templatePath)) {
+							let snippet = fs.readFileSync(templatePath, 'utf8');
+							snippet = snippet.replace(/\[filename\]/g, filename);
+							snippet = snippet.replace(/\[path\]/g, luaPath);
+							snippet = snippet.replace(/__filename_replacer__/g, filename);
+							snippet = snippet.replace(/__path_replacer__/g, luaPath);
+							return snippet;
+						}
+					}
+				}
+			}
+		} catch {
+			// 忽略模板读取错误，使用默认模板
+		}
+
+		// 使用插件内置的默认模板
+		try {
+			const defaultTemplatePath = path.join(this.context.extensionPath, 'resource', 'lua_template.lua');
+			if (fs.existsSync(defaultTemplatePath)) {
+				let snippet = fs.readFileSync(defaultTemplatePath, 'utf8');
+				snippet = snippet.replace(/filename/g, filename);
+				snippet = snippet.replace(/path/g, luaPath);
+				return snippet;
+			}
+		} catch {
+			// 忽略模板读取错误
+		}
+
+		// 最后的备用模板
+		if (useTypescript) {
+			return `// ${filename}\n\nexport function ${filename}(): void {\n    // TODO: Implement\n}\n`;
+		}
+		return `-- ${filename}\n\nfunction ${filename}()\n    -- TODO: Implement\nend\n`;
 	}
 
 	private async handleOpenTextEditor(document: vscode.TextDocument): Promise<void> {
@@ -3121,6 +3244,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 		const sanitizedOptions = this.sanitizeColumnOptionList(message.options);
 		const isFileScope = message.scope === 'file';
+		const multiple = message.multiple === true;
+		const separator = typeof message.separator === 'string' && message.separator.length > 0 ? message.separator : '|';
 
 		if (isFileScope) {
 			// 保存到文件级别配置
@@ -3149,11 +3274,24 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				if (Object.keys(overrides.files[documentKey].columnOptions!).length === 0) {
 					delete overrides.files[documentKey].columnOptions;
 				}
-				if (Object.keys(overrides.files[documentKey]).length === 0) {
-					delete overrides.files[documentKey];
-				}
 			} else {
 				overrides.files[documentKey].columnOptions![columnKey] = sanitizedOptions;
+			}
+
+			// 保存 multiple 和 separator 设置
+			if (!overrides.files[documentKey].columnSettings) {
+				overrides.files[documentKey].columnSettings = {};
+			}
+			overrides.files[documentKey].columnSettings![columnKey] = { multiple, separator };
+
+			// 清理空的 columnSettings
+			if (Object.keys(overrides.files[documentKey].columnSettings!).length === 0) {
+				delete overrides.files[documentKey].columnSettings;
+			}
+
+			// 清理空的文件配置
+			if (Object.keys(overrides.files[documentKey]).length === 0) {
+				delete overrides.files[documentKey];
 			}
 
 			this.writeColumnOptionOverrides(workspaceFolder, overrides);
@@ -3175,6 +3313,26 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				overrides.columns[columnKey] = columnOverrides;
 			} else if (overrides.columns[columnKey]) {
 				delete overrides.columns[columnKey];
+			}
+
+			// 保存全局级别的 multiple 和 separator 设置
+			if (!overrides.columnSettings) {
+				overrides.columnSettings = {};
+			}
+			if (!overrides.columnSettings[columnKey]) {
+				overrides.columnSettings[columnKey] = {};
+			}
+			overrides.columnSettings[columnKey][scope] = { multiple, separator };
+
+			// 清理空的设置
+			if (!overrides.columnSettings[columnKey][scope]?.multiple && !overrides.columnSettings[columnKey][scope]?.separator) {
+				delete overrides.columnSettings[columnKey][scope];
+			}
+			if (Object.keys(overrides.columnSettings[columnKey]).length === 0) {
+				delete overrides.columnSettings[columnKey];
+			}
+			if (Object.keys(overrides.columnSettings).length === 0) {
+				delete overrides.columnSettings;
 			}
 
 			this.writeColumnOptionOverrides(workspaceFolder, overrides);
@@ -3362,12 +3520,71 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					}
 				}
 
+				// 处理 columnSettings（多选和分隔符配置）
+				if (configObj.columnSettings && typeof configObj.columnSettings === 'object') {
+					const columnSettings: Record<string, KvEditorColumnMultiSelectSettings> = {};
+					for (const [columnKey, settings] of Object.entries(configObj.columnSettings as Record<string, unknown>)) {
+						if (typeof columnKey !== 'string' || !settings || typeof settings !== 'object') {
+							continue;
+						}
+						const settingsObj = settings as Record<string, unknown>;
+						const normalized: KvEditorColumnMultiSelectSettings = {};
+						if (typeof settingsObj.multiple === 'boolean') {
+							normalized.multiple = settingsObj.multiple;
+						}
+						if (typeof settingsObj.separator === 'string' && settingsObj.separator.length > 0) {
+							normalized.separator = settingsObj.separator;
+						}
+						if (Object.keys(normalized).length) {
+							columnSettings[columnKey] = normalized;
+						}
+					}
+					if (Object.keys(columnSettings).length) {
+						fileOptions.columnSettings = columnSettings;
+					}
+				}
+
 				if (Object.keys(fileOptions).length) {
 					files[documentKey] = fileOptions;
 				}
 			}
 			if (Object.keys(files).length) {
 				result.files = files;
+			}
+		}
+
+		// 处理全局 columnSettings（多选和分隔符配置）
+		const columnSettingsSection = container.columnSettings;
+		if (columnSettingsSection && typeof columnSettingsSection === 'object') {
+			const columnSettings: Record<string, Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>>> = {};
+			for (const [columnKey, scopeMap] of Object.entries(columnSettingsSection as Record<string, unknown>)) {
+				if (typeof columnKey !== 'string' || !scopeMap || typeof scopeMap !== 'object') {
+					continue;
+				}
+				const scopeSettings: Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>> = {};
+				for (const [scopeKey, settings] of Object.entries(scopeMap as Record<string, unknown>)) {
+					const normalizedScope = this.normalizeFolderTypeKey(scopeKey) ?? (scopeKey === 'default' ? 'default' : undefined);
+					if (!normalizedScope || !settings || typeof settings !== 'object') {
+						continue;
+					}
+					const settingsObj = settings as Record<string, unknown>;
+					const normalized: KvEditorColumnMultiSelectSettings = {};
+					if (typeof settingsObj.multiple === 'boolean') {
+						normalized.multiple = settingsObj.multiple;
+					}
+					if (typeof settingsObj.separator === 'string' && settingsObj.separator.length > 0) {
+						normalized.separator = settingsObj.separator;
+					}
+					if (Object.keys(normalized).length) {
+						scopeSettings[normalizedScope] = normalized;
+					}
+				}
+				if (Object.keys(scopeSettings).length) {
+					columnSettings[columnKey] = scopeSettings;
+				}
+			}
+			if (Object.keys(columnSettings).length) {
+				result.columnSettings = columnSettings;
 			}
 		}
 
@@ -3410,6 +3627,21 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		}
 
+		// 复制全局 columnSettings
+		let columnSettings: Record<string, Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>>> | undefined;
+		if (source.columnSettings && typeof source.columnSettings === 'object') {
+			columnSettings = {};
+			for (const [columnKey, scopeMap] of Object.entries(source.columnSettings)) {
+				const copiedScopeMap: Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>> = {};
+				for (const [scopeKey, settings] of Object.entries(scopeMap)) {
+					copiedScopeMap[scopeKey as KvEditorColumnOptionsScope] = { ...settings };
+				}
+				if (Object.keys(copiedScopeMap).length) {
+					columnSettings[columnKey] = copiedScopeMap;
+				}
+			}
+		}
+
 		let files: Record<string, KvEditorFileColumnOptions> | undefined;
 		if (source.files && typeof source.files === 'object') {
 			files = {};
@@ -3419,6 +3651,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					copiedFile.columnOptions = {};
 					for (const [columnKey, options] of Object.entries(fileConfig.columnOptions)) {
 						copiedFile.columnOptions[columnKey] = options.map((option) => ({ ...option }));
+					}
+				}
+				// 复制文件级别 columnSettings
+				if (fileConfig.columnSettings) {
+					copiedFile.columnSettings = {};
+					for (const [columnKey, settings] of Object.entries(fileConfig.columnSettings)) {
+						copiedFile.columnSettings[columnKey] = { ...settings };
 					}
 				}
 				if (Object.keys(copiedFile).length) {
@@ -3433,6 +3672,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		if (columnDescriptions && Object.keys(columnDescriptions).length) {
 			result.columnDescriptions = columnDescriptions;
+		}
+		if (columnSettings && Object.keys(columnSettings).length) {
+			result.columnSettings = columnSettings;
 		}
 		if (files && Object.keys(files).length) {
 			result.files = files;
@@ -3527,6 +3769,39 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}, {});
 			if (Object.keys(sorted).length) {
 				output.columnDescriptions = sorted;
+			}
+		}
+
+		// 序列化全局 columnSettings 字段
+		if (overrides.columnSettings && typeof overrides.columnSettings === 'object') {
+			const columnSettingsOutput: Record<string, Record<string, KvEditorColumnMultiSelectSettings>> = {};
+			const columnKeys = Object.keys(overrides.columnSettings).sort((a, b) => a.localeCompare(b));
+			for (const columnKey of columnKeys) {
+				const scopeMap = overrides.columnSettings[columnKey];
+				if (!scopeMap || typeof scopeMap !== 'object') {
+					continue;
+				}
+				const scopeOutput: Record<string, KvEditorColumnMultiSelectSettings> = {};
+				const scopeKeys = Object.keys(scopeMap).sort((a, b) => a.localeCompare(b));
+				for (const scopeKey of scopeKeys) {
+					const settings = scopeMap[scopeKey as KvEditorColumnOptionsScope];
+					if (settings && (settings.multiple || settings.separator)) {
+						const entry: KvEditorColumnMultiSelectSettings = {};
+						if (settings.multiple) {
+							entry.multiple = true;
+						}
+						if (settings.separator) {
+							entry.separator = settings.separator;
+						}
+						scopeOutput[scopeKey] = entry;
+					}
+				}
+				if (Object.keys(scopeOutput).length) {
+					columnSettingsOutput[columnKey] = scopeOutput;
+				}
+			}
+			if (Object.keys(columnSettingsOutput).length) {
+				output.columnSettings = columnSettingsOutput;
 			}
 		}
 
@@ -4195,6 +4470,8 @@ interface KvEditorSaveColumnOptionsMessage {
 	column: string;
 	folderType?: KvFolderType;
 	options?: KvEditorColumnOptionUpdate[];
+	multiple?: boolean;
+	separator?: string;
 	scope?: 'global' | 'file';
 }
 
@@ -4215,11 +4492,18 @@ interface KvEditorColumnOptionsFile {
 	columns: Record<string, KvEditorColumnOptionsFolderMap>;
 	formulas?: KvEditorFormulaStorage;
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
+	columnSettings?: Record<string, Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>>>;
 	files?: Record<string, KvEditorFileColumnOptions>;
+}
+
+interface KvEditorColumnMultiSelectSettings {
+	multiple?: boolean;
+	separator?: string;
 }
 
 interface KvEditorFileColumnOptions {
 	columnOptions?: Record<string, KvEditorColumnOption[]>;
+	columnSettings?: Record<string, KvEditorColumnMultiSelectSettings>;
 }
 
 type KvEditorColumnOptionsFolderMap = Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnOption[]>>;

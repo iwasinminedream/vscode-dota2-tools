@@ -169,6 +169,7 @@ document.addEventListener('mouseup', stopColumnResize);
 document.addEventListener('keydown', handleRowClipboardShortcuts);
 document.addEventListener('keydown', handleClipboardShortcuts);
 document.addEventListener('keydown', handleEscapeClearSelection);
+document.addEventListener('keydown', handleCellNavigation);
 
 if (formulaValueInput) {
 	formulaValueInput.addEventListener('input', () => {
@@ -1218,6 +1219,119 @@ function handleEscapeClearSelection(event) {
 	if (event.key === 'Escape' && selectedRows.size > 0) {
 		event.preventDefault();
 		clearRowSelection();
+	}
+}
+
+// 处理方向键导航和空格键进入编辑状态
+function handleCellNavigation(event) {
+	// 如果正在编辑状态，不处理导航
+	if (isEditableElement(document.activeElement)) {
+		return;
+	}
+	// 如果没有选中单元格，不处理
+	if (!selectedCellKey || !latestPayload || !Array.isArray(latestPayload.columns) || !Array.isArray(latestPayload.rows)) {
+		return;
+	}
+
+	const key = event.key;
+	const columns = latestPayload.columns;
+	const rows = latestPayload.rows;
+	const currentRowIndex = selectedCellKey.rowIndex;
+	const currentColumn = selectedCellKey.column;
+	const currentColumnIndex = columns.indexOf(currentColumn);
+
+	if (currentColumnIndex < 0 || currentRowIndex < 0) {
+		return;
+	}
+
+	// 处理空格键进入编辑状态
+	if (key === ' ') {
+		event.preventDefault();
+		if (selectedCell && selectedCell.editable && selectedCell.element) {
+			if (selectedCell.element instanceof HTMLInputElement) {
+				selectedCell.element.focus();
+				selectedCell.element.select();
+			} else if (selectedCell.element.focus) {
+				selectedCell.element.focus();
+			}
+		}
+		return;
+	}
+
+	// 处理方向键导航
+	let newRowIndex = currentRowIndex;
+	let newColumnIndex = currentColumnIndex;
+
+	switch (key) {
+		case 'ArrowUp':
+			newRowIndex = Math.max(0, currentRowIndex - 1);
+			break;
+		case 'ArrowDown':
+			newRowIndex = Math.min(rows.length - 1, currentRowIndex + 1);
+			break;
+		case 'ArrowLeft':
+			newColumnIndex = Math.max(0, currentColumnIndex - 1);
+			break;
+		case 'ArrowRight':
+			newColumnIndex = Math.min(columns.length - 1, currentColumnIndex + 1);
+			break;
+		default:
+			return; // 不是方向键，不处理
+	}
+
+	// 如果位置没有变化，不处理
+	if (newRowIndex === currentRowIndex && newColumnIndex === currentColumnIndex) {
+		return;
+	}
+
+	event.preventDefault();
+
+	// 找到目标单元格并选中
+	const newColumn = columns[newColumnIndex];
+	const selector = `td[data-column="${newColumn}"][data-row-index="${newRowIndex}"]`;
+	const targetTd = tableSection?.querySelector(selector);
+
+	if (targetTd) {
+		// 直接构建 context 并调用 selectCell，而不是使用 click() 来避免自动进入编辑状态
+		const rowId = targetTd.dataset.rowId ?? '';
+		const isAbilityColumn = newColumn === 'AbilityValues';
+		const editable = newColumn !== ROW_NUMBER_COLUMN_KEY && !isAbilityColumn;
+		const fieldConfig = columnOptionConfig[newColumn];
+		const usesDropdown = Boolean(fieldConfig?.options?.length);
+		let element = null;
+		if (editable) {
+			element = usesDropdown ? targetTd.querySelector('select') : targetTd.querySelector('input');
+		}
+		const value = isAbilityColumn
+			? (targetTd.dataset.displayValue ?? targetTd.textContent ?? '')
+			: editable
+				? readElementValue(element, fieldConfig)
+				: (targetTd.textContent ?? '');
+		const abilityEntries = isAbilityColumn ? parseAbilityEntriesFromCell(targetTd) : undefined;
+		const hasAbilityField = isAbilityColumn ? targetTd.dataset.hasAbilityField === 'true' : false;
+
+		// 获取列字母和列名
+		const columnLetter = getColumnLetter(newColumnIndex);
+		const columnName = latestPayload.columnLabels?.[newColumn] ?? newColumn;
+
+		selectCell(targetTd, {
+			column: newColumn,
+			columnLetter,
+			columnName,
+			rowId,
+			rowIndex: newRowIndex,
+			editable,
+			element,
+			fieldConfig,
+			usesDropdown,
+			value,
+			dataType: isAbilityColumn ? 'abilityValues' : 'cell',
+			abilityEntries,
+			hasAbilityField
+		});
+
+		// 确保单元格可见
+		targetTd.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 	}
 }
 
@@ -3415,6 +3529,8 @@ function renderTable(columns, rows, columnOptions) {
 					columnName: headerLabel,
 					folderType: latestPayload?.folderType ?? 'custom',
 					options: cloneColumnOptionEntries(columnFieldConfig?.options ?? []),
+					multiple: columnFieldConfig?.multiple ?? false,
+					separator: columnFieldConfig?.separator ?? '|',
 				});
 			});
 			titleRow.appendChild(optionsButton);
@@ -3580,11 +3696,13 @@ function renderTable(columns, rows, columnOptions) {
 						usesDropdown: false,
 						value: displayValue
 					});
-					if (document.activeElement !== input) {
-						// focus 事件会自动处理公式显示
-						input.focus();
-						input.select();
-					}
+					// 点击只选中单元格，不自动进入编辑状态
+					// 用户可以通过空格键或双击进入编辑状态
+				});
+				td.addEventListener('dblclick', () => {
+					// 双击进入编辑状态
+					input.focus();
+					input.select();
 				});
 			} else {
 				const rawValue = row.values?.[column];
@@ -3772,26 +3890,38 @@ function renderTable(columns, rows, columnOptions) {
 						}
 						return inlineWrapper;
 					};
-					if (previewInfo && previewInfo.uri) {
+					// AbilityTextureName 列始终显示图标选择按钮（即使没有有效的图标预览）
+					if (column === 'AbilityTextureName') {
 						const wrapper = ensureInlineWrapper();
 						const preview = document.createElement('div');
-						preview.className = 'kv-cell-preview';
-						preview.dataset.type = previewInfo.kind === 'item' ? 'item' : 'spell';
-						preview.dataset.source = previewInfo.source || '';
-						const img = document.createElement('img');
-						img.src = previewInfo.uri;
-						img.alt = `${row.id ?? ''} icon`;
-						img.draggable = false;
-						if (previewInfo.fileName) {
-							const tooltipParts = [previewInfo.fileName];
-							if (previewInfo.source) {
-								tooltipParts.push(previewInfo.source === 'addon' ? '项目资源' : '插件资源');
-							}
-							img.title = tooltipParts.join(' · ');
-						}
-						preview.appendChild(img);
-						preview.classList.add('kv-cell-preview-button');
+						preview.className = 'kv-cell-preview kv-cell-preview-button';
 						preview.tabIndex = 0;
+
+						if (previewInfo && previewInfo.uri) {
+							// 有有效的图标预览
+							preview.dataset.type = previewInfo.kind === 'item' ? 'item' : 'spell';
+							preview.dataset.source = previewInfo.source || '';
+							const img = document.createElement('img');
+							img.src = previewInfo.uri;
+							img.alt = `${row.id ?? ''} icon`;
+							img.draggable = false;
+							if (previewInfo.fileName) {
+								const tooltipParts = [previewInfo.fileName];
+								if (previewInfo.source) {
+									tooltipParts.push(previewInfo.source === 'addon' ? '项目资源' : '插件资源');
+								}
+								img.title = tooltipParts.join(' · ');
+							}
+							preview.appendChild(img);
+						} else {
+							// 没有有效的图标预览，显示占位图标
+							preview.classList.add('kv-cell-preview-placeholder');
+							const icon = document.createElement('span');
+							icon.className = 'codicon codicon-file-media';
+							icon.title = '选择图标';
+							preview.appendChild(icon);
+						}
+
 						const openMenu = (event) => {
 							event.preventDefault();
 							event.stopPropagation();
@@ -3799,7 +3929,7 @@ function renderTable(columns, rows, columnOptions) {
 								input,
 								folderType: latestPayload?.folderType ?? 'custom',
 								currentValue: input.value ?? '',
-								preferredKind: previewInfo.kind,
+								preferredKind: previewInfo?.kind ?? 'spell',
 								rowId: row.id ?? '',
 								column,
 							});
@@ -5609,6 +5739,42 @@ function openColumnOptionsEditor(context) {
 	scopeCheckboxWrapper.appendChild(scopeLabel);
 	footerLeft.appendChild(scopeCheckboxWrapper);
 
+	// 添加"允许多选"复选框
+	const multiSelectWrapper = document.createElement('label');
+	multiSelectWrapper.className = 'kv-checkbox-wrapper';
+	multiSelectWrapper.style.cssText = 'margin-left: 16px;';
+	const multiSelectCheckbox = document.createElement('input');
+	multiSelectCheckbox.type = 'checkbox';
+	multiSelectCheckbox.className = 'kv-checkbox-input';
+	multiSelectCheckbox.checked = context.multiple ?? false;
+	multiSelectWrapper.appendChild(multiSelectCheckbox);
+	const multiSelectIndicator = document.createElement('span');
+	multiSelectIndicator.className = 'kv-checkbox-indicator codicon codicon-check';
+	multiSelectWrapper.appendChild(multiSelectIndicator);
+	const multiSelectLabel = document.createElement('span');
+	multiSelectLabel.className = 'kv-checkbox-label';
+	multiSelectLabel.textContent = '允许多选';
+	multiSelectWrapper.appendChild(multiSelectLabel);
+	footerLeft.appendChild(multiSelectWrapper);
+
+	// 添加"分隔符"输入框
+	const separatorWrapper = document.createElement('div');
+	separatorWrapper.className = 'kv-separator-wrapper';
+	separatorWrapper.style.cssText = 'margin-left: 16px; display: inline-flex; align-items: center; gap: 4px;';
+	const separatorLabel = document.createElement('span');
+	separatorLabel.className = 'kv-separator-label';
+	separatorLabel.textContent = '分隔符:';
+	separatorLabel.style.cssText = 'font-size: 12px; color: var(--vscode-descriptionForeground);';
+	separatorWrapper.appendChild(separatorLabel);
+	const separatorInput = document.createElement('input');
+	separatorInput.type = 'text';
+	separatorInput.className = 'kv-separator-input';
+	separatorInput.value = context.separator ?? '|';
+	separatorInput.style.cssText = 'width: 40px; padding: 2px 6px; font-size: 12px; text-align: center; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, transparent); border-radius: 2px;';
+	separatorInput.maxLength = 3;
+	separatorWrapper.appendChild(separatorInput);
+	footerLeft.appendChild(separatorWrapper);
+
 	footer.appendChild(footerLeft);
 	const footerRight = document.createElement('div');
 	footerRight.className = 'kv-column-options-footer-right';
@@ -5642,6 +5808,8 @@ function openColumnOptionsEditor(context) {
 		listContainer,
 		errorEl,
 		scopeCheckbox,
+		multiSelectCheckbox,
+		separatorInput,
 		column: context.column,
 		columnName: context.columnName || context.column,
 		folderType: context.folderType || (latestPayload?.folderType ?? 'custom'),
@@ -5907,8 +6075,10 @@ function submitColumnOptionsEditor() {
 		return;
 	}
 	resetColumnOptionsEditorError();
-	const { column, folderType, options, scopeCheckbox } = columnOptionsEditorState;
+	const { column, folderType, options, scopeCheckbox, multiSelectCheckbox, separatorInput } = columnOptionsEditorState;
 	const isFileScope = scopeCheckbox ? scopeCheckbox.checked : true; // 默认勾选
+	const isMultiple = multiSelectCheckbox ? multiSelectCheckbox.checked : false;
+	const separator = separatorInput ? (separatorInput.value || '|') : '|';
 	const normalized = options.map((option) => {
 		const value = (option.value || '').trim();
 		const description = (option.description || '').trim();
@@ -5945,6 +6115,8 @@ function submitColumnOptionsEditor() {
 			column,
 			folderType,
 			options: payloadOptions,
+			multiple: isMultiple,
+			separator: separator,
 			scope: isFileScope ? 'file' : 'global',
 		},
 	});

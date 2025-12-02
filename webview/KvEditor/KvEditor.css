@@ -891,6 +891,21 @@ body {
 	width: var(--kv-cell-base-height);
 }
 
+.kv-cell-preview-placeholder {
+	cursor: pointer;
+	opacity: 0.5;
+	transition: opacity 0.15s ease;
+}
+
+.kv-cell-preview-placeholder:hover {
+	opacity: 1;
+}
+
+.kv-cell-preview-placeholder .codicon {
+	font-size: 16px;
+	color: var(--vscode-foreground);
+}
+
 .kv-ability-values-cell {
 	padding: 4px 8px;
 	vertical-align: top;
