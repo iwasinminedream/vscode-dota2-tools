@@ -97,6 +97,33 @@ body {
 	background: var(--vscode-editor-background);
 }
 
+.kv-formula-help-button {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--vscode-foreground);
+	cursor: pointer;
+	opacity: 0.7;
+	transition: opacity 0.2s, background-color 0.2s;
+	border-radius: 3px;
+}
+
+.kv-formula-help-button:hover {
+	opacity: 1;
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-formula-help-button .codicon {
+	display: inline-block;
+	font-size: 16px;
+}
+
 .kv-formula-bar input {
 	border: 1px solid var(--vscode-panel-border);
 	background: var(--vscode-editor-background);
@@ -2149,33 +2176,35 @@ body.kv-texture-menu-open {
 }
 
 .kv-radio-input:checked~.kv-radio-indicator::before {
+	content: '●';
+}
 
-	/* 临时消息动画 */
-	@keyframes kv-message-slide-in {
-		from {
-			transform: translateX(100%);
-			opacity: 0;
-		}
-
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
+/* 临时消息动画 */
+@keyframes kv-message-slide-in {
+	from {
+		transform: translateX(100%);
+		opacity: 0;
 	}
 
-	@keyframes kv-message-fade-out {
-		from {
-			opacity: 1;
-		}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
 
-		to {
-			opacity: 0;
-		}
+@keyframes kv-message-fade-out {
+	from {
+		opacity: 1;
 	}
 
-	content: '\ebb3';
-	/* codicon-circle-filled */
-	font-family: codicon;
+	to {
+		opacity: 0;
+	}
+}
+
+content: '\ebb3';
+/* codicon-circle-filled */
+font-family: codicon;
 }
 
 .kv-radio-label {

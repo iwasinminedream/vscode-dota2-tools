@@ -249,6 +249,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				});
 				return;
 			}
+			if (message.type === 'openFormulaHelp') {
+				void this.handleOpenFormulaHelp();
+				return;
+			}
 		});
 
 		webviewPanel.onDidDispose(() => {
@@ -2039,6 +2043,17 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			void vscode.window.showErrorMessage(`无法打开文本编辑器：${message}`);
+		}
+	}
+
+	private async handleOpenFormulaHelp(): Promise<void> {
+		try {
+			const docPath = this.context.asAbsolutePath(path.join('docs', 'kv-editor-formula-guide.md'));
+			const docUri = vscode.Uri.file(docPath);
+			await vscode.commands.executeCommand('markdown.showPreview', docUri);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			void vscode.window.showErrorMessage(`无法打开公式帮助文档：${message}`);
 		}
 	}
 

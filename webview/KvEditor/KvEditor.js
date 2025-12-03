@@ -10,11 +10,19 @@ const emptySection = document.getElementById('kv-empty');
 const errorSection = document.getElementById('kv-error');
 const formulaAddressInput = document.getElementById('kv-editor-address');
 const formulaValueInput = document.getElementById('kv-editor-value');
+const formulaHelpBtn = document.getElementById('kv-formula-help');
 
 if (emptySection) {
 	emptySection.textContent = 'Loading KV data...';
 }
 setSectionVisibility({ showTable: false, showEmpty: true, showError: false });
+
+// 绑定公式帮助按钮
+if (formulaHelpBtn) {
+	formulaHelpBtn.addEventListener('click', () => {
+		vscode.postMessage({ type: 'openFormulaHelp' });
+	});
+}
 
 // 绑定"用文本编辑器打开"按钮事件
 if (openTextEditorBtn) {
