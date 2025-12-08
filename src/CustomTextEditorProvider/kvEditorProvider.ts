@@ -3736,6 +3736,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					if (option.description) {
 						entry.description = option.description;
 					}
+					if (option.color) {
+						entry.color = option.color;
+					}
 					return entry;
 				});
 			}
@@ -3847,6 +3850,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 							if (option.description) {
 								entry.description = option.description;
 							}
+							if (option.color) {
+								entry.color = option.color;
+							}
 							return entry;
 						});
 					}
@@ -3927,6 +3933,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			seen.add(key);
 			const labelRaw = record.label;
 			const descriptionRaw = record.description;
+			const colorRaw = record.color;
 			const hasLabel = typeof labelRaw === 'string' && labelRaw.trim().length > 0;
 			const option: KvEditorColumnOption = {
 				value,
@@ -3937,6 +3944,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			if (typeof descriptionRaw === 'string' && descriptionRaw.trim().length) {
 				option.description = descriptionRaw.trim();
+			}
+			if (typeof colorRaw === 'string' && colorRaw.trim().length) {
+				option.color = colorRaw.trim();
 			}
 			result.push(option);
 		}
@@ -4378,6 +4388,7 @@ interface KvEditorColumnOption {
 	value: string;
 	label: string;
 	description?: string;
+	color?: string;
 	labelIsFallback?: boolean;
 }
 
@@ -4529,6 +4540,7 @@ interface KvEditorColumnOptionUpdate {
 	value: string;
 	label?: string;
 	description?: string;
+	color?: string;
 }
 
 interface KvEditorSaveFormulaMessage {

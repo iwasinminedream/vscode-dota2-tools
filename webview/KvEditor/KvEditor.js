@@ -163,6 +163,21 @@ const FORMULA_ERROR_VALUE = '#ERROR!';
 const FORMULA_CYCLE_VALUE = '#CYCLE!';
 
 const formulaDefinitions = new Map();
+
+// 预定义的颜色选项
+const DEFAULT_COLORS = [
+	'#4A90E2', '#50C878', '#F5A623', '#E24A4A', '#9B59B6',
+	'#1ABC9C', '#E67E22', '#3498DB', '#E91E63', '#9C27B0',
+	'#00BCD4', '#8BC34A', '#FFC107', '#FF5722', '#607D8B',
+	'#795548', '#FF9800', '#CDDC39', '#03A9F4', '#673AB7'
+];
+
+let colorPickerPopup = null;
+
+// 自动分配颜色
+function getAutoColor(index) {
+	return DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+}
 const formulaComputedValues = new Map();
 
 const FILL_DEFAULT_STEP = 1;
@@ -1180,23 +1195,22 @@ function copySelectedRows() {
 			const formulas = {};
 			if (latestPayload.columns && Array.isArray(latestPayload.columns)) {
 				for (const column of latestPayload.columns) {
-					const formula = getFormulaDefinition(column.key, row.id, rowIndex);
+					// columns 是字符串数组,不是对象数组
+					const columnKey = typeof column === 'string' ? column : column.key;
+					const formula = getFormulaDefinition(columnKey, row.id, rowIndex);
 					if (formula && formula.formula) {
-						formulas[column.key] = formula.formula;
+						formulas[columnKey] = formula.formula;
 					}
 				}
 			}
 			if (Object.keys(formulas).length > 0) {
 				rowCopy.formulas = formulas;
-			}
-
-			rowsToCopy.push(rowCopy);
+			} rowsToCopy.push(rowCopy);
 		}
 	}
 
 	if (rowsToCopy.length > 0) {
 		copiedRowsData = rowsToCopy;
-		console.log(`已复制 ${rowsToCopy.length} 行数据`);
 
 		// 可选：显示提示信息
 		if (tableSection) {
@@ -1218,9 +1232,6 @@ function pasteRows() {
 	} else if (latestPayload && latestPayload.rows) {
 		insertAfterIndex = latestPayload.rows.length - 1;
 	}
-
-	console.log(`[pasteRows] 准备粘贴 ${copiedRowsData.length} 行:`, copiedRowsData);
-	console.log(`[pasteRows] 插入位置: ${insertAfterIndex + 1}`);
 
 	// 调整公式行引用
 	const rowsWithAdjustedFormulas = copiedRowsData.map((rowData, index) => {
@@ -1257,8 +1268,6 @@ function pasteRows() {
 			rows: rowsWithAdjustedFormulas,
 		},
 	});
-
-	console.log(`粘贴 ${copiedRowsData.length} 行到位置 ${insertAfterIndex + 1}`);
 
 	// 显示提示信息
 	if (tableSection) {
@@ -2650,8 +2659,22 @@ function updateSelectDisplay(select, display, fieldConfig) {
 	values.forEach((value) => {
 		const tag = document.createElement('span');
 		tag.className = 'kv-select-tag';
-		// 适配本地化显示：当 localizedMode 为 false 时，在必要时显示 "value (label)"
+
+		// 获取选项配置
 		const option = fieldConfig?.options?.find((opt) => opt.value === value);
+
+		// 整个标签填充颜色
+		if (option?.color) {
+			tag.style.backgroundColor = option.color;
+		} else {
+			// 如果没有颜色配置，使用默认样式
+			tag.style.backgroundColor = 'var(--vscode-badge-background)';
+			tag.style.color = 'var(--vscode-badge-foreground)';
+			tag.style.textShadow = 'none';
+		}
+
+		// 添加文本内容
+		// 适配本地化显示：当 localizedMode 为 false 时，在必要时显示 "value (label)"
 		if (localizedMode) {
 			tag.textContent = option?.label || option?.value || value;
 		} else {
@@ -2661,6 +2684,7 @@ function updateSelectDisplay(select, display, fieldConfig) {
 				tag.textContent = option?.value || value;
 			}
 		}
+
 		display.appendChild(tag);
 	});
 }
@@ -2789,6 +2813,7 @@ function openMultiSelectDropdown(context) {
 		const item = document.createElement('div');
 		item.className = 'kv-quickpick-item';
 		item.dataset.value = option.value;
+
 		const textWrapper = document.createElement('div');
 		textWrapper.className = 'kv-quickpick-text';
 		const hasCustomLabel = option.label && option.label !== option.value;
@@ -2809,7 +2834,18 @@ function openMultiSelectDropdown(context) {
 
 		const labelEl = document.createElement('div');
 		labelEl.className = 'kv-quickpick-label';
-		labelEl.textContent = primaryText;
+
+		// 主文本使用颜色标签样式（像单元格标签一样）
+		if (option.color) {
+			const colorTag = document.createElement('span');
+			colorTag.className = 'kv-select-tag';
+			colorTag.style.backgroundColor = option.color;
+			colorTag.textContent = primaryText;
+			labelEl.appendChild(colorTag);
+		} else {
+			labelEl.textContent = primaryText;
+		}
+
 		textWrapper.appendChild(labelEl);
 		if (detailText) {
 			const detailEl = document.createElement('div');
@@ -4243,12 +4279,14 @@ function cloneColumnOptionEntries(options) {
 		const value = typeof option?.value === 'string' ? option.value : '';
 		const label = typeof option?.label === 'string' ? option.label : '';
 		const description = typeof option?.description === 'string' ? option.description : '';
+		const color = typeof option?.color === 'string' ? option.color : '';
 		const hasFallbackFlag = option && typeof option === 'object' && Object.prototype.hasOwnProperty.call(option, 'labelIsFallback');
 		const labelIsFallback = hasFallbackFlag ? option.labelIsFallback === true : false;
 		return {
 			value,
 			label,
 			description,
+			color,
 			labelIsFallback,
 		};
 	});
@@ -5984,6 +6022,16 @@ function renderColumnOptionsEditorOptions() {
 		const row = document.createElement('div');
 		row.className = 'kv-column-options-row';
 		row.dataset.index = String(index);
+
+		// 颜色选择器
+		const colorPicker = document.createElement('div');
+		colorPicker.className = 'kv-option-color-picker';
+		colorPicker.dataset.role = 'color';
+		colorPicker.dataset.index = String(index);
+		colorPicker.style.backgroundColor = option.color || getAutoColor(index);
+		colorPicker.title = '点击选择颜色';
+		row.appendChild(colorPicker);
+
 		const valueInput = document.createElement('input');
 		valueInput.type = 'text';
 		valueInput.className = 'kv-ability-editor-input kv-column-options-input';
@@ -6076,10 +6124,95 @@ function handleColumnOptionsEditorInput(event) {
 	resetColumnOptionsEditorError();
 }
 
+function openColorPicker(targetElement, optionIndex) {
+	if (colorPickerPopup) {
+		closeColorPicker();
+	}
+
+	const overlay = document.createElement('div');
+	overlay.className = 'kv-color-picker-overlay';
+
+	const popup = document.createElement('div');
+	popup.className = 'kv-color-picker-popup';
+
+	// 预定义颜色网格
+	const grid = document.createElement('div');
+	grid.className = 'kv-color-picker-grid';
+	DEFAULT_COLORS.forEach(color => {
+		const colorBtn = document.createElement('button');
+		colorBtn.type = 'button';
+		colorBtn.className = 'kv-color-picker-btn';
+		colorBtn.style.backgroundColor = color;
+		colorBtn.dataset.color = color;
+		colorBtn.addEventListener('click', () => {
+			if (columnOptionsEditorState) {
+				columnOptionsEditorState.options[optionIndex].color = color;
+				targetElement.style.backgroundColor = color;
+				closeColorPicker();
+			}
+		});
+		grid.appendChild(colorBtn);
+	});
+	popup.appendChild(grid);
+
+	// 自定义颜色输入
+	const customWrapper = document.createElement('div');
+	customWrapper.className = 'kv-color-picker-custom';
+	const customLabel = document.createElement('label');
+	customLabel.textContent = '自定义: ';
+	const customInput = document.createElement('input');
+	customInput.type = 'color';
+	customInput.value = columnOptionsEditorState?.options[optionIndex]?.color || DEFAULT_COLORS[0];
+	customInput.addEventListener('change', () => {
+		if (columnOptionsEditorState) {
+			columnOptionsEditorState.options[optionIndex].color = customInput.value;
+			targetElement.style.backgroundColor = customInput.value;
+			closeColorPicker();
+		}
+	});
+	customLabel.appendChild(customInput);
+	customWrapper.appendChild(customLabel);
+	popup.appendChild(customWrapper);
+
+	overlay.appendChild(popup);
+	document.body.appendChild(overlay);
+
+	colorPickerPopup = { overlay, popup, targetElement };
+
+	// 定位弹窗
+	const rect = targetElement.getBoundingClientRect();
+	popup.style.left = `${rect.left}px`;
+	popup.style.top = `${rect.bottom + 5}px`;
+
+	overlay.addEventListener('click', (e) => {
+		if (e.target === overlay) {
+			closeColorPicker();
+		}
+	});
+}
+
+function closeColorPicker() {
+	if (colorPickerPopup) {
+		colorPickerPopup.overlay.remove();
+		colorPickerPopup = null;
+	}
+}
+
 function handleColumnOptionsEditorClick(event) {
 	if (!columnOptionsEditorState) {
 		return;
 	}
+
+	// 处理颜色选择器点击
+	const colorPicker = event.target instanceof HTMLElement ? event.target.closest('[data-role="color"]') : null;
+	if (colorPicker) {
+		const index = Number(colorPicker.dataset.index ?? '-1');
+		if (!Number.isNaN(index) && index >= 0) {
+			openColorPicker(colorPicker, index);
+		}
+		return;
+	}
+
 	const target = event.target instanceof HTMLElement ? event.target.closest('button[data-role]') : null;
 	if (!(target instanceof HTMLButtonElement)) {
 		return;
@@ -6163,9 +6296,10 @@ function submitColumnOptionsEditor() {
 	const isFileScope = scopeCheckbox ? scopeCheckbox.checked : true; // 默认勾选
 	const isMultiple = multiSelectCheckbox ? multiSelectCheckbox.checked : false;
 	const separator = separatorInput ? (separatorInput.value || '|') : '|';
-	const normalized = options.map((option) => {
+	const normalized = options.map((option, index) => {
 		const value = (option.value || '').trim();
 		const description = (option.description || '').trim();
+		const color = option.color || getAutoColor(index);
 		const hasFallback = option.labelIsFallback === true;
 		const rawLabel = hasFallback ? '' : (option.label || '').trim();
 		const labelIsFallback = hasFallback || rawLabel.length === 0;
@@ -6173,6 +6307,7 @@ function submitColumnOptionsEditor() {
 			value,
 			label: rawLabel,
 			description,
+			color,
 			labelIsFallback,
 		};
 	});
@@ -6190,6 +6325,9 @@ function submitColumnOptionsEditor() {
 		}
 		if (entry.description) {
 			result.description = entry.description;
+		}
+		if (entry.color) {
+			result.color = entry.color;
 		}
 		return result;
 	});
