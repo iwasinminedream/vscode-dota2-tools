@@ -1038,6 +1038,11 @@ function handleRowClipboardShortcuts(event) {
 		return;
 	}
 
+	// 如果有选中的单元格，优先使用单元格复制粘贴
+	if (selectedCell) {
+		return;
+	}
+
 	// 复制需要有选中的行
 	if (isCopy && selectedRows.size === 0) {
 		return;
