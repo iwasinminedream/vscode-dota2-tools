@@ -2326,6 +2326,27 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 			console.log(`[handleBulkInsertRows] 完成插入，共插入 ${insertedCount} 行`);
 
+			// 收集所有需要保存的公式
+			const formulasToSave: Array<{ column: string; rowId: string; rowIndex: number; formula: string; }> = [];
+			message.rows.forEach((rowData, index) => {
+				if (rowData.formulas && typeof rowData.formulas === 'object') {
+					const targetRowIndex = insertionRowIndex + index;
+					const newRowKey = newEntries[insertionEntryIndex + index]?.[0] as string;
+					if (newRowKey) {
+						for (const [column, formula] of Object.entries(rowData.formulas)) {
+							if (typeof formula === 'string' && formula.trim().startsWith('=')) {
+								formulasToSave.push({
+									column,
+									rowId: newRowKey,
+									rowIndex: targetRowIndex,
+									formula: formula.trim(),
+								});
+							}
+						}
+					}
+				}
+			});
+
 			const reorderedBlock: Record<string, unknown> = {};
 			newEntries.forEach(([key, value]) => {
 				reorderedBlock[key] = value;
@@ -2345,6 +2366,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				this.shiftFormulaRowIndices(document, insertionRowIndex, insertedCount);
 			} catch (error) {
 				console.warn('[kvEditorProvider] Failed to shift formula row indices after bulk insertion:', error);
+			}
+
+			// 保存所有公式
+			if (formulasToSave.length > 0) {
+				console.log(`[handleBulkInsertRows] 保存 ${formulasToSave.length} 个公式`);
+				for (const formulaData of formulasToSave) {
+					await this.handleSaveFormula(document, formulaData);
+				}
 			}
 
 			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
@@ -3295,8 +3324,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			overrides.columnSettings[columnKey][scope] = { multiple, separator };
 
-			// 清理空的设置
-			if (!overrides.columnSettings[columnKey][scope]?.multiple && !overrides.columnSettings[columnKey][scope]?.separator) {
+			// 清理空的设置（只有在两个字段都未定义时才删除）
+			const scopeSettings = overrides.columnSettings[columnKey][scope];
+			if (scopeSettings && typeof scopeSettings.multiple !== 'boolean' && !scopeSettings.separator) {
 				delete overrides.columnSettings[columnKey][scope];
 			}
 			if (Object.keys(overrides.columnSettings[columnKey]).length === 0) {
@@ -3771,10 +3801,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const scopeKeys = Object.keys(scopeMap).sort((a, b) => a.localeCompare(b));
 				for (const scopeKey of scopeKeys) {
 					const settings = scopeMap[scopeKey as KvEditorColumnOptionsScope];
-					if (settings && (settings.multiple || settings.separator)) {
+					if (settings && (typeof settings.multiple === 'boolean' || settings.separator)) {
 						const entry: KvEditorColumnMultiSelectSettings = {};
-						if (settings.multiple) {
-							entry.multiple = true;
+						if (typeof settings.multiple === 'boolean') {
+							entry.multiple = settings.multiple;
 						}
 						if (settings.separator) {
 							entry.separator = settings.separator;
@@ -3822,6 +3852,28 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					}
 					if (Object.keys(columnOptionsOutput).length) {
 						fileOutput.columnOptions = columnOptionsOutput;
+					}
+				}
+
+				// 序列化文件级别 columnSettings
+				if (fileConfig.columnSettings) {
+					const columnKeys = Object.keys(fileConfig.columnSettings).sort((a, b) => a.localeCompare(b));
+					const columnSettingsOutput: Record<string, KvEditorColumnMultiSelectSettings> = {};
+					for (const columnKey of columnKeys) {
+						const settings = fileConfig.columnSettings[columnKey];
+						if (settings && (typeof settings.multiple === 'boolean' || settings.separator)) {
+							const entry: KvEditorColumnMultiSelectSettings = {};
+							if (typeof settings.multiple === 'boolean') {
+								entry.multiple = settings.multiple;
+							}
+							if (settings.separator) {
+								entry.separator = settings.separator;
+							}
+							columnSettingsOutput[columnKey] = entry;
+						}
+					}
+					if (Object.keys(columnSettingsOutput).length) {
+						fileOutput.columnSettings = columnSettingsOutput;
 					}
 				}
 
@@ -4291,6 +4343,7 @@ interface KvEditorBulkInsertRowsMessage {
 		id: string;
 		values: Record<string, string>;
 		abilityValues?: Array<Record<string, unknown>>;
+		formulas?: Record<string, string>;
 	}>;
 }
 

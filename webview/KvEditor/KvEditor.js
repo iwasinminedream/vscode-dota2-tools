@@ -905,13 +905,17 @@ function copySelectedCell() {
 		return;
 	}
 	let text = '';
+	// 获取单元格的公式定义（如果有）
+	const formula = getFormulaDefinition(selectedCell.column, selectedCell.rowId, selectedCell.rowIndex);
 	if (selectedCell.dataType === 'abilityValues') {
 		const entries = cloneAbilityValuesEntries(selectedCell.abilityEntries || []);
 		clipboardData = {
 			type: 'abilityValues',
 			entries,
 			hasAbilityField: Boolean(selectedCell.hasAbilityField),
-			text: selectedCell.value ?? ''
+			text: selectedCell.value ?? '',
+			formula: formula?.formula,
+			sourceRowIndex: selectedCell.rowIndex
 		};
 		text = clipboardData.text;
 	} else if (selectedCell.editable && selectedCell.element) {
@@ -920,7 +924,9 @@ function copySelectedCell() {
 			type: 'cell',
 			value,
 			column: selectedCell.column,
-			text: value
+			text: value,
+			formula: formula?.formula,
+			sourceRowIndex: selectedCell.rowIndex
 		};
 		text = value;
 	} else {
@@ -929,7 +935,9 @@ function copySelectedCell() {
 			type: 'text',
 			value,
 			column: selectedCell.column,
-			text: value
+			text: value,
+			formula: formula?.formula,
+			sourceRowIndex: selectedCell.rowIndex
 		};
 		text = value;
 	}
@@ -993,6 +1001,27 @@ function pasteToSelectedCell() {
 	}
 	if (clipboardData.type === 'abilityValues') {
 		return;
+	}
+	// 处理公式：如果复制的数据包含公式，则调整行引用并保存
+	if (clipboardData.formula && typeof clipboardData.formula === 'string') {
+		const sourceRow = clipboardData.sourceRowIndex;
+		const targetRow = selectedCell.rowIndex;
+		if (Number.isFinite(sourceRow) && Number.isFinite(targetRow)) {
+			const rowOffset = targetRow - sourceRow;
+			const adjustedFormula = offsetFormulaReferences(clipboardData.formula, rowOffset);
+			// 设置公式定义
+			setFormulaDefinition(selectedCell.column, selectedCell.rowId, selectedCell.rowIndex, adjustedFormula);
+			// 保存公式到后端
+			postSaveFormulaMessage({
+				column: selectedCell.column,
+				rowId: selectedCell.rowId,
+				rowIndex: selectedCell.rowIndex,
+				formula: adjustedFormula
+			});
+			// 重新计算公式
+			recalculateFormulas({ emitUpdates: true });
+			return;
+		}
 	}
 	const newValue = String(clipboardData.value ?? clipboardData.text ?? '');
 	setElementValue(selectedCell.element, newValue, selectedCell.fieldConfig);
@@ -1139,11 +1168,26 @@ function copySelectedRows() {
 			const rowCopy = {
 				id: row.id,
 				values: { ...row.values },
+				rowIndex: rowIndex,
 			};
 
 			// 复制 abilityValues 如果存在
 			if (row.abilityValues) {
 				rowCopy.abilityValues = cloneAbilityValuesEntries(row.abilityValues);
+			}
+
+			// 收集该行所有列的公式
+			const formulas = {};
+			if (latestPayload.columns && Array.isArray(latestPayload.columns)) {
+				for (const column of latestPayload.columns) {
+					const formula = getFormulaDefinition(column.key, row.id, rowIndex);
+					if (formula && formula.formula) {
+						formulas[column.key] = formula.formula;
+					}
+				}
+			}
+			if (Object.keys(formulas).length > 0) {
+				rowCopy.formulas = formulas;
 			}
 
 			rowsToCopy.push(rowCopy);
@@ -1178,12 +1222,39 @@ function pasteRows() {
 	console.log(`[pasteRows] 准备粘贴 ${copiedRowsData.length} 行:`, copiedRowsData);
 	console.log(`[pasteRows] 插入位置: ${insertAfterIndex + 1}`);
 
+	// 调整公式行引用
+	const rowsWithAdjustedFormulas = copiedRowsData.map((rowData, index) => {
+		const targetRowIndex = insertAfterIndex + 1 + index;
+		const sourceRowIndex = rowData.rowIndex;
+		const adjustedRow = {
+			id: rowData.id,
+			values: rowData.values,
+		};
+		if (rowData.abilityValues) {
+			adjustedRow.abilityValues = rowData.abilityValues;
+		}
+		// 如果有公式，调整行引用
+		if (rowData.formulas && typeof rowData.formulas === 'object' && Number.isFinite(sourceRowIndex)) {
+			const rowOffset = targetRowIndex - sourceRowIndex;
+			const adjustedFormulas = {};
+			for (const [column, formula] of Object.entries(rowData.formulas)) {
+				if (typeof formula === 'string') {
+					adjustedFormulas[column] = offsetFormulaReferences(formula, rowOffset);
+				}
+			}
+			if (Object.keys(adjustedFormulas).length > 0) {
+				adjustedRow.formulas = adjustedFormulas;
+			}
+		}
+		return adjustedRow;
+	});
+
 	// 发送批量插入请求
 	vscode.postMessage({
 		type: 'bulkInsertRows',
 		payload: {
 			insertAfterIndex,
-			rows: copiedRowsData,
+			rows: rowsWithAdjustedFormulas,
 		},
 	});
 
