@@ -10,11 +10,19 @@ const emptySection = document.getElementById('kv-empty');
 const errorSection = document.getElementById('kv-error');
 const formulaAddressInput = document.getElementById('kv-editor-address');
 const formulaValueInput = document.getElementById('kv-editor-value');
+const formulaHelpBtn = document.getElementById('kv-formula-help');
 
 if (emptySection) {
 	emptySection.textContent = 'Loading KV data...';
 }
 setSectionVisibility({ showTable: false, showEmpty: true, showError: false });
+
+// 绑定公式帮助按钮
+if (formulaHelpBtn) {
+	formulaHelpBtn.addEventListener('click', () => {
+		vscode.postMessage({ type: 'openFormulaHelp' });
+	});
+}
 
 // 绑定"用文本编辑器打开"按钮事件
 if (openTextEditorBtn) {
@@ -155,6 +163,21 @@ const FORMULA_ERROR_VALUE = '#ERROR!';
 const FORMULA_CYCLE_VALUE = '#CYCLE!';
 
 const formulaDefinitions = new Map();
+
+// 预定义的颜色选项
+const DEFAULT_COLORS = [
+	'#4A90E2', '#50C878', '#F5A623', '#E24A4A', '#9B59B6',
+	'#1ABC9C', '#E67E22', '#3498DB', '#E91E63', '#9C27B0',
+	'#00BCD4', '#8BC34A', '#FFC107', '#FF5722', '#607D8B',
+	'#795548', '#FF9800', '#CDDC39', '#03A9F4', '#673AB7'
+];
+
+let colorPickerPopup = null;
+
+// 自动分配颜色
+function getAutoColor(index) {
+	return DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+}
 const formulaComputedValues = new Map();
 
 const FILL_DEFAULT_STEP = 1;
@@ -897,13 +920,17 @@ function copySelectedCell() {
 		return;
 	}
 	let text = '';
+	// 获取单元格的公式定义（如果有）
+	const formula = getFormulaDefinition(selectedCell.column, selectedCell.rowId, selectedCell.rowIndex);
 	if (selectedCell.dataType === 'abilityValues') {
 		const entries = cloneAbilityValuesEntries(selectedCell.abilityEntries || []);
 		clipboardData = {
 			type: 'abilityValues',
 			entries,
 			hasAbilityField: Boolean(selectedCell.hasAbilityField),
-			text: selectedCell.value ?? ''
+			text: selectedCell.value ?? '',
+			formula: formula?.formula,
+			sourceRowIndex: selectedCell.rowIndex
 		};
 		text = clipboardData.text;
 	} else if (selectedCell.editable && selectedCell.element) {
@@ -912,7 +939,9 @@ function copySelectedCell() {
 			type: 'cell',
 			value,
 			column: selectedCell.column,
-			text: value
+			text: value,
+			formula: formula?.formula,
+			sourceRowIndex: selectedCell.rowIndex
 		};
 		text = value;
 	} else {
@@ -921,7 +950,9 @@ function copySelectedCell() {
 			type: 'text',
 			value,
 			column: selectedCell.column,
-			text: value
+			text: value,
+			formula: formula?.formula,
+			sourceRowIndex: selectedCell.rowIndex
 		};
 		text = value;
 	}
@@ -986,6 +1017,27 @@ function pasteToSelectedCell() {
 	if (clipboardData.type === 'abilityValues') {
 		return;
 	}
+	// 处理公式：如果复制的数据包含公式，则调整行引用并保存
+	if (clipboardData.formula && typeof clipboardData.formula === 'string') {
+		const sourceRow = clipboardData.sourceRowIndex;
+		const targetRow = selectedCell.rowIndex;
+		if (Number.isFinite(sourceRow) && Number.isFinite(targetRow)) {
+			const rowOffset = targetRow - sourceRow;
+			const adjustedFormula = offsetFormulaReferences(clipboardData.formula, rowOffset);
+			// 设置公式定义
+			setFormulaDefinition(selectedCell.column, selectedCell.rowId, selectedCell.rowIndex, adjustedFormula);
+			// 保存公式到后端
+			postSaveFormulaMessage({
+				column: selectedCell.column,
+				rowId: selectedCell.rowId,
+				rowIndex: selectedCell.rowIndex,
+				formula: adjustedFormula
+			});
+			// 重新计算公式
+			recalculateFormulas({ emitUpdates: true });
+			return;
+		}
+	}
 	const newValue = String(clipboardData.value ?? clipboardData.text ?? '');
 	setElementValue(selectedCell.element, newValue, selectedCell.fieldConfig);
 	if (selectedCell.usesDropdown) {
@@ -1027,6 +1079,11 @@ function handleRowClipboardShortcuts(event) {
 	const isPaste = event.key?.toLowerCase() === 'v';
 
 	if (!(event.ctrlKey || event.metaKey) || (!isCopy && !isPaste)) {
+		return;
+	}
+
+	// 如果有选中的单元格，优先使用单元格复制粘贴
+	if (selectedCell) {
 		return;
 	}
 
@@ -1126,6 +1183,7 @@ function copySelectedRows() {
 			const rowCopy = {
 				id: row.id,
 				values: { ...row.values },
+				rowIndex: rowIndex,
 			};
 
 			// 复制 abilityValues 如果存在
@@ -1133,13 +1191,26 @@ function copySelectedRows() {
 				rowCopy.abilityValues = cloneAbilityValuesEntries(row.abilityValues);
 			}
 
-			rowsToCopy.push(rowCopy);
+			// 收集该行所有列的公式
+			const formulas = {};
+			if (latestPayload.columns && Array.isArray(latestPayload.columns)) {
+				for (const column of latestPayload.columns) {
+					// columns 是字符串数组,不是对象数组
+					const columnKey = typeof column === 'string' ? column : column.key;
+					const formula = getFormulaDefinition(columnKey, row.id, rowIndex);
+					if (formula && formula.formula) {
+						formulas[columnKey] = formula.formula;
+					}
+				}
+			}
+			if (Object.keys(formulas).length > 0) {
+				rowCopy.formulas = formulas;
+			} rowsToCopy.push(rowCopy);
 		}
 	}
 
 	if (rowsToCopy.length > 0) {
 		copiedRowsData = rowsToCopy;
-		console.log(`已复制 ${rowsToCopy.length} 行数据`);
 
 		// 可选：显示提示信息
 		if (tableSection) {
@@ -1162,19 +1233,41 @@ function pasteRows() {
 		insertAfterIndex = latestPayload.rows.length - 1;
 	}
 
-	console.log(`[pasteRows] 准备粘贴 ${copiedRowsData.length} 行:`, copiedRowsData);
-	console.log(`[pasteRows] 插入位置: ${insertAfterIndex + 1}`);
+	// 调整公式行引用
+	const rowsWithAdjustedFormulas = copiedRowsData.map((rowData, index) => {
+		const targetRowIndex = insertAfterIndex + 1 + index;
+		const sourceRowIndex = rowData.rowIndex;
+		const adjustedRow = {
+			id: rowData.id,
+			values: rowData.values,
+		};
+		if (rowData.abilityValues) {
+			adjustedRow.abilityValues = rowData.abilityValues;
+		}
+		// 如果有公式，调整行引用
+		if (rowData.formulas && typeof rowData.formulas === 'object' && Number.isFinite(sourceRowIndex)) {
+			const rowOffset = targetRowIndex - sourceRowIndex;
+			const adjustedFormulas = {};
+			for (const [column, formula] of Object.entries(rowData.formulas)) {
+				if (typeof formula === 'string') {
+					adjustedFormulas[column] = offsetFormulaReferences(formula, rowOffset);
+				}
+			}
+			if (Object.keys(adjustedFormulas).length > 0) {
+				adjustedRow.formulas = adjustedFormulas;
+			}
+		}
+		return adjustedRow;
+	});
 
 	// 发送批量插入请求
 	vscode.postMessage({
 		type: 'bulkInsertRows',
 		payload: {
 			insertAfterIndex,
-			rows: copiedRowsData,
+			rows: rowsWithAdjustedFormulas,
 		},
 	});
-
-	console.log(`粘贴 ${copiedRowsData.length} 行到位置 ${insertAfterIndex + 1}`);
 
 	// 显示提示信息
 	if (tableSection) {
@@ -2566,8 +2659,22 @@ function updateSelectDisplay(select, display, fieldConfig) {
 	values.forEach((value) => {
 		const tag = document.createElement('span');
 		tag.className = 'kv-select-tag';
-		// 适配本地化显示：当 localizedMode 为 false 时，在必要时显示 "value (label)"
+
+		// 获取选项配置
 		const option = fieldConfig?.options?.find((opt) => opt.value === value);
+
+		// 整个标签填充颜色
+		if (option?.color) {
+			tag.style.backgroundColor = option.color;
+		} else {
+			// 如果没有颜色配置，使用默认样式
+			tag.style.backgroundColor = 'var(--vscode-badge-background)';
+			tag.style.color = 'var(--vscode-badge-foreground)';
+			tag.style.textShadow = 'none';
+		}
+
+		// 添加文本内容
+		// 适配本地化显示：当 localizedMode 为 false 时，在必要时显示 "value (label)"
 		if (localizedMode) {
 			tag.textContent = option?.label || option?.value || value;
 		} else {
@@ -2577,6 +2684,7 @@ function updateSelectDisplay(select, display, fieldConfig) {
 				tag.textContent = option?.value || value;
 			}
 		}
+
 		display.appendChild(tag);
 	});
 }
@@ -2705,6 +2813,7 @@ function openMultiSelectDropdown(context) {
 		const item = document.createElement('div');
 		item.className = 'kv-quickpick-item';
 		item.dataset.value = option.value;
+
 		const textWrapper = document.createElement('div');
 		textWrapper.className = 'kv-quickpick-text';
 		const hasCustomLabel = option.label && option.label !== option.value;
@@ -2725,7 +2834,18 @@ function openMultiSelectDropdown(context) {
 
 		const labelEl = document.createElement('div');
 		labelEl.className = 'kv-quickpick-label';
-		labelEl.textContent = primaryText;
+
+		// 主文本使用颜色标签样式（像单元格标签一样）
+		if (option.color) {
+			const colorTag = document.createElement('span');
+			colorTag.className = 'kv-select-tag';
+			colorTag.style.backgroundColor = option.color;
+			colorTag.textContent = primaryText;
+			labelEl.appendChild(colorTag);
+		} else {
+			labelEl.textContent = primaryText;
+		}
+
 		textWrapper.appendChild(labelEl);
 		if (detailText) {
 			const detailEl = document.createElement('div');
@@ -4159,12 +4279,14 @@ function cloneColumnOptionEntries(options) {
 		const value = typeof option?.value === 'string' ? option.value : '';
 		const label = typeof option?.label === 'string' ? option.label : '';
 		const description = typeof option?.description === 'string' ? option.description : '';
+		const color = typeof option?.color === 'string' ? option.color : '';
 		const hasFallbackFlag = option && typeof option === 'object' && Object.prototype.hasOwnProperty.call(option, 'labelIsFallback');
 		const labelIsFallback = hasFallbackFlag ? option.labelIsFallback === true : false;
 		return {
 			value,
 			label,
 			description,
+			color,
 			labelIsFallback,
 		};
 	});
@@ -5900,6 +6022,16 @@ function renderColumnOptionsEditorOptions() {
 		const row = document.createElement('div');
 		row.className = 'kv-column-options-row';
 		row.dataset.index = String(index);
+
+		// 颜色选择器
+		const colorPicker = document.createElement('div');
+		colorPicker.className = 'kv-option-color-picker';
+		colorPicker.dataset.role = 'color';
+		colorPicker.dataset.index = String(index);
+		colorPicker.style.backgroundColor = option.color || getAutoColor(index);
+		colorPicker.title = '点击选择颜色';
+		row.appendChild(colorPicker);
+
 		const valueInput = document.createElement('input');
 		valueInput.type = 'text';
 		valueInput.className = 'kv-ability-editor-input kv-column-options-input';
@@ -5992,10 +6124,95 @@ function handleColumnOptionsEditorInput(event) {
 	resetColumnOptionsEditorError();
 }
 
+function openColorPicker(targetElement, optionIndex) {
+	if (colorPickerPopup) {
+		closeColorPicker();
+	}
+
+	const overlay = document.createElement('div');
+	overlay.className = 'kv-color-picker-overlay';
+
+	const popup = document.createElement('div');
+	popup.className = 'kv-color-picker-popup';
+
+	// 预定义颜色网格
+	const grid = document.createElement('div');
+	grid.className = 'kv-color-picker-grid';
+	DEFAULT_COLORS.forEach(color => {
+		const colorBtn = document.createElement('button');
+		colorBtn.type = 'button';
+		colorBtn.className = 'kv-color-picker-btn';
+		colorBtn.style.backgroundColor = color;
+		colorBtn.dataset.color = color;
+		colorBtn.addEventListener('click', () => {
+			if (columnOptionsEditorState) {
+				columnOptionsEditorState.options[optionIndex].color = color;
+				targetElement.style.backgroundColor = color;
+				closeColorPicker();
+			}
+		});
+		grid.appendChild(colorBtn);
+	});
+	popup.appendChild(grid);
+
+	// 自定义颜色输入
+	const customWrapper = document.createElement('div');
+	customWrapper.className = 'kv-color-picker-custom';
+	const customLabel = document.createElement('label');
+	customLabel.textContent = '自定义: ';
+	const customInput = document.createElement('input');
+	customInput.type = 'color';
+	customInput.value = columnOptionsEditorState?.options[optionIndex]?.color || DEFAULT_COLORS[0];
+	customInput.addEventListener('change', () => {
+		if (columnOptionsEditorState) {
+			columnOptionsEditorState.options[optionIndex].color = customInput.value;
+			targetElement.style.backgroundColor = customInput.value;
+			closeColorPicker();
+		}
+	});
+	customLabel.appendChild(customInput);
+	customWrapper.appendChild(customLabel);
+	popup.appendChild(customWrapper);
+
+	overlay.appendChild(popup);
+	document.body.appendChild(overlay);
+
+	colorPickerPopup = { overlay, popup, targetElement };
+
+	// 定位弹窗
+	const rect = targetElement.getBoundingClientRect();
+	popup.style.left = `${rect.left}px`;
+	popup.style.top = `${rect.bottom + 5}px`;
+
+	overlay.addEventListener('click', (e) => {
+		if (e.target === overlay) {
+			closeColorPicker();
+		}
+	});
+}
+
+function closeColorPicker() {
+	if (colorPickerPopup) {
+		colorPickerPopup.overlay.remove();
+		colorPickerPopup = null;
+	}
+}
+
 function handleColumnOptionsEditorClick(event) {
 	if (!columnOptionsEditorState) {
 		return;
 	}
+
+	// 处理颜色选择器点击
+	const colorPicker = event.target instanceof HTMLElement ? event.target.closest('[data-role="color"]') : null;
+	if (colorPicker) {
+		const index = Number(colorPicker.dataset.index ?? '-1');
+		if (!Number.isNaN(index) && index >= 0) {
+			openColorPicker(colorPicker, index);
+		}
+		return;
+	}
+
 	const target = event.target instanceof HTMLElement ? event.target.closest('button[data-role]') : null;
 	if (!(target instanceof HTMLButtonElement)) {
 		return;
@@ -6079,9 +6296,10 @@ function submitColumnOptionsEditor() {
 	const isFileScope = scopeCheckbox ? scopeCheckbox.checked : true; // 默认勾选
 	const isMultiple = multiSelectCheckbox ? multiSelectCheckbox.checked : false;
 	const separator = separatorInput ? (separatorInput.value || '|') : '|';
-	const normalized = options.map((option) => {
+	const normalized = options.map((option, index) => {
 		const value = (option.value || '').trim();
 		const description = (option.description || '').trim();
+		const color = option.color || getAutoColor(index);
 		const hasFallback = option.labelIsFallback === true;
 		const rawLabel = hasFallback ? '' : (option.label || '').trim();
 		const labelIsFallback = hasFallback || rawLabel.length === 0;
@@ -6089,6 +6307,7 @@ function submitColumnOptionsEditor() {
 			value,
 			label: rawLabel,
 			description,
+			color,
 			labelIsFallback,
 		};
 	});
@@ -6106,6 +6325,9 @@ function submitColumnOptionsEditor() {
 		}
 		if (entry.description) {
 			result.description = entry.description;
+		}
+		if (entry.color) {
+			result.color = entry.color;
 		}
 		return result;
 	});

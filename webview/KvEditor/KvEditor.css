@@ -97,6 +97,33 @@ body {
 	background: var(--vscode-editor-background);
 }
 
+.kv-formula-help-button {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--vscode-foreground);
+	cursor: pointer;
+	opacity: 0.7;
+	transition: opacity 0.2s, background-color 0.2s;
+	border-radius: 3px;
+}
+
+.kv-formula-help-button:hover {
+	opacity: 1;
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-formula-help-button .codicon {
+	display: inline-block;
+	font-size: 16px;
+}
+
 .kv-formula-bar input {
 	border: 1px solid var(--vscode-panel-border);
 	background: var(--vscode-editor-background);
@@ -2149,35 +2176,155 @@ body.kv-texture-menu-open {
 }
 
 .kv-radio-input:checked~.kv-radio-indicator::before {
+	content: '●';
+}
 
-	/* 临时消息动画 */
-	@keyframes kv-message-slide-in {
-		from {
-			transform: translateX(100%);
-			opacity: 0;
-		}
-
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
+/* 临时消息动画 */
+@keyframes kv-message-slide-in {
+	from {
+		transform: translateX(100%);
+		opacity: 0;
 	}
 
-	@keyframes kv-message-fade-out {
-		from {
-			opacity: 1;
-		}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
 
-		to {
-			opacity: 0;
-		}
+@keyframes kv-message-fade-out {
+	from {
+		opacity: 1;
 	}
 
-	content: '\ebb3';
-	/* codicon-circle-filled */
-	font-family: codicon;
+	to {
+		opacity: 0;
+	}
+}
+
+content: '\ebb3';
+/* codicon-circle-filled */
+font-family: codicon;
 }
 
 .kv-radio-label {
 	flex: 1;
+}
+
+/* 颜色选择器 */
+.kv-option-color-picker {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	border: 2px solid var(--vscode-input-border, #3c3c3c);
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: transform 0.1s ease;
+}
+
+.kv-option-color-picker:hover {
+	transform: scale(1.1);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.kv-color-picker-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 10000;
+	background: transparent;
+}
+
+.kv-color-picker-popup {
+	position: absolute;
+	background: var(--vscode-dropdown-background);
+	border: 1px solid var(--vscode-dropdown-border);
+	border-radius: 4px;
+	padding: 12px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+	z-index: 10001;
+}
+
+.kv-color-picker-grid {
+	display: grid;
+	grid-template-columns: repeat(5, 28px);
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.kv-color-picker-btn {
+	width: 28px;
+	height: 28px;
+	border: 2px solid var(--vscode-input-border, #3c3c3c);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.1s ease;
+	padding: 0;
+}
+
+.kv-color-picker-btn:hover {
+	transform: scale(1.15);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-color-picker-custom {
+	padding-top: 8px;
+	border-top: 1px solid var(--vscode-panel-border);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.kv-color-picker-custom label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	color: var(--vscode-foreground);
+	cursor: pointer;
+}
+
+.kv-color-picker-custom input[type="color"] {
+	width: 40px;
+	height: 28px;
+	border: 1px solid var(--vscode-input-border);
+	border-radius: 4px;
+	cursor: pointer;
+	background: transparent;
+}
+
+/* 选项行中的颜色选择器 */
+.kv-column-options-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+/* 单元格标签中的颜色 - 整个标签填充颜色 */
+.kv-select-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	white-space: nowrap;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	color: #fff;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 快速选择列表中的选项 */
+.kv-quickpick-item {
+	display: flex;
+	align-items: center;
+}
+
+.kv-quickpick-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
