@@ -3362,7 +3362,7 @@ function normalizeAbilityEntriesForPayload(entries) {
 				value: (modifier.value || '').trim(),
 			}))
 			.filter((modifier) => modifier.key.length > 0);
-		const type = entry.type === 'scalar' && normalizedModifiers.length === 0 ? 'scalar' : 'object';
+		const type = normalizedModifiers.length === 0 ? 'scalar' : 'object';
 		return {
 			key: trimmedKey,
 			originalKey: trimmedOriginalKey,
