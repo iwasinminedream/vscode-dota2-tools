@@ -468,8 +468,3 @@
 		"BaseClass"						"special_bonus_base"
 	}
 }
-
-		"BaseClass"						"special_bonus_base"
-	}
-}
-

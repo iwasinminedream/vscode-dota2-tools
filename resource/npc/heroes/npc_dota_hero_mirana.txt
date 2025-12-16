@@ -445,21 +445,3 @@
 
 	
 }
-OTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
-
-	
-}
-OR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
-
-	
-}
-Y_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
-
-	
-}

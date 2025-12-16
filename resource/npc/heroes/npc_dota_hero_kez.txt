@@ -597,33 +597,3 @@
 		}
 	}
 }
-
-
-
-
-
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_SHOW_IN_GUIDES"
-	}
-
-
-	"kez_shadowhawk_passive"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_HIDDEN"
-		"MaxLevel"						"5"
-		"DependentOnAbility"			"kez_ravens_veil"
-
-		// Special
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityValues"
-		{
-			"invis_bonus_duration"				"1"
-			"invis_bonus_crit"					"30 45 60 75"
-		}
-	}
-}
-
-
-
-

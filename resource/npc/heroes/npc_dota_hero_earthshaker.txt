@@ -451,18 +451,3 @@
 		"BaseClass"						"special_bonus_base"
 	}
 }
-eClass"						"special_bonus_base"
-	}
-}
-==================================================
-	"special_bonus_unique_earthshaker_echo_cd"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"ad_linked_abilities"			"earthshaker_echo_slam"				// this is the ability this bonus affects.  This line is required for Ability Draft to correctly choose talents.
-		"BaseClass"						"special_bonus_base"
-	}
-}
-

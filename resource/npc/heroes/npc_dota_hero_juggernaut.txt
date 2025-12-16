@@ -447,29 +447,3 @@
 
 	
 }
-VE"
-		"BaseClass"						"special_bonus_base"
-	}
-		
-
-	
-}
-BUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
-		
-
-	
-}
-bonus_base"
-	}
-		
-
-	
-}
-
-		
-
-	
-}

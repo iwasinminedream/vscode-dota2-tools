@@ -493,7 +493,3 @@
 		"MaxLevel"						"1"
 	}
 }
-llDispellableType"			"SPELL_DISPELLABLE_NO"
-		"MaxLevel"						"1"
-	}
-}

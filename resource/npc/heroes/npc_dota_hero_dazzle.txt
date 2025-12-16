@@ -609,17 +609,3 @@
 
 	
 }
-BaseClass"						"special_bonus_base"
-	}
-
-
-
-	
-}
-"						"special_bonus_base"
-	}
-
-
-
-	
-}

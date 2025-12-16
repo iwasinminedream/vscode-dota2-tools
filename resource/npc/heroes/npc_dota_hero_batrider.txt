@@ -477,7 +477,3 @@
 		"BaseClass"						"special_bonus_base"
 	}
 }
-ITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
-}
