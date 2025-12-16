@@ -32,7 +32,7 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"duration"			"3.5"
+			"duration"			"3.0"
 			"wind_strength"		"240"
 			"radius"			
 			{
@@ -231,7 +231,6 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"15 14 13 12"
 		"AbilityDuration"				"3 4 5 6"
 	
 		// Cost
@@ -274,6 +273,11 @@
 				"special_bonus_facet_windrunner_tailwind"	"=15"				
 			}
 			"duration"					"3 4 5 6"
+			"AbilityCooldown"
+			{
+				"value"									"15 14 13 12"
+				"special_bonus_unique_windranger_4"		"-2"
+			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
 	}
@@ -285,7 +289,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC | DOTA_UNIT_TARGET_BUILDING"
@@ -342,6 +346,10 @@
 				"value"						"-25"
 				"special_bonus_facet_windrunner_whirlwind" "-5"
 				"special_bonus_unique_windranger_8"		"+10"
+
+				// "damage" in attribute name but it's a percentage-based effect
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}
 			"focusfire_fire_on_the_move"	"1"
 			"process_procs"
@@ -390,35 +398,34 @@
 	}
 
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Ability: Innate Like The Wind (min movespeed)
 	//=================================================================================================================
-	"special_bonus_unique_windranger_2"
+	"windrunner_easy_breezy"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_SKIP_FOR_KEYBINDS"
+		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+		"Innate"						"1"
+		"MaxLevel"						"1"
+				
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"value"
+			"min_movespeed"		
 			{
-				"value" "18"
+				"value"						"240"
 			}
+			"max_movespeed"		
+			{
+				"value"						"600"
+			}			
 		}
+		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_windranger_3"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-	}
-
-	//=================================================================================================================
+}
+===============================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_windranger_4"

@@ -172,7 +172,7 @@ export function parsePanelList(context: vscode.ExtensionContext) {
 
 /** 生成音效json */
 export async function vsndGenerator(context: vscode.ExtensionContext) {
-	const sound_path: string = 'E:/Dota Addons/dota2 tracking/root/soundevents';
+	const sound_path: string = 'D:/Dota Addons/dota2 tracking/root/soundevents';
 
 	let json_obj: any = {};
 	await readFolder(sound_path);

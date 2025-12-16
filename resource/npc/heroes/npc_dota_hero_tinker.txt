@@ -78,7 +78,6 @@
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_BUILDING"
 		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_INVULNERABLE"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
 		"AbilityCastAnimation"			"ACT_DOTA_CAST_ABILITY_4"
 		"MaxLevel"						"3"
 		"DependentOnAbility"			"tinker_rearm"
@@ -86,7 +85,7 @@
 		// Stats
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastRange"				"0"
-		"AbilityCooldown"				"80.0"
+		"AbilityCooldown"				"50.0"
 		"AbilityCastPoint"				"0.0"
 		
 		// Item Info
@@ -337,14 +336,14 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_HIDDEN | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
 		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_FOW_VISIBLE | DOTA_UNIT_TARGET_FLAG_NO_INVIS | DOTA_UNIT_TARGET_FLAG_NOT_CREEP_HERO"
 		"FightRecapLevel"				"1"
 		"AbilitySound"					"Hero_Tinker.Heat-Seeking_Missile"
-
+		"MaxLevel"						"1"
 		// Casting
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastPoint"				"0 0 0 0"
@@ -362,7 +361,8 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{ 
-				"damage"			"120 200 280 360"
+				//"damage"			"120 200 280 360"
+				"damage"			"360"
 				"radius"			
 				{
 					"value"	"1500"
@@ -452,7 +452,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_CHANNELLED"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilitySound"					"Hero_Tinker.Rearm"
 		"AbilityDraftExtraAbilities"
 		{
@@ -535,7 +535,8 @@
 				"debuff_duration"		"2"
 		}
 	}
-	//=================================================================================================================
+}
+======================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_tinker"

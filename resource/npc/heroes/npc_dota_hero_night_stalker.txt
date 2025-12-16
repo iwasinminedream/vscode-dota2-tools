@@ -49,7 +49,7 @@
 			"duration_day"			"1.25"
 			"duration_night"
 			{
-				"value"											"2.0 2.5 3 3.5 4"
+				"value"											"1.6 2.2 2.8 3.4 4.0"
 				"special_bonus_facet_night_stalker_voidbringer"	"+0"
 			}
 			"movespeed_slow"		
@@ -79,11 +79,6 @@
 			"max_level_tooltip"
 			{
 				"special_bonus_facet_night_stalker_voidbringer" "=5"
-			}
-			"disable_vision"
-			{
-				"value"			"0"
-				"special_bonus_facet_night_stalker_blinding_void" "1"				
 			}
 			"cast_radius"
 			{
@@ -171,7 +166,7 @@
 			"dps"			
 			{
 				"value"			"25 30 35 40"
-				"special_bonus_unique_night_stalker_crippling_fear_damage" 	"+20"
+				"special_bonus_unique_night_stalker_crippling_fear_damage" 	"+40"
 			}
 			"tick_rate"	"0.1"
 
@@ -258,7 +253,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"AbilitySound"					"Hero_Nightstalker.Darkness"
@@ -268,7 +263,6 @@
 		"AbilityCastPoint"				"0.3 0.3 0.3"
 		"AbilityCastAnimation"			"ACT_DOTA_CAST_ABILITY_4"
 
-		"AbilityCooldown"				"140 135 130"
 		"AbilityManaCost"				"125 175 225"
 			
 		// Special
@@ -285,6 +279,11 @@
 				"value"			"50 100 150"
 				"special_bonus_unique_night_stalker_3"	"+25"
 				"CalculateSpellDamageTooltip"	"0"
+			}
+			"AbilityCooldown"
+			{
+				"value"									"140 135 130"
+				"special_bonus_unique_night_stalker"	"-40"
 			}
 		}
 	}
@@ -305,7 +304,7 @@
 		"AbilityValues"
 		{
 			"hp_regen_during_night_pct"				"20"
-			"hp_regen_during_day_pct"				"20"
+			"hp_regen_during_day_pct"				"0"
 		}
 	}
 
@@ -327,6 +326,10 @@
 			"daytime_change"	"-15"
 			"roshan_initial_move_timer_override"	"1199" // Have Roshan start moving at 20 minutes instead of at 15.
 			"tooltip_nighttime_change"	"15" // Should match daytime_change, just so we can have different tooltips
+		}
+	}
+}
+ have different tooltips
 		}
 	}
 

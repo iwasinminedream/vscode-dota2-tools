@@ -9,7 +9,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
@@ -19,7 +19,7 @@
 
 		// Casting
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCastRange"				"1000"
+		"AbilityCastRange"				"850"
 		"AbilityCastPoint"				"0.3 0.3 0.3 0.3"
 		
 		// Time		
@@ -76,8 +76,8 @@
 			}
 			"penalty_multiplier"		
 			{
-				"value"													"1.5"
-				"special_bonus_unique_silencer"							"+0.5"
+				"value"													"1.25"
+				"special_bonus_unique_silencer"							"+0.25"
 			}
 			"duration_percent_per_stolen_int"
 			{
@@ -135,11 +135,11 @@
 			}
 			"int_steal"		
 			{
-				"value"		"1 2 3 4 4"
+				"value"		"2 3 4 5 5"
 			}
 			"int_steal_duration"		
 			{
-				"value"								"20 25 30 35 35"
+				"value"								"10 20 30 40 40"
 				"special_bonus_unique_silencer_5"	"+40"
 			}
 			"bounce_range"
@@ -238,7 +238,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
@@ -250,10 +250,6 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastPoint"				"0.3 0.3 0.3"
 		"AbilityCastAnimation"			"ACT_DOTA_CAST_ABILITY_4"
-
-		// Time		
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"120"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -291,6 +287,11 @@
 			"applies_curse"
 			{
 				"special_bonus_scepter"		"+1"
+			}
+			"AbilityCooldown"
+			{
+				"value"								"120"
+				"special_bonus_unique_silencer_7"	"-20"
 			}
 		}
 	}
@@ -336,7 +337,7 @@
 		"IsBreakable"					"1"
 		"AbilityValues"
 		{
-			"damage_pct"				"10 15 20 25"
+			"damage_pct"				"8 12 16 20"
 		}
 	}
 
@@ -352,6 +353,11 @@
 		//-------------------------------------------------------------------------------------------------------------
 
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_HIDDEN"
+		"MaxLevel"						"1"
+		"IsBreakable"					"1"
+	}
+}
+_HIDDEN"
 		"MaxLevel"						"1"
 		"IsBreakable"					"1"
 	}

@@ -50,6 +50,27 @@
 	}
 
 	//=================================================================================================================
+	// Rattletrap: Jetpack Toggle
+	//=================================================================================================================
+	"rattletrap_jetpack_toggle"
+	{
+		// General
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_HIDDEN | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL"
+		"MaxLevel"						"1"
+		//"IsGrantedByShard"				"1"
+		
+		// Casting
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCastPoint"				"0 0 0"
+ 		"AbilityCastAnimation"			"ACT_INVALID"
+
+		// Time		
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCooldown"				"1.0 1.0 1.0"
+	}
+
+	//=================================================================================================================
 	// Rattletrap: Overclocking (scepter ability)
 	//=================================================================================================================
 	"rattletrap_overclocking"
@@ -92,7 +113,7 @@
 			"rocket_flare_interval"				"0.15"
 			"rocket_flare_offset_pct"		"125"
 			"rocket_flare_rockets"				"2"
-			"rocket_flare_cooldown"				"3"
+			"rocket_flare_cooldown"				"3.5"
 			"jetpack_bonus_speed"			"40"
 			"jetpack_turn_rate"				"75"
 		}
@@ -244,6 +265,10 @@
 			"projectile_distance"						"1000"
 			"projectile_speed"							"1000"
 
+			"debuff_immune_inside_cogs"
+			{
+				"special_bonus_unique_clockwerk_6"		"1"
+			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
 	}
@@ -310,6 +335,10 @@
 			"projectile_vision_radius"		"250"
 			"projectile_vision_duration"	"1.0"
 			"projectile_vision_tick_rate"	"0.15"
+			"true_sight"
+			{
+				"special_bonus_unique_clockwerk_4"		"1"
+			}
 		}	
 	}
 	
@@ -321,7 +350,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES_STRONG"
@@ -436,39 +465,8 @@
 			}
 		}
 	}
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_clockwerk"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-
-	}
-
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_clockwerk_3"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"AbilityValues"
-		{
-			"value"
-			{
-				"value" "24"
-			}
-		}
-	}
-
-
-	//=================================================================================================================
+}
+=================================================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_clockwerk_4"

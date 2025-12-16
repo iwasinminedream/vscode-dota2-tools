@@ -27,7 +27,7 @@
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityManaCost"				"90"		
+		"AbilityManaCost"				"75"		
 
 		// Cast Range
 		//-------------------------------------------------------------------------------------------------------------
@@ -47,7 +47,7 @@
 				"value"					"5"
 				"special_bonus_unique_visage_grave_chill_duration"			"+2"
 			}
-			"movespeed_bonus"				"12 16 20 24"
+			"movespeed_bonus"				"12 18 24 30"
 			"attackspeed_bonus"				"25 40 55 70"
 			"radius"
 			{
@@ -61,7 +61,7 @@
 			}
 			"penalty"
 			{
-				"special_bonus_facet_visage_sepulchre"		"50"
+				"special_bonus_facet_visage_sepulchre"		"70"
 			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
@@ -143,6 +143,11 @@
 				}
 				"damage_min"				"2.0"
 				"damage_max"				"3000.0"
+				"target_count"
+				{
+					"value"			"1"
+					"special_bonus_unique_visage_3"	"=3"
+				}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
 	}	
@@ -172,6 +177,7 @@
 			"recovery_time"
 			{
 				"value" "7 6 5 4"
+				"special_bonus_unique_visage_cloak_recovery_time"		"-2"
 			}
 			"minimum_damage"
 			{
@@ -198,6 +204,10 @@
 			{
 				"special_bonus_shard" "125"
 			}
+			"armor"				
+			{
+				"special_bonus_unique_visage_5"		"15"
+			}
 		}
 	}
 
@@ -210,7 +220,7 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"	
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 
 		"AbilityDraftExtraAbilities"
 		{
@@ -238,7 +248,7 @@
 		"AbilityValues"
 		{
 			"familiar_hp"				"500 600 700"
-			"familiar_armor"			"0 2 4"
+			"familiar_armor"			"2 3 4"
 			"familiar_attack_range"		
 			{
 				"value"					"180"
@@ -478,44 +488,37 @@
 	}
 
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Visage: Familiar Recall
 	//=================================================================================================================
-	"special_bonus_unique_visage_1"
+	"visage_summon_familiars_recall"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL | DOTA_ABILITY_BEHAVIOR_IGNORE_PSEUDO_QUEUE"
+		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
+		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
+		"SpellDispellableType"			"SPELL_DISPELLABLE_YES_STRONG"
+		"AbilityCastRange"				"0"
+		"AbilityCastPoint"				"0.0"
+		"MaxLevel"						"1"
+		"AbilitySound"					"Visage_Familiar.StoneForm.Cast"
+		"DependentOnAbility"			"visage_summon_familiars"
+		"AbilityTextureName"			"visage_summon_familiars"
 
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_visage_3"
-	{
-		// General
+		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityCooldown"				"10.0"
+
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"value"
-			{
-				"value" "3"
-			}
+			"recall_duration"				"4"
 		}
+		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_5"
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_visage_4"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+}
+AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass" "special_bonus_base"
 	}
 

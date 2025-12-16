@@ -8,7 +8,7 @@
 	"dragon_knight_fireball"
 	{
 		"MaxLevel"						"1"
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_HIDDEN  | DOTA_ABILITY_BEHAVIOR_SHOW_IN_GUIDES"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -79,7 +79,6 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"14 13 12 11"
 		
 		
 		// Cost
@@ -101,22 +100,33 @@
 				"affected_by_aoe_increase"	"1"
 			}
 			"range"					"750"
-			"AbilityCastRange"			"600"	
+			"AbilityCastRange"		
+			{
+				"value"						"600"	
+				"special_bonus_unique_dragon_knight_9"				"+60%"
+			}
+
+			"AbilityCooldown"
+			{
+				"value"							"14 13 12 11"
+				"special_bonus_unique_dragon_knight_3"		"-2"
+			}			
 			"speed"					"1050"		
 			"damage"			
 			{
 				"value"			"80 160 240 320"
+				"special_bonus_unique_dragon_knight_9"				"+60%"
 				"CalculateSpellDamageTooltip" "1"
 			}
 			"reduction"
 			{
 				"value"				"-30"
-				"special_bonus_unique_dragon_knight_3"		"-30"
+
 			}
 			"dragon_form_bonus_pct"
 			{
 				"value"		"0"
-				"special_bonus_unique_dragon_knight_9"				"+85"
+
 			}
 			"duration"				"11"
 			"physical_damage_type"
@@ -308,7 +318,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"	
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"FightRecapLevel"				"2"
@@ -349,7 +359,7 @@
 					"value"			"350 350 350 350"
 					"special_bonus_unique_dragon_knight_7"		"+150"
 				}
-				"bonus_attack_damage"		"20 60 100 140"
+				"bonus_attack_damage"		"20 50 80 110"
 				"magic_resistance"		
 				{
 					"value"					"0"
@@ -412,15 +422,14 @@
 					"value"													"20 30 40 50"
 					"special_bonus_unique_dragon_knight_8"					"+50"
 				}
-
+				"health_bar_offset"
+				{
+					"value"													"300"
+				}
 		}
 	}
 }
-th_effect_bonus"
-				{
-					"value"				"0 0 0 0"
-					"special_bonus_facet_dragon_knight_fire_dragon"			"=20 =30 =40 =50"
-					"special_bonus_unique_dragon_knight_8"						"+50"
+
 					"RequiresFacet"			"dragon_knight_fire_dragon"
 				}
 				"wyrms_wrath_bonus_tooltip"

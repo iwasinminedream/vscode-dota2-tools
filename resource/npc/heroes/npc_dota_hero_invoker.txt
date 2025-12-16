@@ -180,6 +180,10 @@
 			{
 				"value"								"2 4 6 8 10 12 14 16 18 20"
 				"special_bonus_unique_invoker_13"	"x2"
+
+				// "damage" in attribute name, want to show as physical
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_PHYSICAL"
 			}
 			"upgrade_at_level"
 			{
@@ -244,7 +248,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_SHOW_IN_GUIDES | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL | DOTA_ABILITY_BEHAVIOR_IGNORE_INVISIBLE"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"MaxLevel"						"1"
 		"Innate"						"1"
 
@@ -272,7 +276,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"MaxLevel"						"1"
 		"LevelsBetweenUpgrades"			"1"
@@ -325,7 +329,7 @@
 			"AbilityCooldown"
 			{
 				"value"					"18"
-				"special_bonus_unique_invoker_9"	"-5"
+				"special_bonus_unique_invoker_9"	"-6"
 			}
 			"duration"
 			{
@@ -434,7 +438,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_HIDDEN | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_SHOW_IN_GUIDES"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_HIDDEN | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_SHOW_IN_GUIDES | DOTA_ABILITY_BEHAVIOR_OVERSHOOT"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"MaxLevel"						"1"
@@ -504,7 +508,7 @@
 				"special_bonus_facet_invoker_wex_focus"
 				{
 					"value"				"0"
-					"special_bonus_scepter"		"+400"
+					"special_bonus_scepter"		"+300"
 				}
 			}
 			"twister_radius"
@@ -593,7 +597,7 @@
 				"special_bonus_facet_invoker_wex_focus"
 				{
 					"value"					"0"
-					"special_bonus_shard"	"+50%"
+					"special_bonus_shard"	"+30"
 				}
 			}
 			
@@ -603,7 +607,7 @@
 				"special_bonus_facet_invoker_wex_focus"
 				{
 					"value"						"0"
-					"special_bonus_shard"		"+150"
+					"special_bonus_shard"		"+125"
 				}
 			}
 			"self_mana_restore_pct"			"25"
@@ -638,12 +642,12 @@
 		
 		// Stats
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCastRange"				"650"
+		"AbilityCastRange"				"700"
 		"AbilityCastPoint"				"0.05"
 		"AbilityCastAnimation"			"ACT_INVALID"
 
 		"AbilityCooldown"				"15"
-		"AbilityManaCost"				"90"
+		"AbilityManaCost"				"75"
 			
 		// Special
 		//-------------------------------------------------------------------------------------------------------------
@@ -653,13 +657,13 @@
 			{
 				"value"					"10 22 34 46 58 70 82 94 106 118"
 				"levelkey"				"wexlevel"
-				"special_bonus_unique_invoker_5"	"+35"
+				"special_bonus_unique_invoker_5"	"+50"
 			}
 			"bonus_damage"
 			{
 				"value"					"10 22 34 46 58 70 82 94 106 118"
 				"levelkey"				"exortlevel"
-				"special_bonus_unique_invoker_5"	"+35"
+				"special_bonus_unique_invoker_5"	"+50"
 				"CalculateSpellDamageTooltip"	"0"
 			}
 			"bonus_attack_range"
@@ -993,7 +997,7 @@
 			"slow_duration"			"2.0"
 			"damage_per_second"
 			{
-				"value"				"30 35 40 45 50 55 60 65 70 75"
+				"value"				"30 36 42 48 54 60 66 72 78 84"
 				"levelkey"			"exortlevel"
 				"special_bonus_unique_invoker_ice_wall_dps" "+50"
 			}
@@ -1190,7 +1194,7 @@
 			"AbilityCooldown"
 			{
 				"value"					"20"
-				"special_bonus_unique_invoker_9"	"-5"
+				"special_bonus_unique_invoker_9"	"-6"
 			}
 			"duration"
 			{
@@ -1387,12 +1391,12 @@
 			"bonus_attack_speed"
 			{
 				"value"					"22 42 62 82"
-				"special_bonus_unique_invoker_5"	"+35"
+				"special_bonus_unique_invoker_5"	"+50"
 			}
 			"bonus_damage"
 			{
 				"value"					"22 42 62 82"
-				"special_bonus_unique_invoker_5"	"+35"
+				"special_bonus_unique_invoker_5"	"+50"
 			}
 			"duration"					"9"
 		}
@@ -1443,15 +1447,19 @@
 			}
 			"cataclysm_cooldown"
 			{
-				"special_bonus_scepter"	"100"
+				"value"					"90"
 			}
 			"cataclysm_min_range"
 			{
-				"special_bonus_scepter"	"160"
+				"value"					"90"
 			}
 			"cataclysm_max_range"
 			{
-				"special_bonus_scepter"	"200"
+				"value"					"180"
+			}
+			"cataclysm_damage_pct"
+			{
+				"value"					"75"
 			}
 		}
 	}
@@ -1601,27 +1609,37 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"duration"				"4.5 7.0 9.5 12.0"
+			"duration"				"3.0 6.0 9.0 12.0"
 
-			"slow"					"-40 -74 -106 -140"
+			"slow"					"-20 -80 -140 -200"
 			"slow_duration"			"2.0"
-			"damage_per_second"		"12 22 32 42"
-			"wall_place_distance"	"200"
-			"num_wall_elements"		"15"
-			"wall_element_spacing"	
+			"damage_per_second"
 			{
-				"value"		"80"
-				"affected_by_aoe_increase"	"1"
+				"value"				"30 45 60 75"
+				"special_bonus_unique_invoker_ice_wall_dps" "+50"
 			}
-			"wall_element_radius"	
+			"tick_interval"			"0.5"
+			"wall_place_distance"	"200"
+			"wall_total_length"	
 			{
-				"value"		"105"
-				"affected_by_aoe_increase"	"1"
+				"value"						"1200"
+				"affected_by_aoe_increase"	"1"		
+
+			}
+			"wall_width"
+			{
+				"value"					"105"
+				"affected_by_aoe_increase"	"1"		
+
 			}
 			"vector_cast_range"
 			{
 				"value"				"0"
+				"special_bonus_unique_invoker_glacier" 	"600"
 			}
+
+			"glacier_formation_delay"			"1.3"
+			"glacier_formation_speed"			"600"
 		}
 	}
 	
@@ -1679,14 +1697,8 @@
 			}
 		}
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_invoker_2"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
+}
+--------------------
 		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 	}

@@ -27,9 +27,9 @@
 		
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityManaCost"				"110 120 130 140"
+		"AbilityManaCost"				"100 110 120 130"
 		
-		"AbilityDamage"					"80 140 200 260"
+		"AbilityDamage"					"80 150 220 290"
 		
 		// Special
 		//-------------------------------------------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 			{
 
 				"value"										"14 13 12 11"
-				"special_bonus_unique_sand_king_7"			"-2"
+				"special_bonus_unique_sand_king_7"			"-3"
 
 			}
 			"burrow_width"		
@@ -56,7 +56,7 @@
 			"AbilityCastRange"
 			{
 				"value"								"525 600 675 750"
-				"special_bonus_unique_sand_king_8"	"+150"
+				"special_bonus_unique_sand_king_8"	"+200"
 			}
 			"mound_duration"				
 			{
@@ -113,13 +113,13 @@
 			}
 			"sand_storm_radius"
 			{
-				"value"		"425 500 575 650"
+				"value"		"475 550 625 700"
 				"affected_by_aoe_increase"	"1"
 			}
 			"sand_storm_damage"
 			{
 				"value"		"30 50 70 90"
-				"special_bonus_unique_sand_king_2"	"+20"
+				"special_bonus_unique_sand_king_2"	"+25"
 			}
 			"fade_delay"		
 			{
@@ -133,10 +133,10 @@
 			{
 				"special_bonus_facet_sand_king_obscurity"			"5"
 			}
-			
-
-
-
+			"sand_storm_slow"
+			{
+				"special_bonus_unique_sand_king_4"	"50"
+			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
 	}
@@ -183,7 +183,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -221,7 +221,7 @@
 			"epicenter_pulses"	
 			{
 				"value"		"12 16 20"
-				"special_bonus_unique_sand_king"	"+10"
+				"special_bonus_unique_sand_king"	"+8"
 			}
 			"epicenter_damage"	
 			{
@@ -256,13 +256,13 @@
 			}
 			"shard_interval"
 			{
-				"special_bonus_shard"		"3.5"
+				"special_bonus_shard"		"3"
 			}
 			"linger_duration"		"3.0"
 
 			"scepter_explosion_radius_pct"
 			{
-				"special_bonus_scepter"		"+15"
+				"special_bonus_scepter"		"+35"
 			}
 			"scepter_explosion_min_dist"
 			{
@@ -345,7 +345,7 @@
 			"strike_slow"				
 			{
 				"value"					"10 12 14 16"
-				"special_bonus_unique_sand_king_3"	"+8"
+				"special_bonus_unique_sand_king_3"	"+12"
 			}
 			"caustic_damage_pct"
 			{
@@ -353,9 +353,8 @@
 			}
 		}
 	}
-
-
-	//=================================================================================================================
+}
+========================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_sand_king"

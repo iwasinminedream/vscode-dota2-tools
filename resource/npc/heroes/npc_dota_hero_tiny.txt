@@ -20,11 +20,6 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastPoint"				"0.0 0.0 0.0 0.0"
 
-		// Time		
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"23 20 17 14"
-
-
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityManaCost"				"95 110 125 140"
@@ -56,6 +51,11 @@
 				"toss_damage_bonus_pct"		
 				{
 					"value"				"0"
+				}
+				"AbilityCooldown"
+				{
+					"value"							"23 20 17 14"
+					"special_bonus_unique_tiny_3"	"-8"
 				}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
@@ -95,7 +95,7 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-				"duration"				"1.4"
+				"duration"				"1.25"
 				"grab_radius"			
 				{
 					"value"			"300"
@@ -282,7 +282,7 @@
 			"range"		"1200"
 			"bonus_damage"				
 			{
-				"value"				"20"
+				"value"				"10 20 30 40"
 				"special_bonus_shard"		"+100"
 				"CalculateSpellDamageTooltip"	"0"
 			}
@@ -355,7 +355,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"
 		"AbilitySound"					"Tiny.Grow"
 		"AbilityCastAnimation"		"ACT_INVALID"
@@ -380,33 +380,10 @@
 					"value"					"50 175 300"
 					"DamageTypeTooltip"		"DAMAGE_TYPE_MAGICAL"
 				}
-				"move_speed"		"15"
+				"move_speed"		"10 15 20"
 		}
 	}
 
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_tiny"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
-	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_tiny_2"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass" "special_bonus_base"
-	}
 	//=================================================================================================================
 	// Rocksteady
 	//=================================================================================================================
@@ -415,6 +392,40 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
+		"Innate"			"1"
+		"MaxLevel"			"1"
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityValues"
+		{
+			"max_attack_speed"			"100"
+			"attack_speed_to_damage"	"60"
+		}
+	}
+	//=================================================================================================================
+	// Insurmountable
+	//=================================================================================================================
+	"tiny_insurmountable"
+	{
+		// General
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_HIDDEN"
+		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
+		"Innate"						"1"
+		"MaxLevel"						"1"
+		"IsBreakable"					"1"
+
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityValues"
+		{
+			"str_to_slow_resist_pct"			"20"
+			"str_to_status_resist_pct"			"10"
+		}
+	}
+}
+A_ABILITY_BEHAVIOR_PASSIVE"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"Innate"			"1"
 		"MaxLevel"			"1"

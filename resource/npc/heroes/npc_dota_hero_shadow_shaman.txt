@@ -54,7 +54,7 @@
 				}
 				"damage"					
 				{
-					"value"		"140 200 260 320"
+					"value"		"125 190 255 320"
 					"special_bonus_unique_shadow_shaman_3" "+250"
 				}
 		}
@@ -94,7 +94,7 @@
 		"AbilityValues"
 		{
 			"movespeed"					"100"					// if changing this, update shadow_shaman_voodoo_hands movespeed
-			"duration"					"2 2.3 2.6 2.9"
+			"duration"					"2.0 2.3 2.6 2.9"
 			"damage_amp"				
 			{
 				"value"					"0"
@@ -127,7 +127,7 @@
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityChannelTime"			"2.4 3.0 3.6 4.2"
-		"AbilityCooldown"				"13 12 11 10"
+		"AbilityCooldown"				"14 13 12 11"
 		
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -146,7 +146,7 @@
 			"tick_interval"		"0.1 0.1 0.1 0.1"
 			"total_damage"
 			{
-				"value"					"70 140 210 280"
+				"value"					"100 160 220 280"
 				"special_bonus_unique_shadow_shaman_6" "+170"
 			}
 			"channel_time"
@@ -211,7 +211,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
@@ -226,7 +226,7 @@
 		
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"110"
+		"AbilityCooldown"				"110 105 100"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -256,7 +256,7 @@
 			"hits_to_destroy_mega_ward_tooltip"
 			{
 				"value"														"0"
-				"special_bonus_facet_shadow_shaman_massive_serpent_ward"	"=20"
+				"special_bonus_facet_shadow_shaman_massive_serpent_ward"	"=18"
 				"special_bonus_unique_shadow_shaman_1"						"50%"
 			}
 			"ward_health"
@@ -281,7 +281,7 @@
 			"mega_ward_multiplier_health"
 			{
 				"value"						"0"
-				"special_bonus_facet_shadow_shaman_massive_serpent_ward"	"=10"	// check ward_health and hits_to_destroy_tooltip as well
+				"special_bonus_facet_shadow_shaman_massive_serpent_ward"	"=9"	// check ward_health and hits_to_destroy_tooltip as well
 			}
 			"mega_ward_model_scale_multiplier"			"2.3 3.0 3.5"
 			"ward_damage_tooltip"
@@ -413,53 +413,54 @@
 
 		"AbilityValues"
 		{
-			"voodoo_duration"			"1"
+			"voodoo_duration"			"1.0"
 			"movespeed"					"100"		// if changing this, update shadow_shaman_voodoo movespeed
 		}
 	}
 
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Shadow Shaman: Innate Snake Jar
 	//=================================================================================================================
-	"special_bonus_unique_shadow_shaman_1"
+	"shadow_shaman_innate_snake_jar"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_INNATE_UI"
+		"MaxLevel"						"1"
 		"AbilityValues"
 		{
-			"value"
-			{
-				"value" "2"
-			}
-			"value2"
-			{
-				"value" "1"
-			}
+			// purely for tooltips on variant selection, actual KV's are on the item
+			"tooltip_cast_range"				"400"
+			"tooltip_damage"					"50"
+			"tooltip_attack_range"				"650"
+			"duration"							"10"
+			"cooldown"							"40"
+			"tooltip_hits_to_destroy"			"2"
+			"tooltip_hits_to_destroy_creeps"	"4"
 		}
 	}
 
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Shadow Shaman: Innate Piglet Pole
 	//=================================================================================================================
-	"special_bonus_unique_shadow_shaman_2"
+	"shadow_shaman_innate_piglet_pole"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_INNATE_UI"
+		"MaxLevel"						"1"
+		"AbilityValues"
+		{	
+			// purely for tooltips on variant selection, actual KV's are on the item
+			"tooltip_duration"		"4"
+			"tooltip_cooldown"		"25.0"
+			"tooltip_manacost"		"0"
+			"tooltip_movespeed"		"10"
+			"voodoo_manacost"		"110"
+		}
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_shadow_shaman_3"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+}
+_ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass" "special_bonus_base"
 	}

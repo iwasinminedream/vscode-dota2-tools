@@ -66,12 +66,12 @@
 			"move_slow_min"
 			{
 				"value"								"12.5 15.0 17.5 20"
-				"special_bonus_unique_antimage_5"	"+7.5"
+				"special_bonus_unique_antimage_5"	"+9"
 			}
 			"move_slow_max"
 			{
 				"value"								"25 30 35 40"
-				"special_bonus_unique_antimage_5"	"+15"
+				"special_bonus_unique_antimage_5"	"+18"
 			}
 			"mana_threshold"						"50"
 			"slow_duration"		"0.75"
@@ -168,11 +168,11 @@
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"FightRecapLevel"				"1"
 		"IsBreakable"					"1"
-
-		"AbilityDraftExtraAbilities"
-		{
-			"antimage_counterspell_ally" "shard"
-		}
+		"HasShardUpgrade"				"1"
+		//"AbilityDraftExtraAbilities"
+		//{
+		//	"antimage_counterspell_ally" "shard"
+		//}
 
 		// Casting
 		//-------------------------------------------------------------------------------------------------------------
@@ -197,7 +197,7 @@
 			}
 			"duration"					"1.2"
 			"duration_illusion"				"4"
-			"outgoing_damage"			"-25"
+			"outgoing_damage"			"0"
 			"incoming_damage"			"100"
 			"does_reflect"
 			{
@@ -209,7 +209,7 @@
 			}
 			"mana_drain_percent"
 			{
-				"special_bonus_facet_antimage_magebanes_mirror"	"=150 =190 =230 =270"
+				"special_bonus_facet_antimage_magebanes_mirror"	"=150 =200 =250 =300"
 			}
 			"damage_from_mana_drain_percent"
 			{
@@ -222,6 +222,10 @@
 			"AbilityCooldown"
 			{
 				"value"						"15 11 7 3"
+			}
+			"heal_pct"
+			{
+				"value"					"0"
 			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
@@ -242,7 +246,7 @@
 
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"FightRecapLevel"				"1"
-		"IsGrantedByShard"              "1"
+		//"IsGrantedByShard"              "1"
 		"MaxLevel"						"1"
 		// Casting
 		//-------------------------------------------------------------------------------------------------------------
@@ -279,7 +283,7 @@
 			}
 			"mana_drain_percent"
 			{
-				"special_bonus_facet_antimage_magebanes_mirror"	"=270"
+				"special_bonus_facet_antimage_magebanes_mirror"	"=300"
 			}
 			"damage_from_mana_drain_percent"
 			{
@@ -302,7 +306,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_AOE"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
@@ -438,8 +442,8 @@
 			"incoming_damage"			"100"
 		}
 	}
-
-	//=================================================================================================================
+}
+========================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_antimage"
@@ -532,6 +536,12 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
+		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"BaseClass"						"special_bonus_base"
+	}
+}
+-----------------------------------------------------
 		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"

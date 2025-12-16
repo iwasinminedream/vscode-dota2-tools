@@ -39,14 +39,14 @@
 		{
 				"gush_damage"		
 				{
-					"value"		"110 160 210 260"
+					"value"		"100 160 220 280"
 				"special_bonus_unique_tidehunter_2" "+100"
 				}
 				"projectile_speed"	"2500"
 				"movement_speed"	
 				{
 					"value"	"-40 -40 -40 -40"
-					"special_bonus_unique_tidehunter_5" "-15"
+					"special_bonus_unique_tidehunter_5" "-20"
 				}
 				"negative_armor"		
 				{
@@ -153,14 +153,14 @@
 		{
 			"attack_damage"			
 			{
-				"value"										"45 90 135 180"
-				"special_bonus_unique_tidehunter_9"			"+40"
+				"value"										"50 100 150 200"
+				//"special_bonus_unique_tidehunter_9"			"+40"
 				"CalculateSpellDamageTooltip"				"0"
 			}
 			"damage_reduction"		
 			{
 				"value"										"-25 -30 -35 -40"
-				"special_bonus_unique_tidehunter_3"			"-30"
+				"special_bonus_unique_tidehunter_3"			"-20"
 				"CalculateSpellDamageTooltip"				"0"
 				"DamageTypeTooltip"							"DAMAGE_TYPE_NONE"
 			}
@@ -175,7 +175,10 @@
 				"value"										"0"
 				"special_bonus_unique_tidehunter_10"			"+1"
 			}
-			
+			"smash_on_attack"
+			{
+				"special_bonus_unique_tidehunter_8"			"1"
+			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
 	}
@@ -187,7 +190,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -207,7 +210,6 @@
 		
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"150.0 145.0 140.0"
 
 		// Damage.
 		//-------------------------------------------------------------------------------------------------------------
@@ -221,6 +223,11 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
+			"AbilityCooldown"
+			{
+				"value"				"150.0 145.0 140.0"
+				"special_bonus_unique_tidehunter_ravage_cooldown" "-15"
+			}
 			"radius"			
 			{
 				"value"		"1250"
@@ -230,7 +237,7 @@
 			"duration"			
 			{
 				"value"					"2.0 2.2 2.4"
-				"special_bonus_unique_tidehunter_7"	"+0.8"
+				"special_bonus_unique_tidehunter_7"	"+1.0"
 			}
 		}
 	}
@@ -386,17 +393,16 @@
 			{
 				"value"		"450"
 			}
+			"smash_on_purge"
+			{
+				"special_bonus_unique_tidehunter_smash_on_blubber"		"1"
+			}
 			"damage_reset_interval"	"7.0"
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
 	}
-	
-
-
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
+}
+=============
 	"special_bonus_unique_tidehunter"
 	{
 		// General

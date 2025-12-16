@@ -74,7 +74,7 @@
 		
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityManaCost"				"105 110 115 120"
+		"AbilityManaCost"				"120"
 		
 		// Special	
 		//-------------------------------------------------------------------------------------------------------------
@@ -244,7 +244,7 @@
 			"bounty_multiplier"		"2"
 			"damage"
 			{
-				"special_bonus_unique_alchemist_7"	"+2"
+				"special_bonus_unique_alchemist_7"	"+2.5"
 			}
 
 			"bonus_gold_cap"
@@ -256,10 +256,7 @@
 				"special_bonus_facet_alchemist_seed_money"	"=250"
 			}
 
-			"scepter_bonus_damage"
-			{
-				"special_bonus_scepter"		"25"
-			}
+			"scepter_bonus_damage"	"25"
 			"scepter_spell_amp"
 			{
 				"special_bonus_scepter"		"0"
@@ -279,7 +276,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"FightRecapLevel"				"2"
 		"AbilitySound"					"Hero_Alchemist.ChemicalRage.Cast"
@@ -347,6 +344,19 @@
 		{		
 				"max_stacks"				"7 10 13 16"
 				"debuff_duration"			"4.0"
+				"slow_per_stack"			"2 2.5 3 3.5"
+				"attack_dmg_per_stack"		"2 2.5 3 3.5"
+				"stacks_per_attack"			"2"
+				"one_tooltip"				"1"
+
+		}
+		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
+	}
+}
+AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
+	}
+}
+ration"			"4.0"
 				"slow_per_stack"			"1.5 2 2.5 3"
 				"attack_damage_per_stack"	"1.5 2 2.5 3"
 				"stacks_per_attack"			"2"

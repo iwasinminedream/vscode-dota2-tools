@@ -103,6 +103,11 @@
 				"value"												"0"
 				"special_bonus_facet_venomancer_plague_carrier"		"+2"	// NOTE: tooltip only
 			}
+			"ward_hp_dmg_pct"
+			{
+				"value"				"0"
+				"special_bonus_facet_venomancer_plague_carrier"		"=75"
+			}
 			"AbilityCooldown"
 			{
 				"value"												"21 20 19 18"
@@ -126,7 +131,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -228,7 +233,7 @@
 			}
 			"ward_damage_tooltip"
 			{
-				"value"							"14 22 30 38"
+				"value"							"16 24 32 40"
 				"special_bonus_unique_venomancer" "x2.5"
 			}
 		}
@@ -241,7 +246,7 @@
 	//=================================================================================================================
 	"venomancer_noxious_plague"
 	{
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
@@ -309,7 +314,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -406,7 +411,7 @@
 		{
 			"bonus_dmg_per_debuff_pct"
 			{
-				"value"						"10"
+				"value"						"8"
 				"special_bonus_scepter"		"+15"
 				"DamageTypeTooltip"			"DAMAGE_TYPE_MAGICAL"
 			}
@@ -417,8 +422,8 @@
 			}
 		}
 	}
-
-	//=================================================================================================================
+}
+=================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_venomancer"

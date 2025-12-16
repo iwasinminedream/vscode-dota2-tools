@@ -254,13 +254,17 @@
 				{
 					"value"		"125 150 175 200"
 					"special_bonus_unique_dawnbreaker_luminosity_crit"		"+40"
+
+					// "damage" in attribute name but it's a percentage-based effect
+					"CalculateSpellDamageTooltip"	"0"
+					"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 				}	
 				"proc_cooldown"				"0.00"
 				"allied_healing_pct"		"50"
 				"cooldown_reduction"		
 				{
 					"value"									"0"
-					"special_bonus_facet_dawnbreaker_solar_charged"		"1"				
+					"special_bonus_facet_dawnbreaker_solar_charged"		"0.8"				
 				}
 				"triggered_by_celestial_hammer"
 				{
@@ -276,7 +280,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_CHANNELLED"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO"
@@ -310,12 +314,12 @@
 			"AbilityCooldown"				
 			{
 				"value"				"120 105 90"
-				"special_bonus_unique_dawnbreaker_solar_guardian_cooldown"			"-20"
+				"special_bonus_unique_dawnbreaker_solar_guardian_cooldown"			"-15"
 			}
 
 			"scepter_aura_duration"
 			{
-				"special_bonus_scepter"		"3"
+				"special_bonus_scepter"		"2"
 			}
 			"miss_rate"				
 			{
@@ -324,7 +328,7 @@
 			"base_heal"				
 			{
 				"value"				"45 70 95"
-				"special_bonus_scepter"	"+10 15 20"
+				"special_bonus_scepter"	"+15 20 25"
 			}
 			"radius"				
 			{
@@ -347,7 +351,7 @@
 			"max_offset_distance"			"350"
 			"scepter_channel_time"				
 			{
-				"special_bonus_scepter"		"1.0"
+				"special_bonus_scepter"		"1.7"
 			}
 			"airtime_scepter_bonus"	
 			{
@@ -357,7 +361,6 @@
 			"airtime_duration"
 			{
 				"value"						"0.8"
-				"special_bonus_scepter"		"=0.5"
 			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_4"
@@ -395,7 +398,11 @@
 		"AbilityValues"
 		{
 			"day_threshold"				"0.006"
-			"max_dmg_pct"				"25"
+			"max_dmg_pct"				
+			{
+				"value"						"25"
+				"special_bonus_unique_dawnbreaker_break_of_dawn_damage"			"+15"
+			}
 			"max_vision_pct"			"20"
 
 			"current_dmg_tooltip"
@@ -428,7 +435,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
 	}
@@ -440,12 +447,12 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"	
 	}
-TA_ABILITY_BEHAVIOR_PASSIVE"
-	//=================================================================================================================
+}
+==================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
   	"special_bonus_unique_dawnbreaker_luminosity_crit"

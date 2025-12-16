@@ -27,7 +27,6 @@
 		
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"13 10 7 4"
 		"AbilityDuration"				"21.0 24.0 27.0 30.0"
 
 		// Cost
@@ -41,7 +40,7 @@
 			"decay_damage"
 			{
 				"value"		"20 60 100 140"
-				"special_bonus_unique_undying_8" "+40"
+				"special_bonus_unique_undying_8" "+30"
 			}
 
 			"str_steal"
@@ -63,6 +62,11 @@
 			"str_scale_up"	"2"
 			"creep_damage_multiplier"	"2.0"
 			"shard_buff_duration"		"40"
+			"AbilityCooldown"
+			{
+				"value"								"13 10 7 4"
+				"special_bonus_unique_undying_2"	"-2"
+			}
 		}
 	}
 
@@ -90,7 +94,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"18 14 10 6"
+		"AbilityCooldown"				"15 12 9 6"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -107,7 +111,7 @@
 				"damage_per_unit"			
 				{
 					"value"			"14 26 38 50"
-					"special_bonus_unique_undying_6" "+10"
+					"special_bonus_unique_undying_6" "+12"
 				}			
 				"max_units"					"10"
 				"radius"					
@@ -177,13 +181,13 @@
 			"tombstone_health"
 			{
 				"value"					"20 24 28 32"
-				"special_bonus_unique_undying_5"	"+24" 
+				"special_bonus_unique_undying_5"	"+16" 
 			}
 
 			"hits_to_destroy_tooltip"
 			{
 				"value"					"5 6 7 8"
-				"special_bonus_unique_undying_5"	"+6"
+				"special_bonus_unique_undying_5"	"+4"
 			}
 
 			"duration"					"30.0"
@@ -203,6 +207,10 @@
 				"value"					"34"
 				"special_bonus_unique_undying" "+20"
 				"CalculateSpellDamageTooltip"	"0"
+			}
+			"zombie_bonus_damage"
+			{
+				"special_bonus_unique_undying" "+20"
 			}
 			"zombie_health"				"2"
 
@@ -305,7 +313,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
@@ -339,7 +347,7 @@
 				"special_bonus_unique_undying_4" "+50"
 			}
 			"duration"					"40"
-			"movement_bonus"			"20 30 40"
+			"movement_bonus"			"20"
 			"spawn_zombie_on_attack"
 			{
 				"value"						"0"
@@ -402,42 +410,37 @@
 	}
 
 	//=================================================================================================================
-	// Undying: Zombie Master
+	// Undying Relentless Return
 	//=================================================================================================================
-	"undying_zombie_master"
+	"undying_ceaseless_dirge"
 	{
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_AUTOCAST | DOTA_ABILITY_BEHAVIOR_ATTACK"
-		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
-		"AbilitySound"					"Hero_Undying.Tombstone"
-		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"	
-		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
-		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC | DOTA_UNIT_TARGET_BUILDING"
-		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES"
-
-		"HasShardUpgrade"				"1"
-		"IsBreakable"					"1"
-
-		// Casting
+		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCastRange"				"150"
-		"AbilityCastPoint"				"0.0"
 
-		// Special	
-		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_SKIP_FOR_KEYBINDS"
+		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
+		"MaxLevel"						"1"
+		"Innate"						"1"
+		"AbilityCooldown"				"480"
+
 		"AbilityValues"
 		{
-			"AbilityCooldown"
-			{
-				"value"					"3 2 1 0"
-			}
-			"zombie_health"
-			{
-				"value"								"2"
-				"special_bonus_unique_undying_5"	"+2"
-			}
-			"duration"
-			{
-				"value"								"6 9 12 15"
+			"respawn_delay"				"2.0"
+		}
+	}
+
+	//=================================================================================================================
+	// Ability: Tombstone On Death
+	//=================================================================================================================
+	"special_bonus_unique_undying_3"
+	{
+		// General
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+	}
+}
+"								"6 9 12 15"
 				"special_bonus_unique_undying_3"	"+20"
 			}
 			"infinite_lifetime"

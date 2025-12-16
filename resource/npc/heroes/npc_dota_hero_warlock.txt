@@ -9,7 +9,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -47,6 +47,7 @@
 			"count"
 			{
 				"value"						"6"
+				"special_bonus_unique_warlock_fatal_bonds_count"		"+3"
 			}
 
 			"damage_share_percentage"
@@ -172,7 +173,10 @@
 			"slow_per_second"		"11 14 17 20"
 			"duration"				"1.0"
 			"max_slow"				"55 70 85 100"
-			"aspd_per_second"		"10"
+			"aspd_per_second"
+			{
+				"special_bonus_unique_warlock_10"		"8"
+			}
 			"base_damage"			
 			{
 				"special_bonus_unique_warlock_3" "=40"
@@ -191,7 +195,7 @@
 
 			"AbilityCooldown"			"60 50 40 30"
 			"imps_interval"				"2"
-			"minor_imp_duration"		"15"			
+			"minor_imp_duration"		"15"
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
 	}
@@ -204,7 +208,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES_STRONG"
 		"FightRecapLevel"				"2"
@@ -218,7 +222,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"160"
+		"AbilityCooldown"				"165"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -236,7 +240,7 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"golem_duration"			"60 60 60"
+			"golem_duration"			"60"
 			"stun_duration"				"0.8"
 			"aoe"						
 			{
@@ -272,11 +276,15 @@
 			}
 			"bonus_magic_resistance"
 			{
-				"special_bonus_unique_warlock_1"		"+80"
+				//"special_bonus_unique_warlock_1"		"+80"
 			}
 			"bonus_armor"
 			{
 				"special_bonus_unique_warlock_2"		"+20"
+			}
+			"bonus_damage_resist"
+			{
+				"special_bonus_unique_warlock_1"		"+25"
 			}
 			"tooltip_golem_armor"
 			{
@@ -289,6 +297,11 @@
 			{
 				"special_bonus_facet_warlock_golem"			"+90"
 			}
+
+			"golem_on_death"
+			{
+				"special_bonus_unique_warlock_4"		"1"
+			}
 		}
 	}
 	
@@ -299,7 +312,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"MaxLevel"						"3"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PURE"	
@@ -328,7 +341,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"MaxLevel"						"3"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
@@ -368,7 +381,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
 		"MaxLevel"						"4"
@@ -398,7 +411,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"BaseClass"						"warlock_imp_explode"
-		"AbilityType"					"DOTA_ABILITY_TYPE_BASIC"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
 		"MaxLevel"						"4"
@@ -471,11 +484,8 @@
 			"tooltip_seconds"			"420"
 		}
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_warlock_1"
+}
+lock_1"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------

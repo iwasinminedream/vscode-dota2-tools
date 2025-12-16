@@ -106,7 +106,7 @@
 		
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityManaCost"				"110"
+		"AbilityManaCost"				"100"
 
 		// Stats
 		//-------------------------------------------------------------------------------------------------------------
@@ -138,6 +138,10 @@
 				"special_bonus_unique_legion_commander_5"			"+300"
 				"affected_by_aoe_increase"							"1"
 			}
+			"immunity_duration"
+			{
+				"special_bonus_unique_legion_commander_8"			"1.5"
+			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
 	}
@@ -155,7 +159,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"1.9 1.5 1.1 0.7"
+		"AbilityCooldown"				"1.7 1.4 1.1 0.8"
 
 		// Special
 		//-------------------------------------------------------------------------------------------------------------
@@ -187,7 +191,7 @@
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES | DOTA_UNIT_TARGET_FLAG_NOT_CREEP_HERO"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
@@ -282,8 +286,8 @@
 			"duration"				"4.0"
 		}
 	}
-
-	//=================================================================================================================
+}
+=============================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_legion_commander_3"

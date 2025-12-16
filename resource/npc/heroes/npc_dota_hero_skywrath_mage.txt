@@ -39,9 +39,13 @@
 					"value"								"875"
 					"special_bonus_unique_skywrath_6"	"+125"
 				}
+				"pierce_spell_immunity"
+				{
+					"special_bonus_unique_skywrath_6"	"1"
+				}
 				"bolt_speed"			"500"
 				"bolt_vision"			"325"
-				"bolt_damage"			"60 85 110 135"
+				"bolt_damage"			"60 90 120 150"
 				"int_multiplier"		
 				{
 					"value"		"1.5"
@@ -58,7 +62,7 @@
 				"total_bolt_count"
 				{
 					"value"				"1"
-					"special_bonus_shard"		"+1"
+					"special_bonus_shard"		"+2"
 				}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
@@ -104,6 +108,10 @@
 					"value"	"1600"
 					"affected_by_aoe_increase"	"1"
 				}
+				"launch_global"
+				{
+					"special_bonus_unique_skywrath_4"	"1"
+				}
 				"slow_radius"		
 				{
 					"value"			"250"
@@ -115,7 +123,7 @@
 				"movement_speed_pct"	
 				{
 					"value"				"40"
-					"special_bonus_unique_skywrath_concussive_shot_slow"		"+15"
+					"special_bonus_unique_skywrath_concussive_shot_slow"		"+20"
 				}
 				"shot_vision"
 				{
@@ -151,10 +159,6 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastRange"				"700 750 800 850"
 		"AbilityCastPoint"				"0.1 0.1 0.1 0.1"
-		
-		// Time		
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"14"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -176,6 +180,11 @@
 					"special_bonus_scepter"		"500"
 					"affected_by_aoe_increase"	"1"
 				}
+				"AbilityCooldown"
+				{
+					"value"								"14"
+					"special_bonus_unique_skywrath"		"-6"
+				}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
 	}
@@ -190,7 +199,7 @@
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 		"FightRecapLevel"				"2"
 
@@ -256,8 +265,12 @@
 		{
 			"stack_duration"			"25"
 			"bonus_intelligence"		"0"
-			"damage_barrier_base"		"10"
-			"damage_barrier_per_level"	"1"
+			"damage_barrier"
+			{
+				"value"					"11"
+				"hero_levelup"			"+1"
+				"DamageTypeTooltip"		"DAMAGE_TYPE_MAGICAL"
+			}
 			"barrier_duration"			"12"
 		}
 	}
@@ -304,10 +317,8 @@
 			}
 		}
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
+}
+===========================================================================================
 	"special_bonus_unique_skywrath"
 	{
 		// General

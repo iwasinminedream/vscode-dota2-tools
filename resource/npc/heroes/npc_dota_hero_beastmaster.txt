@@ -88,7 +88,7 @@
 			"range"						"1500"
 			"axe_damage"
 			{
-				"value"					"35 65 95 125"
+				"value"					"30 65 100 135"
 				"CalculateSpellDamageTooltip"	"1"
 			}
 			"duration"					
@@ -268,6 +268,7 @@
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
 		"AbilitySound"					"Hero_Beastmaster.Call.Hawk"
+		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"						// Dive
 		"LinkedAbility"					"beastmaster_call_of_the_wild_boar"
 
 		"AbilityDraftExtraAbilities"
@@ -456,7 +457,7 @@
 			}
 			"bonus_attack_speed"
 			{
-				"value"									"15 30 45 60"
+				"value"									"10 30 50 70"
 				"special_bonus_unique_beastmaster_4"	"+15"
 			}
 			"attack_speed_per_unit"		
@@ -498,7 +499,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"		
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
@@ -567,11 +568,11 @@
 			"push_duration"				"1.0"
 			"slow_duration"				"3 3.5 4"
 			"movement_speed"			"40"
-			"movement_speed_duration"			"3.0 3.5 4"
+			"movement_speed_duration"			"2"
 			"AbilityCooldown"
 			{ 
 				"value"				"90 75 60"
-				"special_bonus_unique_beastmaster_7"		"-30"
+				"special_bonus_unique_beastmaster_7"		"-25"
 			}
 
 		}
@@ -650,31 +651,38 @@
 		}
 	}
 
+
 	//=================================================================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
-	"special_bonus_unique_beastmaster_2"
+	"special_bonus_unique_beastmaster_5"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"
+		"AbilityValues"
+		{
+			"bonus_ms"				"15"
+		}
 	}
 
 	//=================================================================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
-	"special_bonus_unique_beastmaster_3"
+	"special_bonus_unique_beastmaster_6"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"		
+		"AbilityValues"
+		{
+			"bonus_hp"				"250"
+		}
 	}
-
-	//=================================================================================================================
+}
+==================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_beastmaster_4"
@@ -746,6 +754,12 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
+		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"BaseClass"						"special_bonus_base"
+	}
+}
+---------------------------------------------------------------------------------
 		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"

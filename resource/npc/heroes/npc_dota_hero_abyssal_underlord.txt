@@ -16,7 +16,7 @@
 
         "HasShardUpgrade"               "1"
 
-		"AbilityCastRange"				"600 625 650 675"
+		"AbilityCastRange"				"675"
 		"AbilityCastPoint"				"0.5"
 		"FightRecapLevel"				"1"
 
@@ -121,7 +121,7 @@
 			"speed_bonus"
 			{
 				"value"						"0"
-				"special_bonus_unique_underlord_6" "+25"
+				"special_bonus_unique_underlord_6" "+20"
 			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
@@ -221,7 +221,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_BUILDING | DOTA_UNIT_TARGET_CREEP"
@@ -267,7 +267,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"					"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_HIDDEN | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK"
-		"AbilityType"						"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"						"ABILITY_TYPE_ULTIMATE"
 		"MaxLevel"							"1"
 
 		// Casting
@@ -285,7 +285,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING "
-		"AbilityType"						"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"						"ABILITY_TYPE_ULTIMATE"
 		"FightRecapLevel"				"1"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"AbilitySound"					"Hero_Undying.Tombstone"
@@ -303,7 +303,7 @@
 		
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityManaCost"				"200"
+		"AbilityManaCost"				"175"
 		
 		// Special	
 		//-------------------------------------------------------------------------------------------------------------
@@ -324,12 +324,16 @@
 				"distance_from_fountain"		"1425"
 				"dps"							
 				{
-					"special_bonus_unique_underlord_9"	"+100"					
+					"special_bonus_unique_underlord_9"	"+125"					
 				}
 				"radius"
 				{
 					"special_bonus_unique_underlord_9"	"+700"					
 					"affected_by_aoe_increase"	"1"
+				}
+				"firestorm_radius"
+				{
+					"value"		"0"
 				}
 				"underling_building_damage_reduction_tooltip"		
 				{
@@ -392,7 +396,7 @@
 			}
 			"bonus_ms"				
 			{
-				"value"			"5 10 15 20"
+				"value"			"11 14 17 20"
 				"special_bonus_unique_underlord_7"	"+5"
 			}
 			"dark_portal_multiplier"			"2"
@@ -445,65 +449,77 @@
 		}
 	}
 
-
-
-
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Ability:  Abyssal Underling last will
 	//=================================================================================================================
-	"special_bonus_unique_underlord"
+	"abyssal_underling_warrior_last_will"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
+		"IsBreakable"					"1"
+		
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityValues"
+		{
+			
+			"explosion"				"200 300 400"
+
+		}
+		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
 	}
 
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Ability: Necronomicon Warrior's Mana Burn
 	//=================================================================================================================
-	"special_bonus_unique_underlord_3"
+	"abyssal_underling_warrior_mana_burn"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"
+		"IsBreakable"					"1"
+		
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityValues"
+		{
+			"burn_amount"			"10 20 30"
+			"burn_damage_conversion"	"50"
+		}
+		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
 	}
-
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Ability: Necronomicon Archer's AoE
 	//=================================================================================================================
-	"special_bonus_unique_underlord_4"
+	"abyssal_underling_archer_aoe"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_BASIC"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_underlord_5"
-	{
-		// General
+		"IsBreakable"					"1"
+		
+		// Special
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"AbilityValues"
+		{
+			"radius"				
+			{
+				"value"		"1200"
+				"affected_by_aoe_increase"	"1"
+			}
+			"ms_bonus"			"5"
+			"as_bonus"			"10 15 20"
+		}
+		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_underlord_6"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-	}
-
-	//=================================================================================================================
+}
+=========================================================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_underlord_7"
@@ -606,6 +622,9 @@
 			"as_bonus"			"10 15 20"
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
+	}
+}
+astAnimation"		"ACT_DOTA_CAST_ABILITY_1"
 	}
 	//=================================================================================================================
 	// Ability: Necronomicon Archer's AoE

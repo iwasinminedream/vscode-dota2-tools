@@ -41,9 +41,9 @@
 			"movement_speed"		
 			{
 				"value"			"275 325 375 425"
-				"special_bonus_shard" "+100"
+				"special_bonus_shard" "+85"
 			}
-			"stun_duration"			"1.2 1.5 1.8 2.1"
+			"stun_duration"			"1.3 1.6 1.9 2.2"
 			"bash_radius"			
 			{
 				"value"			"300 300 300 300"
@@ -100,13 +100,6 @@
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"FightRecapLevel"				"1"
 		"AbilitySound"					"Hero_Spirit_Breaker.EmpoweringHaste.Cast"
-
-		// Casting
-		//-------------------------------------------------------------------------------------------------------------
-		
-		// Time		
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"22 20 18 16"
 		
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -121,7 +114,12 @@
 			"damage_barrier"
 			{
 				"value"						"0"
-				"special_bonus_unique_spirit_breaker_shield" "+400"
+				"special_bonus_unique_spirit_breaker_shield" "+375"
+			}
+			"AbilityCooldown"
+			{
+				"value"									"22 20 18 16"
+				"special_bonus_unique_spirit_breaker_2"	"-3"
 			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
@@ -243,7 +241,7 @@
 		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES_STRONG"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
 		"FightRecapLevel"				"2"
 		"AbilitySound"					"Hero_Spirit_Breaker.NetherStrike.Begin"
@@ -373,6 +371,16 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
+		"MaxLevel"						"1"
+		"Innate"						"1"		
+		"AbilityValues"
+		{
+			"xp_gain_rate"				"50"
+		}
+	}
+}
+_ABILITY_BEHAVIOR_PASSIVE"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"MaxLevel"						"1"
 		"Innate"						"1"		

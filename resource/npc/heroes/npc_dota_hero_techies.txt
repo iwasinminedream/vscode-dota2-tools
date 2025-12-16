@@ -13,7 +13,7 @@
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 
 		"AbilityDraftExtraAbilities"
 		{
@@ -64,7 +64,7 @@
 					"value"		"15"
 					"special_bonus_unique_techies_3"	"-3"
 				}
-				"outer_damage"				"50"
+				"outer_damage"				"60"
 				"min_distance"				"150"
 				"placement_radius"			"350"
 				"mres_reduction"			"15 20 25"
@@ -239,21 +239,21 @@
 				"countdown"				"2"
 				"radius"				
 				{
-					"value"			"300"
-					"special_bonus_unique_techies_2"	"+125"
+					"value"			"300"					
 					"affected_by_aoe_increase"	"1"	
 				}
 				"damage"				
 				{
-					"value"	"80 160 240 320"
+					"value"	"95 170 245 320"
+					"special_bonus_unique_techies_2" "+160"
+
 				}
 				"slow"					"25 35 45 55"
 				"secondary_slow"		"15 25 35 45"
 				"secondary_slow_duration"		"3"
 				"explosion_radius"		
 				{
-					"value"				"350"
-					"special_bonus_unique_techies_2"	"+125"
+					"value"				"350"					
 					"affected_by_aoe_increase"	"1"	
 				}
 				"speed"					"500.0"
@@ -286,7 +286,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"30 25 20 15"
+		"AbilityCooldown"				"26 22 18 14"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -305,7 +305,7 @@
 			"bonus_ms"				"18 22 26 30"
 			"stun_radius"			
 			{
-				"value"		"400"
+				"value"		"450"
 				"affected_by_aoe_increase"	"1"	
 			}
 			"shard_damage"	
@@ -340,7 +340,7 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_NORMAL_WHEN_STOLEN"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityCastAnimation"			"ACT_DOTA_CAST_ABILITY_6"
 
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
@@ -549,6 +549,9 @@
 
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_HIDDEN"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
+	}
+}
+ype"				"SPELL_IMMUNITY_ENEMIES_NO"
 	}
 
 

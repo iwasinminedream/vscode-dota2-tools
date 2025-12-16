@@ -51,9 +51,13 @@
 			}
 			"wolf_damage"
 			{
-				"value"							"23 29 35 41 47 53"
+				"value"							"22 28 34 40 46 52"
 				"special_bonus_unique_lycan_3"	"+10"
 				"special_bonus_facet_lycan_spirit_wolves" "=0 =0 =0 =0 =0 =0"				
+
+				// "damage" in attribute name but it isn't really
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_PHYSICAL"
 			}
 			"wolf_hp"					
 			{
@@ -70,6 +74,10 @@
 			{
 				"value"			"0"
 				"special_bonus_unique_lycan_3"	"+10"
+
+				// "damage" in attribute name but it isn't really
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_PHYSICAL"
 			}
 			"bonus_armor"
 			{
@@ -118,6 +126,9 @@
 					"value"							"6 12 18 24"
 					"special_bonus_unique_lycan_3"	"+6"
 				}
+
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_PHYSICAL"
 			}
 			"death_fx_time"
 			{
@@ -158,7 +169,6 @@
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastRange"				"300"
-		"AbilityCooldown"				"110 100 90"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -177,7 +187,12 @@
 				"value"		"1200"		
 				"affected_by_aoe_increase"	"1"
 			}
-			"attack_range"		"150"		
+			"attack_range"		"150"
+			"AbilityCooldown"
+			{
+				"value"							"110 100 90"
+				"special_bonus_unique_lycan_8"	"-15"
+			}
 		}
 	}
 
@@ -218,11 +233,19 @@
 			"attack_damage_reduction"		
 			{
 				"value"		"25 30 35 40"
+
+				// "damage" in attribute name but it isn't really
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}
 			"total_attack_damage_reduction"		
 			{
 				"value"		"0"
 				"special_bonus_unique_lycan_5"	"+1"
+
+				// "damage" in attribute name but it isn't really
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}
 			"armor"			
 			{
@@ -264,6 +287,10 @@
 			{
 				"value"			"10 20 30 40"
 				"special_bonus_unique_lycan_4"	"+25"
+
+				// "damage" in attribute name but it's a percentage-based modifier
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}
 			"bonus_hp_regen"		
 			{
@@ -287,7 +314,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"FightRecapLevel"				"2"
 		"AbilitySound"					"Hero_Lycan.Shapeshift.Cast"
@@ -296,10 +323,6 @@
 		{
 			"lycan_wolf_bite" "scepter"
 		}
-
-		// Time		
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"110 100 90"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -319,7 +342,7 @@
 			"transformation_time"		"1.1"
 			"crit_chance"				"40"
 			"crit_multiplier"		"160 200 240"
-			"health_bonus"		"250 350 450"
+			"health_bonus"		"225 325 425"
 			"is_wolfpack"
 			{
 				"value"				"0"
@@ -329,6 +352,11 @@
 			{
 				"value"				"0"
 				"special_bonus_facet_lycan_pack_leader"			"+5"
+			}
+			"AbilityCooldown"
+			{
+				"value"							"110 100 90"
+				"special_bonus_unique_lycan_8"	"-15"
 			}
 		}
 	}
@@ -456,37 +484,31 @@
 			"bonus_attack_speed"	"20"
 		}		
 	}
-
+	
 	//=================================================================================================================
-	// Ability: Special Bonus
+	// Lycan Innate Apex Predator
 	//=================================================================================================================
-	"special_bonus_unique_lycan_1"
+	"lycan_apex_predator"
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_SKIP_FOR_KEYBINDS"
+		"MaxLevel"						"1"
+		"Innate"						"1"
+		"IsBreakable"					"1"
+
+		"AbilityValues"
+		{
+			"damage_amp_per_level"			"2"
+			"extra_damage_tooltip"
+			{
+				"dynamic_value"				"true"
+			}
+		}
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_lycan_2"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_lycan_3"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+}
+E_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 	}
 

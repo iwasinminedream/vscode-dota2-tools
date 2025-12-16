@@ -23,7 +23,6 @@
 
 		// Casting
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCastRange"				"600"
 		"AbilityCastPoint"				"0.2 0.2 0.2 0.2"
 
 		// Time		
@@ -42,7 +41,19 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-				"bolt_speed"			"1000"
+				"AbilityCastRange"
+				{
+					"value"					"600"
+					"special_bonus_scepter" "+25%"
+				}
+								
+
+				"bolt_speed"			
+				{
+					"value"			"1000"
+					"special_bonus_scepter" "+25%"
+				}
+
 				"bolt_stun_duration"	
 				{
 					"value"		"1.0 1.2 1.4 1.6"
@@ -57,10 +68,6 @@
 				{
 					"value"		"225"
 					"affected_by_aoe_increase"	"1"
-				}
-				"cast_range_bonus_scepter"		
-				{
-					"special_bonus_scepter"		"350"		
 				}
 				"scepter_bonus_damage"			"180"
 		}
@@ -100,8 +107,12 @@
 			}
 			"great_cleave_damage"
 			{
-				"value"				"50 65 80 95"
+				"value"				"60 70 80 90"
 				"special_bonus_unique_sven_8" "+25"
+
+				// "damage" in attribute name but it's a percentage-based effect
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}
 			"strength_bonus"		"00"
 		}
@@ -130,7 +141,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"40 35 30 25"
+		"AbilityCooldown"				"36 32 28 24"
 	
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -192,7 +203,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"FightRecapLevel"				"1"
 		"AbilitySound"					"Hero_Sven.GodsStrength"
@@ -205,8 +216,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"110 105 100"
-		"AbilityDuration"				"35.0"
+		"AbilityDuration"				"30.0"
 	
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -219,12 +229,21 @@
 			"gods_strength_damage"
 			{
 				"value"		"110 150 190"	
-				"special_bonus_unique_sven_2"		"+50"	
+				"special_bonus_unique_sven_2"		"+50"
+
+				// "damage" in attribute name but it isn't really
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}
 			"bonus_slow_resistance"
 			{
 				"value"		"30"	
 				"special_bonus_unique_sven_gods_strength_slow_resist"		"+20"	
+			}
+			"AbilityCooldown"
+			{
+				"value"							"110 105 100"
+				"special_bonus_unique_sven_3"	"-12"
 			}
 		}	
 	}
@@ -267,18 +286,12 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"bonus_damage_per_str"				"0.0 0.3 0.4 0.5"
+			"bonus_damage_per_str"				"0.0 0.2 0.3 0.4"
 			"base_damage_reduction"				"0"
 		}
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
-	"special_bonus_unique_sven_2"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
+}
+----
 		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"

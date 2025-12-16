@@ -54,7 +54,7 @@
 			"damage"
 			{
 				"value"								"55 70 85 100"
-				"special_bonus_unique_enigma_5"		"+50"
+				"special_bonus_unique_enigma_5"		"+60"
 			}
 			"stun_instances"
 			{
@@ -136,7 +136,7 @@
 			"eidolon_xp_bounty"					"10"
 			"eidolon_gold_bounty_min"			"17"
 			"eidolon_gold_bounty_max"			"20"
-			"non_splitting_bounty_reduction"		"50"
+			"non_splitting_bounty_reduction"		"50"		// if changing this, change non_splitting_bounty_reduction_tooltip
 
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
@@ -180,12 +180,12 @@
 					"special_bonus_unique_enigma_9"	"+200"
 					"affected_by_aoe_increase"	"1"
 				}
+				"base_damage"				"5 10 15 20"
 				"damage_percent"			"4 6 8 10"
 				"duration"					
 				{
 					"value"			"9 10 11 12"
 				}
-				"base_damage"				"5 10 15 20"
 
 
 				"tick_rate"			"0.5"
@@ -199,7 +199,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_CHANNELLED"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PURE"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"FightRecapLevel"				"2"
@@ -274,7 +274,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
 	}
@@ -286,7 +286,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
 
@@ -299,7 +299,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"					"special_bonus_base"
 	}
@@ -311,7 +311,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"					"special_bonus_base"
 	}
@@ -323,7 +323,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
 
@@ -336,7 +336,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
 
@@ -349,7 +349,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
+		"AbilityType"					"ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
 	}
@@ -392,9 +392,10 @@
 		"IsBreakable"					"1"
 		"AbilityValues"
 		{
-				"damage_threshold"				"350"
+				"damage_threshold"				"375"
 				"damage_reset_interval"			"7"
 				"eidolon_spawns"				"1"
+				"non_splitting_bounty_reduction_tooltip"	"50"		// tooltip only, non_splitting_bounty_reduction is real value
 		}
 	}
 	//=================================================================================================================
@@ -422,10 +423,6 @@
 			"vision_cone"		"0.08715"
 		}
 	}	
-
-
-}
-
 
 
 }

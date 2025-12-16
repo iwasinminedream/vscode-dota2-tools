@@ -77,6 +77,10 @@
 				{
 					"special_bonus_unique_wisp_4" "=75"
 				}
+				"tethered_unit_damage"
+				{
+					"special_bonus_unique_wisp_8"	"12"
+				}
 		}
 	}
 
@@ -101,7 +105,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityDuration"				"19.0 19.0 19.0 19.0"
+		"AbilityDuration"				"15"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -112,11 +116,15 @@
 		"AbilityValues"
 		{
 			
-			"creep_damage"				"12 18 24 30"
+			"creep_damage"				
+			{
+				"value"					"12 18 24 30"
+				"special_bonus_unique_wisp"		"+50%"
+			}
 			"hero_damage"
 			{
 				"value"				"30 50 70 90"
-				"special_bonus_unique_wisp"		"+60"
+				"special_bonus_unique_wisp"		"+50%"
 			}
 			"revolution_time"			"5.0 5.0 5.0 5.0"
 			"min_range"					"200"
@@ -137,7 +145,7 @@
 				"affected_by_aoe_increase"	"1"
 			}
 			"spirit_movement_rate"		"250 250 250 250"
-			"spirit_duration"			"19.0 19.0 19.0 19.0"
+			"spirit_duration"			"15"
 			"spirit_amount"			"5"
 			"scepter_slow_pct"
 			{
@@ -151,11 +159,11 @@
 			}
 			"AbilityManaCost"				
 			{
-				"value"							"100 110 120 130"
+				"value"							"90 100 110 120"
 			}
 			"AbilityCooldown"				
 			{
-				"value"				"26.0 24.0 22.0 20.0"
+				"value"				"15"
 				"special_bonus_scepter"			"-50%"
 			}
 		}
@@ -237,7 +245,7 @@
 	{
 		// General
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
 		"FightRecapLevel"				"1"
@@ -248,10 +256,6 @@
 		"AbilityCastPoint"				"0"
  		"AbilityCastAnimation"			"ACT_INVALID"
 
-		// Time		
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"90 80 70"
-
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityManaCost"				"175"
@@ -259,11 +263,17 @@
 		{
 			"cast_delay"
 			{
-				"value" "3.5 3.25 3.0"
+				"value" 										"3.5 3.25 3.0"
+				"special_bonus_unique_wisp_relocate_delay"		"-1.5"
 			}
 			"return_time"
 			{
 				"value" "12.0 12.0 12.0"
+			}
+			"AbilityCooldown"
+			{
+				"value"							"90 80 70"
+				"special_bonus_unique_wisp_6"	"-30"
 			}
 		}
 	}
@@ -356,8 +366,8 @@
 				"consume_speed"	"2"
 		}
 	}
-
-	//=================================================================================================================
+}
+===========
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_wisp"

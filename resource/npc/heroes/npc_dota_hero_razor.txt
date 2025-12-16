@@ -97,7 +97,7 @@
 
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityCooldown"				"50 40 30 20"
+		"AbilityCooldown"				"44 36 28 20"
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
@@ -166,7 +166,7 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"strike_pct_chance"		"18"
+			"strike_pct_chance"		"20"
 			"strike_target_count"	"3"
 			"strike_damage"			
 			{
@@ -187,13 +187,13 @@
 
 			"strike_internal_cd"	
 			{
-				"value"										"3.0"
+				"value"										"2.5"
 				//"special_bonus_unique_razor_3"				"-1"
 			}
 			"strike_cd_reduction_during_storm"
 			{
 				"value"										"0"
-				"special_bonus_facet_razor_thunderhead"			"=2.5"
+				"special_bonus_facet_razor_thunderhead"			"=2.0"
 			}
 
 
@@ -246,7 +246,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_PHYSICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
@@ -317,6 +317,8 @@
 			}
 		}
 	}
+}
+
 
 	//=================================================================================================================
 	// Ability: Special Bonus

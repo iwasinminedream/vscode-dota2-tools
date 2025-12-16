@@ -34,7 +34,7 @@
 
 		// Cost
 		//-------------------------------------------------------------------------------------------------------------
-		"AbilityManaCost"				"22"
+		"AbilityManaCost"				"20"
 
 		// Special
 		//-------------------------------------------------------------------------------------------------------------
@@ -79,9 +79,6 @@
 				{
 					"special_bonus_facet_viper_poison_burst"			"=100"
 				}
-				
-
-
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
 	}
@@ -117,7 +114,7 @@
 		{
 				"min_damage"			
 				{
-					"value"		"15 20 25 30"
+					"value"		"15 25 35 45"
 					"special_bonus_unique_viper_3"	"+40"
 				}
 				"max_damage"
@@ -172,15 +169,16 @@
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityValues"
 		{
-			"duration"					"4.0"
+			"duration"								"4.0"
 			"bonus_attack_speed"
 			{
-				"value"								"8 16 24 32"
-				"special_bonus_unique_viper_6"		"+20"
+				"value"								"9 18 27 36"
+				"display_type"						"kDebuffValue"
 			}
 			"bonus_magic_resistance"	
 			{
 				"value"								"10 15 20 25"
+				"display_type"						"kBuffPercentage"
 			}
 			"damage"
 			{
@@ -200,6 +198,7 @@
 			"effect_multiplier"
 			{
 				"special_bonus_scepter"		"4"
+				"display_type"				"kBuffPercentage"
 			}
 			"nethertoxin_bonus_pct"		
 			{
@@ -207,10 +206,8 @@
 			}
 			"nethertoxin_bonus_pct_max_duration_tooltip"
 			{
-				"special_bonus_facet_viper_caustic_bath"		"=4.0"
+				"special_bonus_facet_viper_caustic_bath"		"=5.0"
 			}
-			
-			
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
 	}
@@ -236,7 +233,7 @@
 			"damage_base"				
 			{
 				"value"					"0.15"
-				"special_bonus_unique_viper_predator_damage"		"+0.2"
+				"special_bonus_unique_viper_predator_damage"		"+0.25"
 			}
 			"damage_per_level"			"0.05"
 			"total_damage_per_missing_health"
@@ -256,7 +253,7 @@
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
@@ -296,8 +293,16 @@
 				"value"				"70 110 150"
 				"special_bonus_unique_viper_2"	"+80"
 			}
-			"bonus_movement_speed"	"-60 -70 -80"
-			"bonus_attack_speed"	"-100 -140 -180"
+			"bonus_movement_speed"
+			{
+				"value"				"60 70 80"
+				"display_type"		"kDebuffPercentage"
+			}
+			"bonus_attack_speed"
+			{
+				"value"				"100 140 180"
+				"display_type"		"kDebuffValue"
+			}
 
 			"AbilityCooldown"
 			{
@@ -370,10 +375,8 @@
 		"AbilityCastAnimation"		"ACT_DOTA_VIPER_DIVE"
 		"AbilityCastGestureSlot"	"DEFAULT"
 	}
-
-	//=================================================================================================================
-	// Ability: Special Bonus
-	//=================================================================================================================
+}
+==========================================================================
 	"special_bonus_unique_viper_1"
 	{
 		// General

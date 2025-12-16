@@ -75,7 +75,7 @@
 			"illusion_damage_reduction_pct"
 			{
 				"value"							"0"
-				"special_bonus_shard"			"=30"
+				"special_bonus_shard"			"=15"
 			}
 			"bounce_range_pct"	
 			{
@@ -183,7 +183,7 @@
 		// General
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"FightRecapLevel"				"2"
 
         "HasScepterUpgrade"			"1"
@@ -214,18 +214,30 @@
 			"illusion_duration"
 			{
 				"value"						"30.0"
-				"special_bonus_unique_chaos_knight_4"		"+10"
 			}	
 			"outgoing_damage"				"0"
-			"outgoing_damage_tooltip"		"100"
+			"outgoing_damage_tooltip"
+			{
+				"value"						"100"
+
+				// "damage" in attribute name but it's a percentage-based effect
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
+			}
 			"incoming_damage"
 			{
 				"value"						"250"
+				"special_bonus_unique_chaos_knight_7"		"-125"
+
 
 			}
 			"incoming_damage_tooltip"
 			{
 				"value"						"350"
+				"special_bonus_unique_chaos_knight_7"		"-125"
+				// "damage" in attribute name but it's a percentage-based effect
+				"CalculateSpellDamageTooltip"	"0"
+				"DamageTypeTooltip"	"DAMAGE_TYPE_NONE"
 			}		
 			"invuln_duration"				"0.5"
 			"vision_radius"					
@@ -302,17 +314,8 @@
 			"trinket_options_next"		"2"
 		}
 	}
-	"special_bonus_unique_chaos_knight_2"
-	{
-		// General
-		//-------------------------------------------------------------------------------------------------------------
-		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
-		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
-		"BaseClass"						"special_bonus_base"		
-
-	}
-
-	//=================================================================================================================
+}
+=========================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
 	"special_bonus_unique_chaos_knight_3"
@@ -370,6 +373,11 @@
 		"AbilityType"					"DOTA_ABILITY_TYPE_ATTRIBUTES"
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"BaseClass"						"special_bonus_base"
+	}
+}
+_ABILITY_BEHAVIOR_PASSIVE"
+		"BaseClass"						"special_bonus_base"
+
 	}
 	//=================================================================================================================
 	// Ability: Special Bonus

@@ -45,7 +45,7 @@
 				"delay"				"0.35"
 				"radius"			
 				{
-					"value"	"135 160 185 210"
+					"value"	"150 170 190 210"
 					"affected_by_aoe_increase"	"1"
 				}
 				"duration"			"1.7"
@@ -130,7 +130,7 @@
 				"AbilityDuration"
 				{
 					"value"						"10"
-					"special_bonus_facet_leshrac_misanthropy"	"=6"
+					"special_bonus_facet_leshrac_misanthropy"	"=7.5"
 				}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
@@ -251,7 +251,7 @@
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL"
 		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
 		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_HERO | DOTA_UNIT_TARGET_BASIC"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityUnitDamageType"			"DAMAGE_TYPE_MAGICAL"	
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_NO"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_NO"
@@ -333,6 +333,7 @@
 			"aoe_per_int"				"0.7"
 		}
 	}
+}
 
 
 	//=================================================================================================================

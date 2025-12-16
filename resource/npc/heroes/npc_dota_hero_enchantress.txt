@@ -12,7 +12,7 @@
 		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
 		"SpellImmunityType"				"SPELL_IMMUNITY_ENEMIES_YES"
 		"SpellDispellableType"			"SPELL_DISPELLABLE_YES"
-		"AbilityType"					"DOTA_ABILITY_TYPE_ULTIMATE"
+		"AbilityType"					"ABILITY_TYPE_ULTIMATE"
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_1"
 		"IsBreakable"					"1"
 
@@ -25,8 +25,8 @@
 		{
 			"slow_attack_speed"
 			{
-				"value" "-100 -150 -200"
-				"special_bonus_unique_enchantress_3" "-60"
+				"value" "-110 -160 -210"
+				"special_bonus_unique_enchantress_3" "-70"
 			}
 			"slow_duration"
 			{
@@ -109,7 +109,7 @@
 		"AbilityValues"
 		{
 			"duration"					"6"
-			"bonus_attack_speed"		"100"
+			"bonus_attack_speed"		"70"
 			"bonus_move_speed"			"100"
 			"radius"					
 			{
@@ -145,7 +145,7 @@
 		// Casting
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCastPoint"				"0.3 0.3 0.3 0.3"
-		
+	
 		// Time		
 		//-------------------------------------------------------------------------------------------------------------
 		"AbilityCooldown"				"30 24 18 12"
@@ -175,23 +175,23 @@
 			{
 				"value" 					"150 250 350 450"
 			}
-			
-			"enchant_armor"			
-			{
-				"value" 				"0"
-				"special_bonus_unique_enchantress_enchant_armor"		"+10"
-			}
 			"enchant_damage"			
 			{
-				"value" 					"0 25 50 75"
+				"value" 					"0 20 40 60"
 			}
 
-			"xp_gain_pct"					"35"
+			"xp_gain_pct"					"40"
 			"level_req"					"4 5 6 6"
 			"max_creeps"
 			{
 				"value"					"1"
 				"special_bonus_scepter"	"+1"
+			}
+
+			"bonus_armor"
+			{
+				"value"															"0"
+				"special_bonus_unique_enchantress_enchant_armor"				"+5"
 			}
 			"bonus_health"
 			{
@@ -206,7 +206,7 @@
 			"bonus_attackspeed"
 			{
 				"value"			"0"
-				"special_bonus_unique_enchantress_enchant_attackspeed"		"+30"
+				"special_bonus_unique_enchantress_enchant_attackspeed"			"+30"
 			}			
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_2"
@@ -256,8 +256,8 @@
 			}
 			"wisp_count"			
 			{
-				"value"				"8"
-				"special_bonus_unique_enchantress_2"	"+12"
+				"value"				"9"
+				"special_bonus_unique_enchantress_2"	"+9"
 			}
 			"movespeed"
 			{
@@ -287,7 +287,12 @@
 			"overprotective_max_wisps"
 			{
 				"value"				"0"
-				"special_bonus_facet_enchantress_overprotective_wisps"			"=4"
+				"special_bonus_facet_enchantress_overprotective_wisps"			"=3"
+			}
+
+			"total_max_heal"
+			{
+				"dynamic_value"		"true"
 			}
 		}
 		"AbilityCastAnimation"		"ACT_DOTA_CAST_ABILITY_3"
@@ -353,15 +358,14 @@
 		
 		"AbilityValues"
 		{
-			"base_damage_amp"			"10"
-			"damage_amp_per_level"		"4"
-			"damage_increase_tooltip"
+			"damage_amp"	
 			{
-				"dynamic_value"			"true"
+				"value"		"4"
+				"hero_levelup"	"4"
 			}
 		}
 	}
-
+}
 	//=================================================================================================================
 	// Ability: Special Bonus
 	//=================================================================================================================
