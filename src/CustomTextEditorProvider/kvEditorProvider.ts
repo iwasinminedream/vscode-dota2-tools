@@ -24,14 +24,16 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	) {
 		this.extensionImagesRoot = this.context.asAbsolutePath('images');
 		this.columnOptionConfig = this.readColumnOptionConfig();
+		this.setupConfigFileWatchers();
 	}
 
 	private readonly extensionImagesRoot: string;
 	private readonly columnOptionConfig: KvEditorColumnOptionMap;
 	private readonly textureMenuCache = new Map<string, TextureMenuRawIcon[]>();
 	private readonly localizationCache = new Map<string, LocalizationCacheEntry>();
-	private readonly userSettingsCache = new Map<string, KvEditorUserSettings>();
-	private readonly columnOptionOverridesCache = new Map<string, KvEditorColumnOptionsFile>();
+	private readonly userSettingsCache = new Map<string, { settings: KvEditorUserSettings; mtimeMs: number; }>();
+	private readonly columnOptionOverridesCache = new Map<string, { overrides: KvEditorColumnOptionsFile; mtimeMs: number; }>();
+	private readonly fileWatchers = new Map<string, vscode.FileSystemWatcher>();
 	private heroFilterCache: TextureMenuHeroCache[] | undefined;
 	// Serialize document writes so concurrent webview messages don't clash.
 	private editSequence: Promise<void> = Promise.resolve();
@@ -2307,14 +2309,33 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					Object.assign(newRowValue, rowData.values);
 				}
 
-				// 处理 AbilitySpecial
+				// 处理 AbilityValues
 				if (rowData.abilityValues && Array.isArray(rowData.abilityValues)) {
-					const abilitySpecial: Record<string, Record<string, unknown>> = {};
-					rowData.abilityValues.forEach((item: Record<string, unknown>, idx: number) => {
-						const entryKey = String(idx).padStart(2, '0');
-						abilitySpecial[entryKey] = item || {};
-					});
-					newRowValue['AbilitySpecial'] = abilitySpecial;
+					const abilityValuesBlock: Record<string, unknown> = {};
+					for (const entry of rowData.abilityValues as unknown as AbilityValuesEntry[]) {
+						const key = entry.key;
+						if (!key) {
+							continue;
+						}
+						// 如果是纯标量且没有修饰符，直接保存值
+						if (entry.type === 'scalar' && (!entry.modifiers || !entry.modifiers.length)) {
+							abilityValuesBlock[key] = entry.value ?? '';
+							continue;
+						}
+						// 否则保存为对象结构
+						const blockValue: Record<string, string> = {};
+						blockValue.value = entry.value ?? '';
+						for (const modifier of entry.modifiers ?? []) {
+							if (!modifier.key) {
+								continue;
+							}
+							blockValue[modifier.key] = modifier.value ?? '';
+						}
+						abilityValuesBlock[key] = blockValue;
+					}
+					if (Object.keys(abilityValuesBlock).length) {
+						newRowValue['AbilityValues'] = abilityValuesBlock;
+					}
 				}
 
 				// 处理 Creature 字段（如果存在）
@@ -3015,12 +3036,27 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 	private getUserSettings(folder: vscode.WorkspaceFolder): KvEditorUserSettings {
 		const cacheKey = folder.uri.fsPath;
-		const cached = this.userSettingsCache.get(cacheKey);
-		if (cached) {
-			return cached;
+		const settingsPath = this.getUserSettingsPath(folder);
+
+		// 检查文件修改时间，如果文件已变更则清除缓存
+		let currentMtime = 0;
+		if (this.pathExists(settingsPath)) {
+			try {
+				const stats = fs.statSync(settingsPath);
+				currentMtime = stats.mtimeMs;
+			} catch (error) {
+				// 文件读取失败，清除缓存
+				this.userSettingsCache.delete(cacheKey);
+			}
 		}
+
+		const cached = this.userSettingsCache.get(cacheKey);
+		if (cached && cached.mtimeMs === currentMtime) {
+			return cached.settings;
+		}
+
 		const settings = this.readUserSettingsFromDisk(folder);
-		this.userSettingsCache.set(cacheKey, settings);
+		this.userSettingsCache.set(cacheKey, { settings, mtimeMs: currentMtime });
 		return settings;
 	}
 
@@ -3105,7 +3141,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			fs.mkdirSync(dir, { recursive: true });
 			const serialized = this.serializeUserSettings(settings);
 			fs.writeFileSync(targetPath, `${serialized}\n`, 'utf8');
-			this.userSettingsCache.set(folder.uri.fsPath, this.copyUserSettings(settings));
+			// 获取写入后的文件修改时间
+			const stats = fs.statSync(targetPath);
+			this.userSettingsCache.set(folder.uri.fsPath, {
+				settings: this.copyUserSettings(settings),
+				mtimeMs: stats.mtimeMs
+			});
 		} catch (error) {
 			console.warn('[kvEditorProvider] Failed to write column width settings:', error);
 			const message = error instanceof Error ? error.message : String(error);
@@ -3394,12 +3435,27 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 	private getColumnOptionOverrides(folder: vscode.WorkspaceFolder): KvEditorColumnOptionsFile {
 		const cacheKey = folder.uri.fsPath;
-		const cached = this.columnOptionOverridesCache.get(cacheKey);
-		if (cached) {
-			return this.copyColumnOptionOverrides(cached);
+		const overridesPath = this.getColumnOptionOverridesPath(folder);
+
+		// 检查文件修改时间，如果文件已变更则清除缓存
+		let currentMtime = 0;
+		if (this.pathExists(overridesPath)) {
+			try {
+				const stats = fs.statSync(overridesPath);
+				currentMtime = stats.mtimeMs;
+			} catch (error) {
+				// 文件读取失败，清除缓存
+				this.columnOptionOverridesCache.delete(cacheKey);
+			}
 		}
+
+		const cached = this.columnOptionOverridesCache.get(cacheKey);
+		if (cached && cached.mtimeMs === currentMtime) {
+			return this.copyColumnOptionOverrides(cached.overrides);
+		}
+
 		const overrides = this.readColumnOptionOverridesFromDisk(folder);
-		this.columnOptionOverridesCache.set(cacheKey, overrides);
+		this.columnOptionOverridesCache.set(cacheKey, { overrides, mtimeMs: currentMtime });
 		return this.copyColumnOptionOverrides(overrides);
 	}
 
@@ -3705,7 +3761,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			fs.mkdirSync(dir, { recursive: true });
 			const serialized = this.serializeColumnOptionOverrides(overrides);
 			fs.writeFileSync(targetPath, `${serialized}\n`, 'utf8');
-			this.columnOptionOverridesCache.set(folder.uri.fsPath, this.copyColumnOptionOverrides(overrides));
+			// 获取写入后的文件修改时间
+			const stats = fs.statSync(targetPath);
+			this.columnOptionOverridesCache.set(folder.uri.fsPath, {
+				overrides: this.copyColumnOptionOverrides(overrides),
+				mtimeMs: stats.mtimeMs
+			});
 		} catch (error) {
 			console.warn('[kvEditorProvider] Failed to write column option overrides:', error);
 			const message = error instanceof Error ? error.message : String(error);
@@ -4249,6 +4310,82 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			return undefined;
 		}
 		return Math.max(0, Math.floor(numeric));
+	}
+
+	/**
+	 * 设置配置文件监听器，当配置文件变化时清除缓存
+	 */
+	private setupConfigFileWatchers(): void {
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+		if (!workspaceFolders) {
+			return;
+		}
+
+		for (const folder of workspaceFolders) {
+			const watcherKey = folder.uri.fsPath;
+
+			// 避免重复创建监听器
+			if (this.fileWatchers.has(watcherKey)) {
+				continue;
+			}
+
+			// 监听 .vscode 目录下的配置文件
+			const pattern = new vscode.RelativePattern(
+				folder,
+				'.vscode/{kv_editor_setting.json,kv_editor_user_setting.json}'
+			);
+
+			const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+
+			// 文件创建、修改、删除时都清除缓存
+			const clearCache = (uri: vscode.Uri) => {
+				const fileName = path.basename(uri.fsPath);
+				console.log(`[kvEditorProvider] Config file changed: ${fileName}, clearing cache for ${folder.name}`);
+
+				if (fileName === 'kv_editor_user_setting.json') {
+					this.userSettingsCache.delete(folder.uri.fsPath);
+				} else if (fileName === 'kv_editor_setting.json') {
+					this.columnOptionOverridesCache.delete(folder.uri.fsPath);
+				}
+			};
+
+			watcher.onDidCreate(clearCache);
+			watcher.onDidChange(clearCache);
+			watcher.onDidDelete(clearCache);
+
+			this.fileWatchers.set(watcherKey, watcher);
+		}
+
+		// 监听工作区文件夹变化
+		this.context.subscriptions.push(
+			vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+				// 移除已删除的工作区的监听器
+				for (const removed of event.removed) {
+					const watcher = this.fileWatchers.get(removed.uri.fsPath);
+					if (watcher) {
+						watcher.dispose();
+						this.fileWatchers.delete(removed.uri.fsPath);
+						this.userSettingsCache.delete(removed.uri.fsPath);
+						this.columnOptionOverridesCache.delete(removed.uri.fsPath);
+					}
+				}
+
+				// 为新添加的工作区创建监听器
+				for (const added of event.added) {
+					this.setupConfigFileWatchers();
+				}
+			})
+		);
+
+		// 注册清理函数
+		this.context.subscriptions.push({
+			dispose: () => {
+				for (const watcher of this.fileWatchers.values()) {
+					watcher.dispose();
+				}
+				this.fileWatchers.clear();
+			}
+		});
 	}
 
 }
