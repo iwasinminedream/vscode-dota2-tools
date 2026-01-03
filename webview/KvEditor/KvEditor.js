@@ -37,6 +37,9 @@ let compactMode = false;
 // 本地化模式状态管理
 let localizedMode = false;
 
+// 对话框打开状态管理
+let isDialogOpen = false;
+
 // 列描述配置
 let columnDescriptions = {};
 
@@ -219,6 +222,26 @@ window.addEventListener('beforeunload', () => {
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
+
+// 阻止撤销/重做操作传播到VS Code
+document.addEventListener('keydown', (event) => {
+	const isUndoRedo = (event.ctrlKey || event.metaKey) && (event.key?.toLowerCase() === 'z' || event.key?.toLowerCase() === 'y');
+
+	if (isUndoRedo) {
+		// 当焦点在可编辑元素上时，阻止事件传播到VS Code
+		// 这样可以让输入框/文本域使用自己的撤销功能，而不是触发VS Code的文档撤销
+		const activeElement = document.activeElement;
+		const isEditableElement = activeElement instanceof HTMLInputElement ||
+			activeElement instanceof HTMLTextAreaElement ||
+			activeElement?.isContentEditable;
+
+		if (isDialogOpen || isEditableElement) {
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+		}
+	}
+}, true);
+
 // 行复制粘贴优先于单元格复制粘贴
 document.addEventListener('keydown', handleRowClipboardShortcuts);
 document.addEventListener('keydown', handleClipboardShortcuts);
@@ -927,6 +950,84 @@ function isEditableElement(element) {
 	return Boolean(element.isContentEditable);
 }
 
+/**
+ * 设置对话框打开状态
+ * 统一管理所有对话框/弹窗/编辑器的打开状态
+ * 当对话框打开时，主界面的单元格操作（撤销恢复、复制粘贴、方向键导航等）将被禁用
+ */
+function setDialogOpenState(isOpen) {
+	isDialogOpen = isOpen;
+}
+
+/**
+ * 创建带有状态管理的对话框容器
+ * @param {Object} options - 配置选项
+ * @param {string} options.className - 对话框容器的CSS类名
+ * @param {Function} options.onClose - 关闭对话框时的回调函数
+ * @returns {HTMLElement} 对话框容器元素
+ */
+function createManagedDialog(options = {}) {
+	const { className = 'kv-dialog-overlay', onClose } = options;
+
+	const overlay = document.createElement('div');
+	overlay.className = className;
+
+	// 设置对话框打开状态
+	setDialogOpenState(true);
+
+	// 创建原始的移除函数引用
+	const originalRemove = overlay.remove.bind(overlay);
+
+	// 重写remove方法以自动更新状态
+	overlay.remove = function () {
+		setDialogOpenState(false);
+		if (onClose) {
+			onClose();
+		}
+		originalRemove();
+	};
+
+	// 监听ESC键关闭
+	const handleEsc = (event) => {
+		if (event.key === 'Escape') {
+			event.stopPropagation();
+			overlay.remove();
+			document.removeEventListener('keydown', handleEsc, true);
+		}
+	};
+	document.addEventListener('keydown', handleEsc, true);
+
+	// 确保在移除时清理事件监听
+	const observer = new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			for (const node of mutation.removedNodes) {
+				if (node === overlay) {
+					document.removeEventListener('keydown', handleEsc, true);
+					observer.disconnect();
+					setDialogOpenState(false);
+					if (onClose) {
+						onClose();
+					}
+					return;
+				}
+			}
+		}
+	});
+
+	if (overlay.parentElement) {
+		observer.observe(overlay.parentElement, { childList: true });
+	} else {
+		// 延迟观察，等待元素被添加到DOM
+		setTimeout(() => {
+			if (overlay.parentElement) {
+				observer.observe(overlay.parentElement, { childList: true });
+			}
+		}, 0);
+	}
+
+	return overlay;
+}
+
 function copyTextToClipboard(text) {
 	const helper = document.createElement('textarea');
 	try {
@@ -1089,6 +1190,10 @@ function pasteToSelectedCell() {
 }
 
 function handleClipboardShortcuts(event) {
+	// 对话框打开时禁用单元格复制粘贴
+	if (isDialogOpen) {
+		return;
+	}
 	if (!selectedCell) {
 		return;
 	}
@@ -1110,6 +1215,10 @@ function handleClipboardShortcuts(event) {
 
 // 处理行级别的复制粘贴快捷键
 function handleRowClipboardShortcuts(event) {
+	// 对话框打开时禁用行复制粘贴
+	if (isDialogOpen) {
+		return;
+	}
 	const isCopy = event.key?.toLowerCase() === 'c';
 	const isPaste = event.key?.toLowerCase() === 'v';
 
@@ -1347,6 +1456,10 @@ function showTemporaryMessage(message, duration = 2000) {
 
 // 处理 Escape 键清除行选择
 function handleEscapeClearSelection(event) {
+	// 对话框打开时禁用此功能
+	if (isDialogOpen) {
+		return;
+	}
 	if (event.key === 'Escape' && selectedRows.size > 0) {
 		event.preventDefault();
 		clearRowSelection();
@@ -1355,6 +1468,10 @@ function handleEscapeClearSelection(event) {
 
 // 处理方向键导航和空格键进入编辑状态
 function handleCellNavigation(event) {
+	// 对话框打开时禁用单元格导航
+	if (isDialogOpen) {
+		return;
+	}
 	// 如果正在编辑状态，不处理导航
 	if (isEditableElement(document.activeElement)) {
 		return;
@@ -1666,6 +1783,20 @@ function setupUndoRedo(input, maxHistory = 50) {
 			(event.key === 'y' && (event.ctrlKey || event.metaKey));
 
 		if (isUndo || isRedo) {
+			console.log('[KV-Editor Debug] setupUndoRedo收到撤销/恢复:', isUndo ? 'undo' : 'redo', 'isDialogOpen:', isDialogOpen, 'target:', event.target, 'input:', input);
+
+			// 检查当前输入框是否在对话框内
+			// 如果对话框打开，但当前输入框不在对话框内（即在主界面），则禁用撤销恢复
+			if (isDialogOpen) {
+				const isInDialog = input.closest('.kv-quickpick, .kv-fill-popup, .kv-ability-editor-overlay, .kv-autofill-popup, .kv-column-insert-dialog-overlay, .kv-column-options-overlay, .kv-color-picker-overlay');
+				console.log('[KV-Editor Debug] setupUndoRedo: 对话框已打开, 当前输入框是否在对话框内:', !!isInDialog, 'input:', input);
+
+				if (!isInDialog) {
+					console.log('[KV-Editor Debug] setupUndoRedo: 主界面输入框在对话框打开时禁用撤销恢复');
+					return; // 主界面的输入框在对话框打开时不处理撤销恢复
+				}
+			}
+
 			event.preventDefault();
 			const history = JSON.parse(input.dataset.undoHistory || '[]');
 			let index = parseInt(input.dataset.undoIndex || '0');
@@ -1712,6 +1843,20 @@ function setupUndoRedo(input, maxHistory = 50) {
 	};
 
 	input.addEventListener('keydown', handleKeyDown);
+
+	// 调试：额外监听以查看所有keydown事件
+	input.addEventListener('keydown', (event) => {
+		if ((event.ctrlKey || event.metaKey) && (event.key === 'z' || event.key === 'y')) {
+			console.log('[KV-Editor Debug] 输入框收到Ctrl+Z/Y:', {
+				inputClass: input.className,
+				inputDataset: input.dataset,
+				isDialogOpen,
+				eventKey: event.key,
+				eventDefaultPrevented: event.defaultPrevented
+			});
+		}
+	}, true);
+
 	input.addEventListener('input', handleInput);
 }
 
@@ -1977,9 +2122,12 @@ function closeFillPopup(options = {}) {
 		return;
 	}
 	const { element, keyHandler, outsideHandler, scrollHandler, resizeHandler } = fillPopupState;
+
+	// 移除element会自动触发setDialogOpenState(false)
 	if (element && element.parentElement) {
 		element.parentElement.removeChild(element);
 	}
+
 	if (keyHandler) {
 		document.removeEventListener('keydown', keyHandler, true);
 	}
@@ -2034,8 +2182,19 @@ function openFillPopup() {
 		return;
 	}
 	closeFillPopup({ clearPreview: false });
-	const popup = document.createElement('div');
-	popup.className = 'kv-fill-popup';
+
+	// 使用统一的对话框管理
+	const popup = createManagedDialog({
+		className: 'kv-fill-popup',
+		onClose: () => {
+			// 清理填充状态
+			fillPopupState = null;
+			fillHandleState = null;
+			clearFillPreview();
+			refreshFillHandle();
+		}
+	});
+
 	popup.setAttribute('role', 'dialog');
 	popup.setAttribute('aria-label', '填充选项');
 	const title = document.createElement('div');
@@ -2890,7 +3049,10 @@ function closeMultiSelectDropdown(options) {
 	}
 	const preservePending = Boolean(options?.preservePending);
 	const { overlay, outsideHandler, keyHandler, scrollHandler, resizeHandler, searchInput, searchHandlers } = openMultiSelectContext;
+
+	// 移除overlay会自动触发setDialogOpenState(false)
 	overlay.remove();
+
 	document.removeEventListener('mousedown', outsideHandler, true);
 	document.removeEventListener('keydown', keyHandler);
 	if (searchInput && searchHandlers) {
@@ -2925,8 +3087,17 @@ function openMultiSelectDropdown(context) {
 		}
 		closeMultiSelectDropdown();
 	}
-	const overlay = document.createElement('div');
-	overlay.className = 'kv-quickpick';
+
+	// 使用统一的对话框管理
+	const overlay = createManagedDialog({
+		className: 'kv-quickpick',
+		onClose: () => {
+			// 清理context
+			openMultiSelectContext = null;
+			pendingMultiSelectReopen = null;
+		}
+	});
+
 	const searchWrapper = document.createElement('div');
 	searchWrapper.className = 'kv-quickpick-search-wrapper';
 	const placeholderName = context.columnName ? ` ${context.columnName}` : '';
@@ -4729,8 +4900,10 @@ function requestColumnInsertion(position, referenceKey, referenceIndex) {
 		return;
 	}
 
-	const dialog = document.createElement('div');
-	dialog.className = 'kv-column-insert-dialog-overlay';
+	// 使用统一的对话框管理
+	const dialog = createManagedDialog({
+		className: 'kv-column-insert-dialog-overlay'
+	});
 
 	const form = document.createElement('form');
 	form.className = 'kv-column-insert-dialog';
@@ -4869,8 +5042,10 @@ function requestColumnDeletion(columnKey) {
 		return;
 	}
 
-	const dialog = document.createElement('div');
-	dialog.className = 'kv-column-insert-dialog-overlay';
+	// 使用统一的对话框管理
+	const dialog = createManagedDialog({
+		className: 'kv-column-insert-dialog-overlay'
+	});
 
 	const form = document.createElement('form');
 	form.className = 'kv-column-insert-dialog';
@@ -4957,8 +5132,10 @@ function requestColumnDescription(columnKey, columnName) {
 
 	const currentDesc = columnDescriptions[columnKey] || {};
 
-	const dialog = document.createElement('div');
-	dialog.className = 'kv-column-insert-dialog-overlay';
+	// 使用统一的对话框管理
+	const dialog = createManagedDialog({
+		className: 'kv-column-insert-dialog-overlay'
+	});
 
 	const form = document.createElement('form');
 	form.className = 'kv-column-insert-dialog';
@@ -5330,8 +5507,10 @@ function requestRowDeletion(rowId, rowIndex) {
 		return;
 	}
 
-	const dialog = document.createElement('div');
-	dialog.className = 'kv-column-insert-dialog-overlay';
+	// 使用统一的对话框管理
+	const dialog = createManagedDialog({
+		className: 'kv-column-insert-dialog-overlay'
+	});
 
 	const form = document.createElement('form');
 	form.className = 'kv-column-insert-dialog';
@@ -5569,8 +5748,14 @@ function openAutofillPopup(context) {
 	const currentValue = context.input.value || '';
 	const baseValue = parseFloat(currentValue) || 0;
 
-	const popup = document.createElement('div');
-	popup.className = 'kv-autofill-popup';
+	// 使用统一的对话框管理
+	const popup = createManagedDialog({
+		className: 'kv-autofill-popup',
+		onClose: () => {
+			// 清理自动填充状态
+			autofillPopupState = null;
+		}
+	});
 
 	const title = document.createElement('div');
 	title.className = 'kv-autofill-popup-title';
@@ -5722,8 +5907,16 @@ function openAbilityValuesEditor(context) {
 	closeMultiSelectDropdown();
 	closeAbilityValuesEditor();
 	const entries = cloneAbilityValuesEntries(context.entries || []);
-	const overlay = document.createElement('div');
-	overlay.className = 'kv-ability-editor-overlay';
+
+	// 使用统一的对话框管理
+	const overlay = createManagedDialog({
+		className: 'kv-ability-editor-overlay',
+		onClose: () => {
+			// 清理编辑器状态
+			abilityValuesEditorState = null;
+		}
+	});
+
 	const dialog = document.createElement('div');
 	dialog.className = 'kv-ability-editor';
 	overlay.appendChild(dialog);
@@ -6168,8 +6361,16 @@ function openColumnOptionsEditor(context) {
 		return;
 	}
 	closeColumnOptionsEditor();
-	const overlay = document.createElement('div');
-	overlay.className = 'kv-column-options-overlay';
+
+	// 使用统一的对话框管理
+	const overlay = createManagedDialog({
+		className: 'kv-column-options-overlay',
+		onClose: () => {
+			// 清理列选项编辑器状态
+			columnOptionsEditorState = null;
+		}
+	});
+
 	const dialog = document.createElement('div');
 	dialog.className = 'kv-column-options-dialog';
 	overlay.appendChild(dialog);
@@ -6513,8 +6714,14 @@ function openColorPicker(targetElement, optionIndex) {
 		closeColorPicker();
 	}
 
-	const overlay = document.createElement('div');
-	overlay.className = 'kv-color-picker-overlay';
+	// 使用统一的对话框管理
+	const overlay = createManagedDialog({
+		className: 'kv-color-picker-overlay',
+		onClose: () => {
+			// 清理颜色选择器状态
+			colorPickerPopup = null;
+		}
+	});
 
 	const popup = document.createElement('div');
 	popup.className = 'kv-color-picker-popup';
