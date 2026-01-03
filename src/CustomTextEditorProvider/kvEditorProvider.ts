@@ -3689,18 +3689,15 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		if (columnFormulasSection && typeof columnFormulasSection === 'object' && !Array.isArray(columnFormulasSection)) {
 			const columnFormulas: Record<string, Record<string, string>> = {};
 			for (const [documentKey, columnsValue] of Object.entries(columnFormulasSection as Record<string, unknown>)) {
-				console.log('[normalizeColumnOptionOverrides] Processing documentKey:', documentKey, 'columnsValue type:', typeof columnsValue);
 				if (typeof documentKey !== 'string' || !columnsValue || typeof columnsValue !== 'object') {
 					continue;
 				}
 				const columnMap: Record<string, string> = {};
 				for (const [columnKey, formulaValue] of Object.entries(columnsValue as Record<string, unknown>)) {
-					console.log('[normalizeColumnOptionOverrides] columnKey:', columnKey, 'formulaValue:', formulaValue, 'type:', typeof formulaValue);
 					if (typeof columnKey !== 'string') {
 						continue;
 					}
 					const formulaText = typeof formulaValue === 'string' ? formulaValue.trim() : '';
-					console.log('[normalizeColumnOptionOverrides] formulaText:', formulaText, 'startsWith =?', formulaText.startsWith('='));
 					if (!formulaText || !formulaText.startsWith('=')) {
 						continue;
 					}
@@ -4569,7 +4566,6 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			// 文件创建、修改、删除时都清除缓存
 			const clearCache = (uri: vscode.Uri) => {
 				const fileName = path.basename(uri.fsPath);
-				console.log(`[kvEditorProvider] Config file changed: ${fileName}, clearing cache for ${folder.name}`);
 
 				if (fileName === 'kv_editor_user_setting.json') {
 					this.userSettingsCache.delete(folder.uri.fsPath);
