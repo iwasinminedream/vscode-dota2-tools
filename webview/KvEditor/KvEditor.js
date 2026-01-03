@@ -340,14 +340,44 @@ function removeFormulaDefinition(column, rowId, rowIndex) {
 
 function getFormulaDefinition(column, rowId, rowIndex) {
 	const idKey = makeFormulaDefinitionKey(column, rowId, undefined);
+	const indexKey = makeFormulaDefinitionKey(column, undefined, rowIndex);
+
 	if (idKey && formulaDefinitions.has(idKey)) {
 		return formulaDefinitions.get(idKey);
 	}
-	const indexKey = makeFormulaDefinitionKey(column, undefined, rowIndex);
 	if (indexKey && formulaDefinitions.has(indexKey)) {
 		return formulaDefinitions.get(indexKey);
 	}
 	return undefined;
+}
+
+function updateFormulaDefinitionsOnIdRename(oldId, newId) {
+	if (!oldId || !newId || oldId === newId) {
+		return;
+	}
+
+	// 收集所有需要更新的公式定义
+	const updates = [];
+	formulaDefinitions.forEach((definition, key) => {
+		if (definition.rowId === oldId) {
+			updates.push({
+				oldKey: key,
+				definition: {
+					...definition,
+					rowId: newId
+				}
+			});
+		}
+	});
+
+	// 删除旧键，添加新键
+	updates.forEach(({ oldKey, definition }) => {
+		formulaDefinitions.delete(oldKey);
+		const newKey = makeFormulaDefinitionKey(definition.column, definition.rowId, definition.rowIndex);
+		if (newKey) {
+			formulaDefinitions.set(newKey, definition);
+		}
+	});
 }
 
 function applyFormulaDefinitions(entries) {
@@ -2848,15 +2878,49 @@ function handleElementChange(element, fieldConfig) {
 		}
 		element.dataset.initialValue = newId;
 		element.title = newId;
+
+		// 先更新 latestPayload 中的 id，确保 recalculateFormulas 使用新的 id
+		if (latestPayload && Array.isArray(latestPayload.rows)) {
+			const row = latestPayload.rows.find(r => r && r.id === oldId);
+			if (row) {
+				row.id = newId;
+			}
+		}
+
+		// 更新该行所有 td 元素的 data-row-id 和 data-id 属性
+		if (tableSection && Number.isFinite(rowIndex)) {
+			const cells = tableSection.querySelectorAll(`td[data-row-index="${rowIndex}"]`);
+			cells.forEach(td => {
+				if (td.dataset.rowId === oldId) {
+					td.dataset.rowId = newId;
+				}
+				// 同时更新子元素（input/select）的 data-id
+				const input = td.querySelector('input, select, textarea');
+				if (input && input.dataset.id === oldId) {
+					input.dataset.id = newId;
+				}
+			});
+		}
+
+		// 更新所有引用该 rowId 的公式定义
+		updateFormulaDefinitionsOnIdRename(oldId, newId);
+
 		// 发送 renameId 消息
 		vscode.postMessage({
 			type: 'renameId',
 			payload: { oldId, newId }
 		});
+
 		// 更新选中单元格的状态
 		if (selectedCell && selectedCell.element === element) {
 			selectedCell.value = newId;
 		}
+
+		// 重新计算公式并刷新表格显示
+		updatePayloadFormulasSnapshot();
+		recalculateFormulas({ emitUpdates: true });
+		refreshFormulaResultsForTable();
+
 		return;
 	}
 

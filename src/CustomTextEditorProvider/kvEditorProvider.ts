@@ -1907,6 +1907,29 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					throw new Error('保存 KV 文件失败。');
 				}
 			}
+
+			// 更新公式存储中的 rowId
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			if (workspaceFolder) {
+				const documentKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+				if (documentKey) {
+					const overrides = this.copyColumnOptionOverrides(this.getColumnOptionOverrides(workspaceFolder));
+					if (overrides.formulas && overrides.formulas[documentKey]) {
+						const documentFormulas = { ...overrides.formulas[documentKey] };
+						const oldRowKey = `id:${oldId}`;
+						const newRowKey = `id:${newId}`;
+
+						// 如果存在旧的行键，将其公式移到新的行键下
+						if (documentFormulas[oldRowKey]) {
+							documentFormulas[newRowKey] = { ...documentFormulas[oldRowKey] };
+							delete documentFormulas[oldRowKey];
+
+							overrides.formulas[documentKey] = documentFormulas;
+							this.writeColumnOptionOverrides(workspaceFolder, overrides);
+						}
+					}
+				}
+			}
 		});
 	}
 
