@@ -300,7 +300,8 @@ body {
 
 /* 仅在需要放置填充句柄/预览时启用相对定位，避免冻结列偏移错位 */
 .kv-table td.kv-cell-selected,
-.kv-table td.kv-cell-fill-preview {
+.kv-table td.kv-cell-fill-preview,
+.kv-table td.kv-cell-formula {
 	position: relative;
 }
 
