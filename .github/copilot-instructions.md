@@ -1,3 +1,25 @@
+# VS Code Dota2 Tools — Copilot 指南（精简）
+
+目标：为 AI 编码助手提供快速上手要点，使其能安全、可重复地修改和扩展此扩展。
+- **整体架构（一句话）**：`src/extension.ts` 启动本地化和状态栏，然后交给 `src/init.ts` 的 `moduleList` 逐个初始化模块；每个模块应能被重复初始化与销毁。
+
+- **重要目录（快速参考）
+  - `src/`：TypeScript 源码，重点查看 `src/extension.ts`, `src/init.ts`。
+- **开发 / 构建命令**
+  - 本地开发（watch 编译）：`npm run watch`（VS Code Task: `npm: watch`）
+  - 类型检查（watch）：`npm run watch-tests`（`npm: watch-tests`）
+- **不可或缺的项目约定与模式**
+  - 事件总线：使用 `Class/event.ts` 的 `EventManager` 注册/注销事件，避免在模块中重复注册 VS Code 原生事件。
+  - 模块可控：`src/init.ts` 的 `moduleList` 与 `skipModuleList` 控制模块启用；要新增模块请同步修改 `package.json` 的配置项。
+- **新增功能（快速检查表）
+  1) 新命令：在 `src/extension.ts` 注册，并在 `package.json` `contributes.commands` 添加。
+  2) 新模块：把 init 函数加入 `src/init.ts` 的 `moduleList`；若需开关，添加到 `skipModuleList` 并在 `package.json` 新增配置。
+- **示例参考文件（查看实现细节）
+  - 启动与模块：`src/extension.ts`, `src/init.ts`
+  - 事件与消息：`Class/event.ts`
+- **AI 编辑器注意事项（必须遵守）
+  - 变更应保持最小化，只改与任务直接相关的文件；使用 `apply_patch` 提交更改。
+  - 不要把重型 I/O（大文件解析、网络请求）放入 `activate()`，改为懒加载。
 # VS Code Dota2 Tools – Copilot Instructions
 
 ## Big Picture

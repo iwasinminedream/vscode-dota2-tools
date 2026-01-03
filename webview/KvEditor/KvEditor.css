@@ -1,3 +1,100 @@
+/* ===========================================================================
+ * KV Editor Design System - CSS Variables
+ * ===========================================================================
+ * 所有组件应使用这些变量以确保视觉一致性
+ * =========================================================================== */
+:root {
+	/* -------------------------------------------------------------------------
+	 * Spacing - 间距系统 (基于 4px 网格)
+	 * ------------------------------------------------------------------------- */
+	--kv-spacing-xs: 2px;
+	--kv-spacing-sm: 4px;
+	--kv-spacing-md: 8px;
+	--kv-spacing-lg: 12px;
+	--kv-spacing-xl: 16px;
+	--kv-spacing-2xl: 24px;
+
+	/* -------------------------------------------------------------------------
+	 * Border Radius - 圆角系统
+	 * ------------------------------------------------------------------------- */
+	--kv-radius-sm: 3px;
+	/* 小型组件：输入框、小按钮 */
+	--kv-radius-md: 4px;
+	/* 中型组件：按钮、标签 */
+	--kv-radius-lg: 6px;
+	/* 大型组件：弹窗、卡片 */
+	--kv-radius-xl: 8px;
+	/* 超大组件：模态框 */
+	--kv-radius-full: 9999px;
+	/* 圆形：标签、徽章 */
+
+	/* -------------------------------------------------------------------------
+	 * Typography - 字体系统
+	 * ------------------------------------------------------------------------- */
+	--kv-font-size-xs: 10px;
+	--kv-font-size-sm: 11px;
+	--kv-font-size-md: 12px;
+	--kv-font-size-lg: 13px;
+	--kv-font-size-xl: 14px;
+	--kv-font-size-2xl: 16px;
+
+	/* -------------------------------------------------------------------------
+	 * Sizing - 尺寸系统
+	 * ------------------------------------------------------------------------- */
+	--kv-icon-size-sm: 14px;
+	--kv-icon-size-md: 16px;
+	--kv-icon-size-lg: 18px;
+	--kv-icon-size-xl: 20px;
+
+	--kv-button-height-sm: 24px;
+	--kv-button-height-md: 28px;
+	--kv-button-height-lg: 32px;
+
+	--kv-input-height-sm: 24px;
+	--kv-input-height-md: 28px;
+	--kv-input-height-lg: 32px;
+
+	/* -------------------------------------------------------------------------
+	 * Shadows - 阴影系统
+	 * ------------------------------------------------------------------------- */
+	--kv-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+	--kv-shadow-md: 0 8px 20px rgba(0, 0, 0, 0.25);
+	--kv-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.35);
+	--kv-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.45);
+
+	/* -------------------------------------------------------------------------
+	 * Transitions - 过渡动画
+	 * ------------------------------------------------------------------------- */
+	--kv-transition-fast: 0.1s ease;
+	--kv-transition-normal: 0.15s ease;
+	--kv-transition-slow: 0.2s ease;
+
+	/* -------------------------------------------------------------------------
+	 * Z-Index - 层级系统
+	 * ------------------------------------------------------------------------- */
+	--kv-z-sticky: 10;
+	/* 粘性元素：表头 */
+	--kv-z-dropdown: 20;
+	/* 下拉菜单 */
+	--kv-z-overlay: 40;
+	/* 遮罩层 */
+	--kv-z-modal: 50;
+	/* 模态框 */
+	--kv-z-popup: 60;
+	/* 弹出层 */
+	--kv-z-tooltip: 100;
+	/* 工具提示 */
+	--kv-z-context-menu: 10000;
+	/* 右键菜单 */
+
+	/* -------------------------------------------------------------------------
+	 * Component-specific tokens - 组件特定变量
+	 * ------------------------------------------------------------------------- */
+	--kv-cell-base-height: 32px;
+	--kv-header-height: 48px;
+	--kv-formula-bar-height: 46px;
+}
+
 body {
 	margin: 0;
 	padding: 0;
@@ -198,8 +295,13 @@ body {
 
 .kv-table td {
 	vertical-align: middle;
-	position: relative;
 	--kv-cell-base-height: 32px;
+}
+
+/* 仅在需要放置填充句柄/预览时启用相对定位，避免冻结列偏移错位 */
+.kv-table td.kv-cell-selected,
+.kv-table td.kv-cell-fill-preview {
+	position: relative;
 }
 
 .kv-table td.kv-cell-formula::after {
@@ -647,6 +749,20 @@ body {
 	outline: none;
 }
 
+.kv-column-context-menu-item:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+	color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
+	background: transparent;
+}
+
+.kv-column-context-menu-item:disabled:hover,
+.kv-column-context-menu-item:disabled:focus,
+.kv-column-context-menu-item:disabled:focus-visible {
+	background: transparent;
+	color: var(--vscode-disabledForeground, var(--vscode-descriptionForeground));
+}
+
 .kv-context-menu-item-danger {
 	color: var(--vscode-errorForeground, #f48771);
 }
@@ -1022,13 +1138,140 @@ body.kv-column-options-editor-open {
 	overflow: hidden;
 }
 
+/* ===========================================================================
+ * 按钮系统 (Button System)
+ * ===========================================================================
+ * 使用规范：
+ * - 基础类: .kv-btn (必需)
+ * - 变体类: .kv-btn-primary | .kv-btn-secondary | .kv-btn-danger | .kv-btn-ghost
+ * - 尺寸类: .kv-btn-sm | .kv-btn-lg
+ * - 图标类: .kv-btn-icon (仅图标按钮)
+ * 
+ * 示例: <button class="kv-btn kv-btn-primary">确定</button>
+ *       <button class="kv-btn kv-btn-icon"><span class="codicon codicon-close"></span></button>
+ * =========================================================================== */
+
+/* 基础按钮 */
+.kv-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--kv-spacing-md);
+	height: var(--kv-button-height-md);
+	padding: 0 var(--kv-spacing-lg);
+	border-radius: var(--kv-radius-md);
+	border: 1px solid transparent;
+	background: var(--vscode-toolbar-hoverBackground, transparent);
+	color: inherit;
+	font: inherit;
+	font-size: var(--kv-font-size-md);
+	cursor: pointer;
+	text-decoration: none;
+	transition: background var(--kv-transition-fast), border-color var(--kv-transition-fast);
+	white-space: nowrap;
+}
+
+.kv-btn:hover:not(:disabled) {
+	background: var(--vscode-toolbar-activeBackground, var(--vscode-toolbar-hoverBackground));
+}
+
+.kv-btn:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 1px;
+}
+
+.kv-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* 主要按钮 */
+.kv-btn-primary {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	border-color: var(--vscode-button-border, transparent);
+}
+
+.kv-btn-primary:hover:not(:disabled) {
+	background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+}
+
+/* 次要按钮 */
+.kv-btn-secondary {
+	background: var(--vscode-button-secondaryBackground, transparent);
+	color: var(--vscode-button-secondaryForeground, inherit);
+	border-color: var(--vscode-panel-border);
+}
+
+.kv-btn-secondary:hover:not(:disabled) {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* 危险按钮 */
+.kv-btn-danger {
+	background: var(--vscode-inputValidation-errorBackground, rgba(220, 38, 38, 0.9));
+	color: #ffffff;
+	border-color: var(--vscode-inputValidation-errorBorder, rgba(220, 38, 38, 1));
+}
+
+.kv-btn-danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.95);
+}
+
+/* 幽灵按钮 (透明背景) */
+.kv-btn-ghost {
+	background: transparent;
+	border-color: transparent;
+}
+
+.kv-btn-ghost:hover:not(:disabled) {
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+/* 小尺寸 */
+.kv-btn-sm {
+	height: var(--kv-button-height-sm);
+	padding: 0 var(--kv-spacing-md);
+	font-size: var(--kv-font-size-sm);
+	gap: var(--kv-spacing-sm);
+}
+
+/* 大尺寸 */
+.kv-btn-lg {
+	height: var(--kv-button-height-lg);
+	padding: 0 var(--kv-spacing-xl);
+	font-size: var(--kv-font-size-lg);
+}
+
+/* 图标按钮 */
+.kv-btn-icon {
+	width: var(--kv-button-height-md);
+	height: var(--kv-button-height-md);
+	padding: 0;
+}
+
+.kv-btn-icon.kv-btn-sm {
+	width: var(--kv-button-height-sm);
+	height: var(--kv-button-height-sm);
+}
+
+.kv-btn-icon.kv-btn-lg {
+	width: var(--kv-button-height-lg);
+	height: var(--kv-button-height-lg);
+}
+
+.kv-btn-icon .codicon {
+	font-size: var(--kv-icon-size-md);
+}
+
+/* 旧版按钮类 - 保持向后兼容 */
 .kv-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
 	padding: 4px 10px;
-	border-radius: 4px;
+	border-radius: var(--kv-radius-md);
 	border: 1px solid transparent;
 	background: var(--vscode-toolbar-hoverBackground, transparent);
 	color: inherit;
@@ -1092,6 +1335,306 @@ body.kv-column-options-editor-open {
 	font-size: 16px;
 }
 
+/* ===========================================================================
+ * 输入框系统 (Input System)
+ * ===========================================================================
+ * 使用规范：
+ * - 基础类: .kv-input (必需)
+ * - 尺寸类: .kv-input-sm | .kv-input-lg
+ * - 变体类: .kv-input-borderless (无边框)
+ * 
+ * 示例: <input class="kv-input" type="text" placeholder="请输入..." />
+ *       <textarea class="kv-input kv-textarea"></textarea>
+ * =========================================================================== */
+
+.kv-input {
+	display: block;
+	width: 100%;
+	height: var(--kv-input-height-md);
+	padding: 0 var(--kv-spacing-md);
+	border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+	border-radius: var(--kv-radius-sm);
+	background: var(--vscode-input-background, var(--vscode-editor-background));
+	color: var(--vscode-input-foreground, var(--vscode-editor-foreground));
+	font-family: var(--vscode-font-family);
+	font-size: var(--kv-font-size-md);
+	box-sizing: border-box;
+	transition: border-color var(--kv-transition-fast), outline var(--kv-transition-fast);
+}
+
+.kv-input::placeholder {
+	color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
+}
+
+.kv-input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	border-color: var(--vscode-focusBorder);
+}
+
+.kv-input:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.kv-input-sm {
+	height: var(--kv-input-height-sm);
+	font-size: var(--kv-font-size-sm);
+	padding: 0 var(--kv-spacing-sm);
+}
+
+.kv-input-lg {
+	height: var(--kv-input-height-lg);
+	font-size: var(--kv-font-size-lg);
+	padding: 0 var(--kv-spacing-lg);
+}
+
+.kv-input-borderless {
+	border-color: transparent;
+	background: transparent;
+}
+
+.kv-input-borderless:focus {
+	border-color: transparent;
+}
+
+/* 多行文本框 */
+.kv-textarea {
+	height: auto;
+	min-height: 60px;
+	padding: var(--kv-spacing-md);
+	resize: vertical;
+	line-height: 1.4;
+}
+
+/* ===========================================================================
+ * 弹窗/模态框系统 (Modal/Dialog System)
+ * ===========================================================================
+ * 使用规范：
+ * - 遮罩层: .kv-overlay
+ * - 弹窗容器: .kv-modal | .kv-modal-sm | .kv-modal-lg
+ * - 头部: .kv-modal-header > .kv-modal-title
+ * - 内容: .kv-modal-body
+ * - 底部: .kv-modal-footer
+ * 
+ * 示例:
+ * <div class="kv-overlay">
+ *   <div class="kv-modal">
+ *     <div class="kv-modal-header">
+ *       <h3 class="kv-modal-title">标题</h3>
+ *     </div>
+ *     <div class="kv-modal-body">内容</div>
+ *     <div class="kv-modal-footer">操作按钮</div>
+ *   </div>
+ * </div>
+ * =========================================================================== */
+
+.kv-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: var(--kv-z-overlay);
+}
+
+.kv-modal {
+	width: min(640px, 90vw);
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+	color: var(--vscode-editorWidget-foreground, var(--vscode-editor-foreground));
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: var(--kv-radius-lg);
+	box-shadow: var(--kv-shadow-lg);
+	overflow: hidden;
+}
+
+.kv-modal-sm {
+	width: min(400px, 90vw);
+}
+
+.kv-modal-lg {
+	width: min(800px, 92vw);
+}
+
+.kv-modal-xl {
+	width: min(960px, 95vw);
+	max-height: 85vh;
+}
+
+.kv-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--kv-spacing-lg) var(--kv-spacing-xl);
+	border-bottom: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-sideBarSectionHeader-background, var(--vscode-sideBar-background));
+}
+
+.kv-modal-title {
+	margin: 0;
+	font-size: var(--kv-font-size-xl);
+	font-weight: 600;
+}
+
+.kv-modal-body {
+	flex: 1 1 auto;
+	overflow: auto;
+	padding: var(--kv-spacing-xl);
+}
+
+.kv-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--kv-spacing-md);
+	padding: var(--kv-spacing-lg) var(--kv-spacing-xl);
+	border-top: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-sideBar-background);
+}
+
+.kv-modal-footer-left {
+	margin-right: auto;
+}
+
+/* ===========================================================================
+ * 右键菜单系统 (Context Menu System)
+ * ===========================================================================
+ * 使用规范：
+ * - 容器: .kv-context-menu
+ * - 菜单项: .kv-context-menu-item
+ * - 分隔线: .kv-context-menu-separator
+ * - 危险项: .kv-context-menu-item.kv-context-menu-item-danger
+ * =========================================================================== */
+
+.kv-context-menu {
+	position: fixed;
+	min-width: 160px;
+	padding: var(--kv-spacing-sm) 0;
+	z-index: var(--kv-z-context-menu);
+	background: var(--vscode-menu-background, var(--vscode-editorWidget-background));
+	border: 1px solid var(--vscode-menu-border, var(--vscode-editorWidget-border));
+	border-radius: var(--kv-radius-md);
+	box-shadow: var(--kv-shadow-md);
+}
+
+.kv-context-menu:focus {
+	outline: none;
+}
+
+.kv-context-menu-item {
+	width: 100%;
+	padding: var(--kv-spacing-md) var(--kv-spacing-lg);
+	border: none;
+	background: transparent;
+	color: var(--vscode-menu-foreground, var(--vscode-editorWidget-foreground));
+	text-align: left;
+	font-size: var(--kv-font-size-md);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: var(--kv-spacing-md);
+}
+
+.kv-context-menu-item:hover,
+.kv-context-menu-item:focus,
+.kv-context-menu-item:focus-visible {
+	background: var(--vscode-list-hoverBackground);
+	color: var(--vscode-menu-selectionForeground, var(--vscode-editorWidget-foreground));
+	outline: none;
+}
+
+.kv-context-menu-item .codicon {
+	font-size: var(--kv-icon-size-sm);
+	width: var(--kv-icon-size-sm);
+}
+
+/* 分隔线已在下方定义 - .kv-context-menu-separator */
+
+/* ===========================================================================
+ * 拖拽手柄系统 (Drag Handle System)
+ * ===========================================================================
+ * 使用规范：
+ * - 行拖拽: .kv-drag-handle
+ * - 列拖拽: .kv-column-drag-handle
+ * =========================================================================== */
+
+.kv-drag-handle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--kv-icon-size-xl);
+	height: var(--kv-icon-size-xl);
+	border: none;
+	border-radius: var(--kv-radius-sm);
+	background: transparent;
+	color: var(--vscode-descriptionForeground);
+	cursor: grab;
+	opacity: 0;
+	transition: opacity var(--kv-transition-normal), color var(--kv-transition-normal);
+}
+
+.kv-drag-handle:hover {
+	color: var(--vscode-editor-foreground);
+	background: var(--vscode-toolbar-hoverBackground);
+}
+
+.kv-drag-handle:active {
+	cursor: grabbing;
+}
+
+/* ===========================================================================
+ * 标签系统 (Tag System)
+ * ===========================================================================
+ * 使用规范：
+ * - 基础标签: .kv-tag
+ * - 变体: .kv-tag-primary | .kv-tag-secondary | .kv-tag-success | .kv-tag-warning | .kv-tag-danger
+ * =========================================================================== */
+
+.kv-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--kv-spacing-sm);
+	padding: var(--kv-spacing-xs) var(--kv-spacing-md);
+	border-radius: var(--kv-radius-full);
+	font-size: var(--kv-font-size-sm);
+	line-height: 1.3;
+	white-space: nowrap;
+	background: var(--vscode-button-secondaryBackground, rgba(37, 150, 190, 0.18));
+	color: var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground));
+}
+
+/* ===========================================================================
+ * 表单组系统 (Form Group System)
+ * ===========================================================================
+ * 使用规范：
+ * - 表单组: .kv-form-group
+ * - 标签: .kv-form-label
+ * - 错误提示: .kv-form-error
+ * =========================================================================== */
+
+.kv-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--kv-spacing-md);
+}
+
+.kv-form-label {
+	font-size: var(--kv-font-size-md);
+	color: var(--vscode-descriptionForeground);
+}
+
+.kv-form-error {
+	padding: var(--kv-spacing-sm) var(--kv-spacing-md);
+	border-radius: var(--kv-radius-sm);
+	font-size: var(--kv-font-size-md);
+	color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground));
+	background: var(--vscode-inputValidation-errorBackground, transparent);
+	border: 1px solid var(--vscode-inputValidation-errorBorder, transparent);
+}
+
 .kv-ability-editor-overlay {
 	position: fixed;
 	inset: 0;
@@ -1140,17 +1683,13 @@ body.kv-column-options-editor-open {
 .kv-ability-editor-entries {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 4px;
 }
 
 .kv-ability-editor-entry {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
-	/* border: 1px solid var(--vscode-panel-border);
-	border-radius: 6px;
-	padding: 12px;
-	background: var(--vscode-editor-background); */
+	gap: 4px;
 }
 
 .kv-ability-editor-input {
@@ -1171,24 +1710,46 @@ body.kv-column-options-editor-open {
 
 .kv-ability-editor-entry-row {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 8px;
 }
 
-.kv-ability-editor-entry-main-row {
-	flex-wrap: wrap;
+/* 基础键输入框 */
+.kv-ability-editor-key-input {
+	flex: 0 0 auto;
+	width: 200px;
+	/* 使用固定宽度以便修饰行对齐 */
 }
 
-.kv-ability-editor-value-group {
+/* 值输入框包装器：包含输入框和内嵌的autofill按钮 */
+.kv-ability-editor-value-wrapper {
+	position: relative;
 	display: flex;
 	align-items: center;
-	gap: 4px;
 	flex: 1 1 auto;
 	min-width: 0;
 }
 
-.kv-ability-editor-value-group .kv-ability-editor-input {
+.kv-ability-editor-value-wrapper .kv-ability-editor-input {
 	flex: 1 1 auto;
+	padding-right: 28px;
+	/* 为内嵌按钮留空间 */
+}
+
+.kv-ability-editor-value-wrapper .kv-ability-editor-autofill-btn {
+	position: absolute;
+	right: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 24px;
+	height: 24px;
+	padding: 2px;
+	opacity: 0.6;
+}
+
+.kv-ability-editor-value-wrapper:hover .kv-ability-editor-autofill-btn,
+.kv-ability-editor-value-wrapper .kv-ability-editor-autofill-btn:focus {
+	opacity: 1;
 }
 
 .kv-ability-editor-autofill-btn {
@@ -1215,19 +1776,31 @@ body.kv-column-options-editor-open {
 	pointer-events: none;
 }
 
+/* 修饰行容器：左侧缩进 */
 .kv-ability-editor-modifiers {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
+	padding-left: 24px;
+	/* 左侧缩进 */
 }
 
+/* 修饰行布局 */
 .kv-ability-editor-modifier {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-.kv-ability-editor-modifier .kv-ability-editor-input {
+/* 修饰键输入框：与基础键右边缘对齐 */
+.kv-ability-editor-modifier-key {
+	flex: 0 0 auto;
+	width: 176px;
+	/* 200px(基础键宽) - 24px(缩进) = 176px */
+}
+
+/* 修饰值包装器：与基础值对齐 */
+.kv-ability-editor-modifier .kv-ability-editor-value-wrapper {
 	flex: 1 1 auto;
 }
 
@@ -1240,7 +1813,6 @@ body.kv-column-options-editor-open {
 	width: 28px;
 	height: 28px;
 	padding: 4px;
-	/* border: none; */
 	border-radius: 3px;
 	background: transparent;
 	color: var(--vscode-editor-foreground);
@@ -2200,11 +2772,6 @@ body.kv-texture-menu-open {
 	to {
 		opacity: 0;
 	}
-}
-
-content: '\ebb3';
-/* codicon-circle-filled */
-font-family: codicon;
 }
 
 .kv-radio-label {

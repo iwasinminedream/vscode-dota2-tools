@@ -159,6 +159,11 @@ let selectedRows = new Set(); // 存储选中的行索引
 let lastSelectedRowIndex = null; // 用于 Shift 多选
 let copiedRowsData = null; // 存储复制的行数据
 
+// 状态版本机制 - 防止过期消息导致数据不一致
+let payloadVersion = 0;
+let pendingEditVersion = 0;
+let isEditInProgress = false;
+
 const FORMULA_ERROR_VALUE = '#ERROR!';
 const FORMULA_CYCLE_VALUE = '#CYCLE!';
 
@@ -185,6 +190,32 @@ const FILL_DEFAULT_RATIO = 2;
 const COLUMN_WIDTH_SAVE_DEBOUNCE_MS = 600;
 
 let columnWidthSaveHandle = null;
+
+// 编辑锁辅助函数 - 防止公式计算期间数据被覆盖
+function beginEdit() {
+	pendingEditVersion++;
+	isEditInProgress = true;
+	return pendingEditVersion;
+}
+
+function endEdit(editVersion) {
+	if (editVersion === pendingEditVersion) {
+		isEditInProgress = false;
+	}
+}
+
+function isEditStale(editVersion) {
+	return editVersion !== pendingEditVersion || payloadVersion > editVersion;
+}
+
+// 页面关闭前强制保存列宽，防止防抖丢失
+window.addEventListener('beforeunload', () => {
+	if (columnWidthSaveHandle) {
+		clearTimeout(columnWidthSaveHandle);
+		columnWidthSaveHandle = null;
+		flushColumnWidthSave();
+	}
+});
 
 document.addEventListener('mousemove', handleColumnResize);
 document.addEventListener('mouseup', stopColumnResize);
@@ -490,13 +521,17 @@ function recalculateFormulas(options = {}) {
 				pendingEdits.push({ id: row.id, key: definition.column, value });
 			}
 		}
-		// 更新内存中的值
-		if (targetRow && targetRow.values) {
+		// 更新内存中的值（仅在非编辑状态下）
+		if (targetRow && targetRow.values && !isEditInProgress) {
 			targetRow.values[definition.column] = value;
 		}
 	});
-	if (emitUpdates && pendingEdits.length) {
+	// 使用编辑版本防止竞态条件
+	if (emitUpdates && pendingEdits.length && !isEditInProgress) {
+		const editVersion = beginEdit();
 		dispatchBulkEdit(pendingEdits);
+		// 延迟结束编辑状态，等待后端响应
+		setTimeout(() => endEdit(editVersion), 100);
 	}
 	updatePayloadFormulasSnapshot();
 }
@@ -1233,10 +1268,14 @@ function pasteRows() {
 		insertAfterIndex = latestPayload.rows.length - 1;
 	}
 
+	// 计算基准偏移量：使用第一行的偏移作为所有行的基准
+	// 这确保了复制组内的相对引用关系保持不变
+	const firstSourceRowIndex = copiedRowsData[0]?.rowIndex ?? 0;
+	const firstTargetRowIndex = insertAfterIndex + 1;
+	const baseOffset = firstTargetRowIndex - firstSourceRowIndex;
+
 	// 调整公式行引用
 	const rowsWithAdjustedFormulas = copiedRowsData.map((rowData, index) => {
-		const targetRowIndex = insertAfterIndex + 1 + index;
-		const sourceRowIndex = rowData.rowIndex;
 		const adjustedRow = {
 			id: rowData.id,
 			values: rowData.values,
@@ -1244,13 +1283,12 @@ function pasteRows() {
 		if (rowData.abilityValues) {
 			adjustedRow.abilityValues = rowData.abilityValues;
 		}
-		// 如果有公式，调整行引用
-		if (rowData.formulas && typeof rowData.formulas === 'object' && Number.isFinite(sourceRowIndex)) {
-			const rowOffset = targetRowIndex - sourceRowIndex;
+		// 如果有公式，使用统一的基准偏移量调整行引用
+		if (rowData.formulas && typeof rowData.formulas === 'object') {
 			const adjustedFormulas = {};
 			for (const [column, formula] of Object.entries(rowData.formulas)) {
 				if (typeof formula === 'string') {
-					adjustedFormulas[column] = offsetFormulaReferences(formula, rowOffset);
+					adjustedFormulas[column] = offsetFormulaReferences(formula, baseOffset);
 				}
 			}
 			if (Object.keys(adjustedFormulas).length > 0) {
@@ -1428,25 +1466,7 @@ function handleCellNavigation(event) {
 	}
 }
 
-function handleClipboardShortcuts(event) {
-	if (!selectedCell) {
-		return;
-	}
-	const isCopy = event.key?.toLowerCase() === 'c';
-	const isPaste = event.key?.toLowerCase() === 'v';
-	if (!(event.ctrlKey || event.metaKey) || (!isCopy && !isPaste)) {
-		return;
-	}
-	if (isEditableElement(document.activeElement)) {
-		return;
-	}
-	event.preventDefault();
-	if (isCopy) {
-		copySelectedCell();
-	} else {
-		pasteToSelectedCell();
-	}
-}
+// 注意：handleClipboardShortcuts 已在上方定义，此处不再重复
 
 function startFillDrag(event) {
 	if (event.button !== 0) {
@@ -1772,7 +1792,7 @@ function refreshFillHandle() {
 		fillHandleElement.addEventListener('mousedown', (event) => startFillDrag(event));
 	}
 	const host = selectedTd;
-	host.style.position = 'relative';
+	// host.style.position = 'relative';
 	if (fillHandleElement.parentElement !== host) {
 		host.appendChild(fillHandleElement);
 	}
@@ -2637,6 +2657,16 @@ function getOptionLabel(fieldConfig, value) {
 }
 
 // 渲染下拉选择的标签展示
+const optionColorCache = new Map();
+
+function getOptionColor(option, index) {
+	if (option?.color) {
+		return option.color;
+	}
+
+	return getAutoColor(index);
+}
+
 function updateSelectDisplay(select, display, fieldConfig) {
 	if (!display) {
 		return;
@@ -2656,22 +2686,18 @@ function updateSelectDisplay(select, display, fieldConfig) {
 		display.appendChild(placeholder);
 		return;
 	}
-	values.forEach((value) => {
+	const columnKey = select?.dataset?.key || '';
+	values.forEach((value, index) => {
 		const tag = document.createElement('span');
 		tag.className = 'kv-select-tag';
 
 		// 获取选项配置
 		const option = fieldConfig?.options?.find((opt) => opt.value === value);
 
-		// 整个标签填充颜色
-		if (option?.color) {
-			tag.style.backgroundColor = option.color;
-		} else {
-			// 如果没有颜色配置，使用默认样式
-			tag.style.backgroundColor = 'var(--vscode-badge-background)';
-			tag.style.color = 'var(--vscode-badge-foreground)';
-			tag.style.textShadow = 'none';
-		}
+		// 整个标签填充颜色（无显式颜色时生成稳定色相）
+		tag.style.backgroundColor = getOptionColor(option, index);
+		tag.style.color = '#fff';
+		tag.style.textShadow = '0 1px 2px rgba(0,0,0,0.3)';
 
 		// 添加文本内容
 		// 适配本地化显示：当 localizedMode 为 false 时，在必要时显示 "value (label)"
@@ -2809,7 +2835,8 @@ function openMultiSelectDropdown(context) {
 	overlay.appendChild(emptyIndicator);
 	tableSection.appendChild(overlay);
 	const entries = [];
-	(context.fieldConfig.options ?? []).forEach((option) => {
+	const columnKey = context?.select?.dataset?.key || '';
+	(context.fieldConfig.options ?? []).forEach((option, index) => {
 		const item = document.createElement('div');
 		item.className = 'kv-quickpick-item';
 		item.dataset.value = option.value;
@@ -2836,10 +2863,11 @@ function openMultiSelectDropdown(context) {
 		labelEl.className = 'kv-quickpick-label';
 
 		// 主文本使用颜色标签样式（像单元格标签一样）
-		if (option.color) {
+		const color = getOptionColor(option, index);
+		if (color) {
 			const colorTag = document.createElement('span');
 			colorTag.className = 'kv-select-tag';
-			colorTag.style.backgroundColor = option.color;
+			colorTag.style.backgroundColor = color;
 			colorTag.textContent = primaryText;
 			labelEl.appendChild(colorTag);
 		} else {
@@ -3129,6 +3157,30 @@ function cancelColumnWidthSave() {
 	}
 	clearTimeout(columnWidthSaveHandle);
 	columnWidthSaveHandle = null;
+}
+
+// 立即刷新保存列宽（用于页面关闭前）
+function flushColumnWidthSave() {
+	if (!latestPayload || !modifiedColumns.size) {
+		return;
+	}
+	const widthsPayload = {};
+	modifiedColumns.forEach((column) => {
+		const width = columnWidths[column];
+		if (typeof width !== 'number' || !Number.isFinite(width)) {
+			return;
+		}
+		const normalized = Math.max(getMinColumnWidth(column), Math.round(width));
+		widthsPayload[column] = normalized;
+	});
+	if (!Object.keys(widthsPayload).length) {
+		return;
+	}
+	vscode.postMessage({
+		type: 'saveColumnWidths',
+		payload: { widths: widthsPayload },
+	});
+	modifiedColumns.clear();
 }
 
 function markColumnWidthChange(column, width) {
@@ -3493,6 +3545,332 @@ function normalizeAbilityEntriesForPayload(entries) {
 	}).filter((entry) => entry.key.length > 0);
 }
 
+// ============================================================================
+// 虚拟滚动配置
+// ============================================================================
+const VIRTUAL_SCROLL_THRESHOLD = 200; // 超过此行数启用虚拟滚动
+const VIRTUAL_SCROLL_BUFFER = 10;     // 可视区域外的缓冲行数
+const ROW_HEIGHT_ESTIMATE = 32;       // 估算行高（像素）
+
+let virtualScrollState = null;
+let scrollRAFHandle = null;
+
+// 检查是否应启用虚拟滚动
+function shouldUseVirtualScroll(rowCount) {
+	return rowCount > VIRTUAL_SCROLL_THRESHOLD;
+}
+
+// 计算可见行范围
+function calculateVisibleRowRange(scrollTop, containerHeight, totalRows) {
+	const startRow = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT_ESTIMATE) - VIRTUAL_SCROLL_BUFFER);
+	const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT_ESTIMATE) + 2 * VIRTUAL_SCROLL_BUFFER;
+	const endRow = Math.min(totalRows - 1, startRow + visibleCount);
+	return { startRow, endRow };
+}
+
+// ============================================================================
+// 渲染性能优化
+// ============================================================================
+
+const RENDER_DEBOUNCE_MS = 16; // ~60fps
+let pendingRenderHandle = null;
+let lastRenderTime = 0;
+
+/**
+ * 防抖渲染 - 合并短时间内的多次渲染请求
+ */
+function scheduleRender(columns, rows, columnOptions) {
+	if (pendingRenderHandle) {
+		cancelAnimationFrame(pendingRenderHandle);
+	}
+
+	const now = performance.now();
+	const timeSinceLastRender = now - lastRenderTime;
+
+	if (timeSinceLastRender < RENDER_DEBOUNCE_MS) {
+		// 使用 RAF 延迟渲染
+		pendingRenderHandle = requestAnimationFrame(() => {
+			pendingRenderHandle = null;
+			lastRenderTime = performance.now();
+			renderTable(columns, rows, columnOptions);
+		});
+	} else {
+		// 立即渲染
+		lastRenderTime = now;
+		renderTable(columns, rows, columnOptions);
+	}
+}
+
+/**
+ * 使用 DocumentFragment 批量创建 DOM 元素以提升性能
+ */
+function createRowsBatch(rows, startIndex, endIndex, context) {
+	const fragment = document.createDocumentFragment();
+	for (let i = startIndex; i <= endIndex && i < rows.length; i++) {
+		const tr = createTableRowElement(rows[i], i, context);
+		if (tr) {
+			fragment.appendChild(tr);
+		}
+	}
+	return fragment;
+}
+
+/**
+ * 创建单个表格行元素（占位符 - 将在后续重构中实现完整版本）
+ * 当前直接返回 null，实际创建逻辑仍在 renderTable 中
+ */
+function createTableRowElement(row, rowIndex, context) {
+	// TODO: 将 renderTable 中的行创建逻辑迁移到此函数
+	// 当前返回 null，保持向后兼容
+	return null;
+}
+
+// ============================================================================
+// 表格渲染辅助函数（模块化拆分）
+// ============================================================================
+
+/**
+ * 创建表格渲染上下文，包含所有共享状态
+ */
+function createRenderContext(columns, rows, columnOptions) {
+	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...columns];
+	const columnLabels = new Map();
+	const columnLetters = new Map();
+
+	columns.forEach((column, index) => {
+		columnLetters.set(column, getColumnLetter(index));
+	});
+	columnLetters.set(ROW_NUMBER_COLUMN_KEY, '#');
+
+	for (const column of displayColumns) {
+		const headerLabel = column === ROW_NUMBER_COLUMN_KEY ? '#' : column;
+		columnLabels.set(column, headerLabel);
+	}
+
+	// 计算冻结列信息
+	const frozenColumnsInOrder = displayColumns.filter(
+		col => frozenColumns.has(col) && col !== ROW_NUMBER_COLUMN_KEY
+	);
+	const lastFrozenColumn = frozenColumnsInOrder.length > 0
+		? frozenColumnsInOrder[frozenColumnsInOrder.length - 1]
+		: null;
+
+	return {
+		columns,
+		rows,
+		columnOptions,
+		displayColumns,
+		columnLabels,
+		columnLetters,
+		frozenColumnsInOrder,
+		lastFrozenColumn,
+		texturePreviewMap: latestPayload?.texturePreviews ?? Object.create(null),
+		scriptSupport: latestPayload?.scriptSupport || { applicable: false, baseReady: false, useTypescript: false },
+	};
+}
+
+/**
+ * 计算冻结列的 left 偏移量
+ */
+function calculateFrozenColumnLeft(column, context) {
+	const { frozenColumnsInOrder, columnLabels } = context;
+	const frozenIndex = frozenColumnsInOrder.indexOf(column);
+	if (frozenIndex < 0) return 0;
+
+	let leftPos = ROW_NUMBER_MIN_WIDTH;
+	for (let i = 0; i < frozenIndex; i++) {
+		const prevCol = frozenColumnsInOrder[i];
+		const prevLabel = columnLabels.get(prevCol) ?? prevCol;
+		leftPos += getColumnWidth(prevCol, prevLabel);
+	}
+	return leftPos;
+}
+
+/**
+ * 应用冻结列样式到元素
+ */
+function applyFrozenColumnStyle(element, column, context) {
+	if (!frozenColumns.has(column) || column === ROW_NUMBER_COLUMN_KEY) {
+		return;
+	}
+	element.dataset.frozen = 'true';
+	if (column === context.lastFrozenColumn) {
+		element.dataset.frozenLast = 'true';
+	}
+	element.style.left = `${calculateFrozenColumnLeft(column, context)}px`;
+}
+
+/**
+ * 创建表格的 colgroup 元素
+ * @param {RenderContext} ctx - 渲染上下文
+ * @returns {HTMLTableColElement}
+ */
+function createColgroup(ctx) {
+	const { displayColumns, columnLabels } = ctx;
+	const colgroup = document.createElement('colgroup');
+
+	for (const column of displayColumns) {
+		const headerLabel = columnLabels.get(column) ?? column;
+		const width = getColumnWidth(column, headerLabel);
+		if (!(column in originalColumnWidths)) {
+			originalColumnWidths[column] = Math.round(width);
+		}
+		const colElement = document.createElement('col');
+		colElement.dataset.column = column;
+		colElement.style.width = `${width}px`;
+		colgroup.appendChild(colElement);
+	}
+
+	return colgroup;
+}
+
+/**
+ * 创建单个表头单元格
+ * @param {string} column - 列标识
+ * @param {number} columnIndex - 列索引
+ * @param {RenderContext} ctx - 渲染上下文
+ * @returns {HTMLTableCellElement}
+ */
+function createHeaderCell(column, columnIndex, ctx) {
+	const { columnLabels, columnLetters, columnOptions } = ctx;
+	const th = document.createElement('th');
+	const headerLabel = columnLabels.get(column) ?? column;
+
+	th.dataset.column = column;
+	th.dataset.columnIndex = String(columnIndex);
+	th.style.width = `${getColumnWidth(column, headerLabel)}px`;
+	th.style.minWidth = `${getMinColumnWidth(column)}px`;
+
+	// 应用冻结列样式
+	applyFrozenColumnStyle(th, column, ctx);
+
+	if (column === ROW_NUMBER_COLUMN_KEY) {
+		th.textContent = '#';
+	} else {
+		const wrapper = document.createElement('div');
+		wrapper.className = 'kv-column-header';
+
+		// 创建列字母拖拽按钮
+		const letterButton = document.createElement('button');
+		letterButton.type = 'button';
+		letterButton.className = 'kv-column-letter';
+		const letterText = document.createElement('span');
+		letterText.className = 'kv-column-letter-text';
+		letterText.textContent = columnLetters.get(column) ?? '';
+		letterButton.appendChild(letterText);
+		const letterIcon = document.createElement('span');
+		letterIcon.className = 'codicon codicon-gripper kv-column-letter-icon';
+		letterIcon.setAttribute('aria-hidden', 'true');
+		letterButton.appendChild(letterIcon);
+
+		if (columnIndex > 0) {
+			letterButton.setAttribute('draggable', 'true');
+			letterButton.setAttribute('aria-label', `拖动列 ${headerLabel}`);
+			letterButton.addEventListener('dragstart', (event) => handleColumnDragStart(event, column, columnIndex, letterButton));
+			letterButton.addEventListener('dragend', (event) => handleColumnDragEnd(event, letterButton));
+			letterButton.addEventListener('mousedown', (event) => event.stopPropagation());
+			letterButton.addEventListener('click', (event) => event.preventDefault());
+			th.classList.add('kv-column-draggable');
+		} else {
+			letterButton.setAttribute('draggable', 'false');
+			letterButton.setAttribute('aria-disabled', 'true');
+			letterButton.tabIndex = -1;
+			letterButton.addEventListener('mousedown', (event) => event.stopPropagation());
+			letterButton.addEventListener('click', (event) => event.preventDefault());
+		}
+
+		// 创建列名元素
+		const nameEl = document.createElement('span');
+		nameEl.className = 'kv-column-name';
+		const columnDesc = columnDescriptions[column];
+		const displayLabel = (localizedMode && columnDesc?.label) ? columnDesc.label : headerLabel;
+		const displayTooltip = (columnDesc?.description) ? columnDesc.description : headerLabel;
+		nameEl.textContent = displayLabel;
+		nameEl.title = displayTooltip;
+
+		wrapper.appendChild(letterButton);
+
+		// 创建标题行（包含列名和选项按钮）
+		const titleRow = document.createElement('div');
+		titleRow.className = 'kv-column-header-title-row';
+		titleRow.appendChild(nameEl);
+
+		const columnFieldConfig = columnOptions?.[column];
+		const optionsButton = document.createElement('button');
+		optionsButton.type = 'button';
+		optionsButton.className = 'kv-column-options-button';
+		optionsButton.title = `编辑 ${headerLabel} 下拉选项`;
+		optionsButton.setAttribute('aria-label', `编辑 ${headerLabel} 下拉选项`);
+		optionsButton.innerHTML = '<span class="codicon codicon-fold-down"></span>';
+		optionsButton.addEventListener('mousedown', (event) => event.stopPropagation());
+		optionsButton.addEventListener('click', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			openColumnOptionsEditor({
+				column,
+				columnKey: column,
+				columnName: headerLabel,
+				folderType: latestPayload?.folderType ?? 'custom',
+				options: cloneColumnOptionEntries(columnFieldConfig?.options ?? []),
+				multiple: columnFieldConfig?.multiple ?? false,
+				separator: columnFieldConfig?.separator ?? '|',
+			});
+		});
+		titleRow.appendChild(optionsButton);
+		wrapper.appendChild(titleRow);
+		th.appendChild(wrapper);
+
+		// 为列标题添加右键菜单（允许 id 列）
+		if (columnIndex >= 0) {
+			th.addEventListener('contextmenu', (event) => {
+				openColumnContextMenu(event, {
+					targetElement: th,
+					columnKey: column,
+					columnIndex,
+					columnName: headerLabel
+				});
+			});
+			th.style.cursor = 'context-menu';
+		}
+	}
+
+	// 添加拖放事件监听器
+	if (columnIndex >= 0) {
+		th.addEventListener('dragover', (event) => handleColumnDragOver(event, th, column, columnIndex));
+		th.addEventListener('dragleave', (event) => handleColumnDragLeave(event, th));
+		th.addEventListener('drop', (event) => handleColumnDrop(event, column));
+	}
+
+	// 添加列宽调整器
+	const resizer = document.createElement('div');
+	resizer.className = 'kv-resizer';
+	resizer.addEventListener('mousedown', (event) => startColumnResize(event, column));
+	th.appendChild(resizer);
+
+	return th;
+}
+
+/**
+ * 创建表头 thead 元素
+ * @param {string[]} columns - 原始列数组
+ * @param {RenderContext} ctx - 渲染上下文
+ * @returns {HTMLTableSectionElement}
+ */
+function createTableHeader(columns, ctx) {
+	const { displayColumns } = ctx;
+	const thead = document.createElement('thead');
+	const headRow = document.createElement('tr');
+
+	for (const column of displayColumns) {
+		const columnIndex = column === ROW_NUMBER_COLUMN_KEY ? -1 : columns.indexOf(column);
+		const th = createHeaderCell(column, columnIndex, ctx);
+		headRow.appendChild(th);
+	}
+
+	thead.appendChild(headRow);
+	return thead;
+}
+
 // 渲染主表格结构和单元格控件
 function renderTable(columns, rows, columnOptions) {
 	if (!tableSection) {
@@ -3519,173 +3897,24 @@ function renderTable(columns, rows, columnOptions) {
 		}
 	}
 	closeMultiSelectDropdown({ preservePending });
-	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...columns];
-	const texturePreviewMap = latestPayload?.texturePreviews ?? Object.create(null);
-	const scriptSupport = latestPayload?.scriptSupport || { applicable: false, baseReady: false, useTypescript: false };
+
+	// 使用渲染上下文统一管理共享状态
+	const ctx = createRenderContext(columns, rows, columnOptions);
+	const { displayColumns, columnLabels, columnLetters, texturePreviewMap, scriptSupport } = ctx;
+
+	// 创建表格结构（使用辅助函数）
 	const table = document.createElement('table');
-	const colgroup = document.createElement('colgroup');
-	const columnLabels = new Map();
-	const columnLetters = new Map();
-	columns.forEach((column, index) => {
-		columnLetters.set(column, getColumnLetter(index));
-	});
-	columnLetters.set(ROW_NUMBER_COLUMN_KEY, '#');
-	for (const column of displayColumns) {
-		let headerLabel;
-		if (column === ROW_NUMBER_COLUMN_KEY) {
-			headerLabel = '#';
-		} else {
-			headerLabel = column;
-		}
-		columnLabels.set(column, headerLabel);
-		const width = getColumnWidth(column, headerLabel);
-		if (!(column in originalColumnWidths)) {
-			originalColumnWidths[column] = Math.round(width);
-		}
-		const colElement = document.createElement('col');
-		colElement.dataset.column = column;
-		colElement.style.width = `${width}px`;
-		colgroup.appendChild(colElement);
-	}
+	const colgroup = createColgroup(ctx);
 	table.appendChild(colgroup);
-	const thead = document.createElement('thead');
-	const headRow = document.createElement('tr');
-	// 计算冻结列的累积left值
-	let cumulativeLeft = 0;
-	const frozenColumnsInOrder = [];
-	for (const col of displayColumns) {
-		if (frozenColumns.has(col) && col !== ROW_NUMBER_COLUMN_KEY) {
-			frozenColumnsInOrder.push(col);
-		}
-	}
+	const thead = createTableHeader(columns, ctx);
 
-	// 找出最右侧的冻结列
-	const lastFrozenColumn = frozenColumnsInOrder.length > 0 ? frozenColumnsInOrder[frozenColumnsInOrder.length - 1] : null;
-
-	for (const column of displayColumns) {
-		const th = document.createElement('th');
-		const headerLabel = columnLabels.get(column) ?? column;
-		const columnIndex = column === ROW_NUMBER_COLUMN_KEY ? -1 : columns.indexOf(column);
-		th.dataset.column = column;
-		th.dataset.columnIndex = String(columnIndex);
-		th.style.width = `${getColumnWidth(column, headerLabel)}px`;
-		th.style.minWidth = `${getMinColumnWidth(column)}px`;
-
-		// 应用冻结列样式
-		if (frozenColumns.has(column) && column !== ROW_NUMBER_COLUMN_KEY) {
-			th.dataset.frozen = 'true';
-			// 标记最右侧的冻结列
-			if (column === lastFrozenColumn) {
-				th.dataset.frozenLast = 'true';
-			}
-			const frozenIndex = frozenColumnsInOrder.indexOf(column);
-			let leftPos = ROW_NUMBER_MIN_WIDTH; // 从行号列宽度开始
-			for (let i = 0; i < frozenIndex; i++) {
-				const prevCol = frozenColumnsInOrder[i];
-				const prevLabel = columnLabels.get(prevCol) ?? prevCol;
-				leftPos += getColumnWidth(prevCol, prevLabel);
-			}
-			th.style.left = `${leftPos}px`;
-		}
-		if (column === ROW_NUMBER_COLUMN_KEY) {
-			th.textContent = '#';
-		} else {
-			const wrapper = document.createElement('div');
-			wrapper.className = 'kv-column-header';
-			const letterButton = document.createElement('button');
-			letterButton.type = 'button';
-			letterButton.className = 'kv-column-letter';
-			const letterText = document.createElement('span');
-			letterText.className = 'kv-column-letter-text';
-			letterText.textContent = columnLetters.get(column) ?? '';
-			letterButton.appendChild(letterText);
-			const letterIcon = document.createElement('span');
-			letterIcon.className = 'codicon codicon-gripper kv-column-letter-icon';
-			letterIcon.setAttribute('aria-hidden', 'true');
-			letterButton.appendChild(letterIcon);
-			if (columnIndex > 0) {
-				letterButton.setAttribute('draggable', 'true');
-				letterButton.setAttribute('aria-label', `拖动列 ${headerLabel}`);
-				letterButton.addEventListener('dragstart', (event) => handleColumnDragStart(event, column, columnIndex, letterButton));
-				letterButton.addEventListener('dragend', (event) => handleColumnDragEnd(event, letterButton));
-				letterButton.addEventListener('mousedown', (event) => event.stopPropagation());
-				letterButton.addEventListener('click', (event) => event.preventDefault());
-				th.classList.add('kv-column-draggable');
-			} else {
-				letterButton.setAttribute('draggable', 'false');
-				letterButton.setAttribute('aria-disabled', 'true');
-				letterButton.tabIndex = -1;
-				letterButton.addEventListener('mousedown', (event) => event.stopPropagation());
-				letterButton.addEventListener('click', (event) => event.preventDefault());
-			}
-			const nameEl = document.createElement('span');
-			nameEl.className = 'kv-column-name';
-
-			// 获取列的描述配置
-			const columnDesc = columnDescriptions[column];
-			const displayLabel = (localizedMode && columnDesc?.label) ? columnDesc.label : headerLabel;
-			const displayTooltip = (columnDesc?.description) ? columnDesc.description : headerLabel;
-
-			nameEl.textContent = displayLabel;
-			nameEl.title = displayTooltip;
-
-			wrapper.appendChild(letterButton);
-			const titleRow = document.createElement('div');
-			titleRow.className = 'kv-column-header-title-row';
-			titleRow.appendChild(nameEl);
-			const columnFieldConfig = columnOptions?.[column];
-			const optionsButton = document.createElement('button');
-			optionsButton.type = 'button';
-			optionsButton.className = 'kv-column-options-button';
-			optionsButton.title = `编辑 ${headerLabel} 下拉选项`;
-			optionsButton.setAttribute('aria-label', `编辑 ${headerLabel} 下拉选项`);
-			optionsButton.innerHTML = '<span class="codicon codicon-fold-down"></span>';
-			optionsButton.addEventListener('mousedown', (event) => event.stopPropagation());
-			optionsButton.addEventListener('click', (event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				openColumnOptionsEditor({
-					column,
-					columnName: headerLabel,
-					folderType: latestPayload?.folderType ?? 'custom',
-					options: cloneColumnOptionEntries(columnFieldConfig?.options ?? []),
-					multiple: columnFieldConfig?.multiple ?? false,
-					separator: columnFieldConfig?.separator ?? '|',
-				});
-			});
-			titleRow.appendChild(optionsButton);
-			wrapper.appendChild(titleRow);
-			th.appendChild(wrapper);
-
-			// 为列标题添加右键菜单（在整个 th 上响应，跳过 id 列）
-			if (columnIndex > 0) {
-				th.addEventListener('contextmenu', (event) => {
-					openColumnContextMenu(event, {
-						targetElement: th,
-						columnKey: column,
-						columnIndex,
-						columnName: headerLabel
-					});
-				});
-				th.style.cursor = 'context-menu';
-			}
-		}
-		if (columnIndex >= 0) {
-			th.addEventListener('dragover', (event) => handleColumnDragOver(event, th, column, columnIndex));
-			th.addEventListener('dragleave', (event) => handleColumnDragLeave(event, th));
-			th.addEventListener('drop', (event) => handleColumnDrop(event, column));
-		}
-		const resizer = document.createElement('div');
-		resizer.className = 'kv-resizer';
-		resizer.addEventListener('mousedown', (event) => startColumnResize(event, column));
-		th.appendChild(resizer);
-		headRow.appendChild(th);
-	}
-	thead.appendChild(headRow);
 	const tbody = document.createElement('tbody');
 	tbody.addEventListener('dragover', (event) => handleRowContainerDragOver(event, tbody));
 	tbody.addEventListener('dragleave', (event) => handleRowContainerDragLeave(event, tbody));
 	tbody.addEventListener('drop', (event) => handleRowContainerDrop(event, tbody));
+
+	// 使用 DocumentFragment 批量构建行，减少 DOM 重排
+	const fragment = document.createDocumentFragment();
 	rows.forEach((row, rowIndex) => {
 		const tr = document.createElement('tr');
 		tr.classList.add('kv-row');
@@ -3698,22 +3927,8 @@ function renderTable(columns, rows, columnOptions) {
 			td.dataset.rowIndex = String(rowIndex);
 			td.style.width = `${getColumnWidth(column, columnLabels.get(column) ?? column)}px`;
 
-			// 应用冻结列样式
-			if (frozenColumns.has(column) && column !== ROW_NUMBER_COLUMN_KEY) {
-				td.dataset.frozen = 'true';
-				// 标记最右侧的冻结列
-				if (column === lastFrozenColumn) {
-					td.dataset.frozenLast = 'true';
-				}
-				const frozenIndex = frozenColumnsInOrder.indexOf(column);
-				let leftPos = ROW_NUMBER_MIN_WIDTH;
-				for (let i = 0; i < frozenIndex; i++) {
-					const prevCol = frozenColumnsInOrder[i];
-					const prevLabel = columnLabels.get(prevCol) ?? prevCol;
-					leftPos += getColumnWidth(prevCol, prevLabel);
-				}
-				td.style.left = `${leftPos}px`;
-			}
+			// 应用冻结列样式（使用辅助函数）
+			applyFrozenColumnStyle(td, column, ctx);
 			const columnLetter = columnLetters.get(column) ?? column;
 			const columnName = columnLabels.get(column) ?? column;
 			const fieldConfig = columnOptions?.[column];
@@ -4212,8 +4427,10 @@ function renderTable(columns, rows, columnOptions) {
 			tr.addEventListener('dragleave', () => handleRowDragLeave(tr));
 			tr.addEventListener('drop', (event) => handleRowDrop(event, tr));
 		}
-		tbody.appendChild(tr);
+		fragment.appendChild(tr);
 	});
+	// 批量将所有行添加到 tbody（单次 DOM 操作）
+	tbody.appendChild(fragment);
 	table.appendChild(thead);
 	table.appendChild(tbody);
 	tableSection.innerHTML = '';
@@ -4808,74 +5025,55 @@ function openColumnContextMenu(invocationEvent, context) {
 	menu.className = 'kv-column-context-menu';
 	menu.setAttribute('role', 'menu');
 
-	// id 列只显示冻结选项
-	if (columnKey === 'id') {
-		// 添加冻结/取消冻结选项
-		const isFrozen = frozenColumns.has(columnKey);
-		const freezeButton = document.createElement('button');
-		freezeButton.type = 'button';
-		freezeButton.className = 'kv-column-context-menu-item';
-		freezeButton.textContent = isFrozen ? '取消冻结列' : '冻结列';
-		freezeButton.addEventListener('click', () => {
-			let frozenColumnKey = null;
-			if (isFrozen) {
-				// 取消冻结：清空所有冻结列
-				frozenColumns.clear();
-			} else {
-				// 冻结：只冻结id列
-				frozenColumns.clear();
-				frozenColumns.add('id');
-				frozenColumnKey = 'id';
-			}
-			// 保存冻结状态（只保存最右侧列的key）
-			vscode.postMessage({
-				type: 'saveFrozenColumns',
-				payload: { frozenColumns: frozenColumnKey }
-			});
-			// 重新渲染表格以应用冻结效果
-			if (latestPayload) {
-				renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
-			}
+	const isIdColumn = columnKey === 'id';
+
+	const createMenuButton = ({ label, onClick, danger = false, disabled = false }) => {
+		const button = document.createElement('button');
+		button.type = 'button';
+		button.className = danger ? 'kv-column-context-menu-item kv-context-menu-item-danger' : 'kv-column-context-menu-item';
+		button.textContent = label;
+		if (disabled) {
+			button.disabled = true;
+		}
+		if (!disabled && typeof onClick === 'function') {
+			button.addEventListener('click', onClick);
+		}
+		return button;
+	};
+
+	// 插入列
+	const insertLeft = createMenuButton({
+		label: '向左插入列',
+		disabled: isIdColumn,
+		onClick: () => {
+			requestColumnInsertion('before', columnKey, columnIndex);
 			closeColumnContextMenu();
-		});
-		menu.appendChild(freezeButton);
-	} else {
-		// 其他列显示完整菜单
-		const options = [
-			{ label: '向左插入列', position: 'before' },
-			{ label: '向右插入列', position: 'after' }
-		];
+		},
+	});
+	const insertRight = createMenuButton({
+		label: '向右插入列',
+		onClick: () => {
+			requestColumnInsertion('after', columnKey, columnIndex);
+			closeColumnContextMenu();
+		},
+	});
+	menu.appendChild(insertLeft);
+	menu.appendChild(insertRight);
 
-		options.forEach((option) => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.className = 'kv-column-context-menu-item';
-			button.textContent = option.label;
-			button.addEventListener('click', () => {
-				requestColumnInsertion(option.position, columnKey, columnIndex);
-				closeColumnContextMenu();
-			});
-			menu.appendChild(button);
-		});
+	// 分隔线
+	const separator1 = document.createElement('div');
+	separator1.className = 'kv-context-menu-separator';
+	menu.appendChild(separator1);
 
-		// 添加分隔线
-		const separator1 = document.createElement('div');
-		separator1.className = 'kv-context-menu-separator';
-		menu.appendChild(separator1);
-
-		// 添加冻结/取消冻结选项
-		const isFrozen = frozenColumns.has(columnKey);
-		const freezeButton = document.createElement('button');
-		freezeButton.type = 'button';
-		freezeButton.className = 'kv-column-context-menu-item';
-		freezeButton.textContent = isFrozen ? '取消冻结列' : '冻结列';
-		freezeButton.addEventListener('click', () => {
+	// 冻结/取消冻结
+	const isFrozen = frozenColumns.has(columnKey);
+	const freezeButton = createMenuButton({
+		label: isFrozen ? '取消冻结列' : '冻结列',
+		onClick: () => {
 			let frozenColumnKey = null;
 			if (isFrozen) {
-				// 取消冻结：清空所有冻结列
 				frozenColumns.clear();
 			} else {
-				// 冻结：清空现有冻结列，然后冻结该列及其左侧所有列（包括id列）
 				frozenColumns.clear();
 				if (latestPayload && latestPayload.columns) {
 					const allColumns = latestPayload.columns;
@@ -4884,54 +5082,51 @@ function openColumnContextMenu(invocationEvent, context) {
 						for (let i = 0; i <= targetIndex; i++) {
 							frozenColumns.add(allColumns[i]);
 						}
-						// 只保存最右侧冻结列的key
 						frozenColumnKey = columnKey;
 					}
 				}
 			}
-			// 保存冻结状态（只保存最右侧列的key）
 			vscode.postMessage({
 				type: 'saveFrozenColumns',
 				payload: { frozenColumns: frozenColumnKey }
 			});
-			// 重新渲染表格以应用冻结效果
 			if (latestPayload) {
 				renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
 			}
 			closeColumnContextMenu();
-		});
-		menu.appendChild(freezeButton);
+		}
+	});
+	menu.appendChild(freezeButton);
 
-		const separator2 = document.createElement('div');
-		separator2.className = 'kv-context-menu-separator';
-		menu.appendChild(separator2);
+	const separator2 = document.createElement('div');
+	separator2.className = 'kv-context-menu-separator';
+	menu.appendChild(separator2);
 
-		// 添加描述按钮
-		const descButton = document.createElement('button');
-		descButton.type = 'button';
-		descButton.className = 'kv-column-context-menu-item';
-		descButton.textContent = '添加描述';
-		descButton.addEventListener('click', () => {
+	// 描述
+	const descButton = createMenuButton({
+		label: '添加描述',
+		onClick: () => {
 			requestColumnDescription(columnKey, resolvedContext.columnName || columnKey);
 			closeColumnContextMenu();
-		});
-		menu.appendChild(descButton);
+		},
+	});
+	menu.appendChild(descButton);
 
-		// 添加删除列选项
-		const separator3 = document.createElement('div');
-		separator3.className = 'kv-context-menu-separator';
-		menu.appendChild(separator3);
+	// 删除列
+	const separator3 = document.createElement('div');
+	separator3.className = 'kv-context-menu-separator';
+	menu.appendChild(separator3);
 
-		const deleteButton = document.createElement('button');
-		deleteButton.type = 'button';
-		deleteButton.className = 'kv-column-context-menu-item kv-context-menu-item-danger';
-		deleteButton.textContent = '删除列';
-		deleteButton.addEventListener('click', () => {
+	const deleteButton = createMenuButton({
+		label: '删除列',
+		danger: true,
+		disabled: isIdColumn,
+		onClick: () => {
 			requestColumnDeletion(columnKey);
 			closeColumnContextMenu();
-		});
-		menu.appendChild(deleteButton);
-	}
+		},
+	});
+	menu.appendChild(deleteButton);
 
 	menu.addEventListener('contextmenu', (event) => event.preventDefault());
 	document.body.appendChild(menu);
@@ -5536,28 +5731,29 @@ function renderAbilityValuesEditorEntries() {
 		entryEl.dataset.entryIndex = String(entryIndex);
 		const mainRow = document.createElement('div');
 		mainRow.className = 'kv-ability-editor-entry-row kv-ability-editor-entry-main-row';
+
+		// 基础键输入框
 		const keyInput = document.createElement('input');
 		keyInput.type = 'text';
-		keyInput.className = 'kv-ability-editor-input';
+		keyInput.className = 'kv-ability-editor-input kv-ability-editor-key-input';
 		keyInput.placeholder = '条目键';
 		keyInput.dataset.role = 'entry-key';
 		keyInput.dataset.entryIndex = String(entryIndex);
 		keyInput.value = entry.key;
 		mainRow.appendChild(keyInput);
-		const valueGroup = document.createElement('div');
-		valueGroup.className = 'kv-ability-editor-value-group';
+
+		// 基础值输入框组（包含内嵌的 autofill 按钮）
+		const valueWrapper = document.createElement('div');
+		valueWrapper.className = 'kv-ability-editor-value-wrapper';
 		const valueInput = document.createElement('input');
 		valueInput.type = 'text';
-		valueInput.className = 'kv-ability-editor-input';
+		valueInput.className = 'kv-ability-editor-input kv-ability-editor-value-input';
 		valueInput.placeholder = '基础值';
 		valueInput.dataset.role = 'entry-value';
 		valueInput.dataset.entryIndex = String(entryIndex);
 		valueInput.value = entry.value;
-
-		// 添加撤销/重做支持
 		setupUndoRedo(valueInput);
-
-		valueGroup.appendChild(valueInput);
+		valueWrapper.appendChild(valueInput);
 		const autofillButton = document.createElement('button');
 		autofillButton.type = 'button';
 		autofillButton.className = 'kv-button kv-button-tertiary kv-ability-editor-autofill-btn';
@@ -5566,8 +5762,20 @@ function renderAbilityValuesEditorEntries() {
 		autofillButton.addEventListener('click', () => {
 			openAutofillPopup({ input: valueInput });
 		});
-		valueGroup.appendChild(autofillButton);
-		mainRow.appendChild(valueGroup);
+		valueWrapper.appendChild(autofillButton);
+		mainRow.appendChild(valueWrapper);
+
+		// 新增修饰按钮（移到主行）
+		const addModifierButton = document.createElement('button');
+		addModifierButton.type = 'button';
+		addModifierButton.className = 'kv-button kv-button-tertiary kv-ability-editor-add-modifier';
+		addModifierButton.dataset.role = 'add-modifier';
+		addModifierButton.dataset.entryIndex = String(entryIndex);
+		addModifierButton.title = '新增修饰';
+		addModifierButton.innerHTML = '<span class="codicon codicon-add"></span>';
+		mainRow.appendChild(addModifierButton);
+
+		// 删除条目按钮
 		const removeEntryButton = document.createElement('button');
 		removeEntryButton.type = 'button';
 		removeEntryButton.className = 'kv-button kv-button-tertiary kv-ability-editor-remove-entry';
@@ -5577,6 +5785,8 @@ function renderAbilityValuesEditorEntries() {
 		removeEntryButton.innerHTML = '<span class="codicon codicon-trash"></span>';
 		mainRow.appendChild(removeEntryButton);
 		entryEl.appendChild(mainRow);
+
+		// 修饰键值容器
 		const modifiersContainer = document.createElement('div');
 		modifiersContainer.className = 'kv-ability-editor-modifiers';
 		entry.modifiers.forEach((modifier, modifierIndex) => {
@@ -5584,6 +5794,8 @@ function renderAbilityValuesEditorEntries() {
 			modifierRow.className = 'kv-ability-editor-modifier';
 			modifierRow.dataset.entryIndex = String(entryIndex);
 			modifierRow.dataset.modifierIndex = String(modifierIndex);
+
+			// 修饰键输入框
 			const modifierKeyInput = document.createElement('input');
 			modifierKeyInput.type = 'text';
 			modifierKeyInput.className = 'kv-ability-editor-input kv-ability-editor-modifier-key';
@@ -5593,6 +5805,10 @@ function renderAbilityValuesEditorEntries() {
 			modifierKeyInput.dataset.modifierIndex = String(modifierIndex);
 			modifierKeyInput.value = modifier.key;
 			modifierRow.appendChild(modifierKeyInput);
+
+			// 修饰值输入框组（包含内嵌的 autofill 按钮）
+			const modifierValueWrapper = document.createElement('div');
+			modifierValueWrapper.className = 'kv-ability-editor-value-wrapper';
 			const modifierValueInput = document.createElement('input');
 			modifierValueInput.type = 'text';
 			modifierValueInput.className = 'kv-ability-editor-input kv-ability-editor-modifier-value';
@@ -5601,7 +5817,19 @@ function renderAbilityValuesEditorEntries() {
 			modifierValueInput.dataset.entryIndex = String(entryIndex);
 			modifierValueInput.dataset.modifierIndex = String(modifierIndex);
 			modifierValueInput.value = modifier.value;
-			modifierRow.appendChild(modifierValueInput);
+			modifierValueWrapper.appendChild(modifierValueInput);
+			const modifierAutofillButton = document.createElement('button');
+			modifierAutofillButton.type = 'button';
+			modifierAutofillButton.className = 'kv-button kv-button-tertiary kv-ability-editor-autofill-btn';
+			modifierAutofillButton.title = '自动填充 (基础值 + 升级间隔 × 等级)';
+			modifierAutofillButton.innerHTML = '<span class="codicon codicon-wand"></span>';
+			modifierAutofillButton.addEventListener('click', () => {
+				openAutofillPopup({ input: modifierValueInput });
+			});
+			modifierValueWrapper.appendChild(modifierAutofillButton);
+			modifierRow.appendChild(modifierValueWrapper);
+
+			// 删除修饰按钮
 			const removeModifierButton = document.createElement('button');
 			removeModifierButton.type = 'button';
 			removeModifierButton.className = 'kv-button kv-button-tertiary kv-ability-editor-remove-modifier';
@@ -5612,16 +5840,11 @@ function renderAbilityValuesEditorEntries() {
 			removeModifierButton.innerHTML = '<span class="codicon codicon-trash"></span>';
 			modifierRow.appendChild(removeModifierButton);
 			modifiersContainer.appendChild(modifierRow);
+			// 仅当存在修饰项时再渲染容器，避免空容器带来的 gap
 		});
-		entryEl.appendChild(modifiersContainer);
-		const addModifierButton = document.createElement('button');
-		addModifierButton.type = 'button';
-		addModifierButton.className = 'kv-button kv-button-tertiary kv-ability-editor-add-modifier';
-		addModifierButton.dataset.role = 'add-modifier';
-		addModifierButton.dataset.entryIndex = String(entryIndex);
-		addModifierButton.title = '新增修饰';
-		addModifierButton.innerHTML = '<span class="codicon codicon-add"></span>';
-		entryEl.appendChild(addModifierButton);
+		if (modifiersContainer.childElementCount > 0) {
+			entryEl.appendChild(modifiersContainer);
+		}
 		entriesContainer.appendChild(entryEl);
 	});
 }
@@ -5933,6 +6156,7 @@ function openColumnOptionsEditor(context) {
 		multiSelectCheckbox,
 		separatorInput,
 		column: context.column,
+		columnKey: context.columnKey || context.column,
 		columnName: context.columnName || context.column,
 		folderType: context.folderType || (latestPayload?.folderType ?? 'custom'),
 		options,
@@ -6009,7 +6233,7 @@ function renderColumnOptionsEditorOptions() {
 	if (!columnOptionsEditorState) {
 		return;
 	}
-	const { listContainer, options } = columnOptionsEditorState;
+	const { listContainer, options, columnKey } = columnOptionsEditorState;
 	listContainer.innerHTML = '';
 	if (!options.length) {
 		const empty = document.createElement('div');
@@ -6028,7 +6252,7 @@ function renderColumnOptionsEditorOptions() {
 		colorPicker.className = 'kv-option-color-picker';
 		colorPicker.dataset.role = 'color';
 		colorPicker.dataset.index = String(index);
-		colorPicker.style.backgroundColor = option.color || getAutoColor(index);
+		colorPicker.style.backgroundColor = getOptionColor(option, index);
 		colorPicker.title = '点击选择颜色';
 		row.appendChild(colorPicker);
 
@@ -7493,6 +7717,14 @@ function applyColumnLayout(columns, layout) {
 // 根据扩展端消息刷新整体界面
 function render(payload) {
 	if (!payload) {
+		return;
+	}
+	// 递增版本号，用于检测过期编辑
+	payloadVersion++;
+	// 如果正在编辑中，跳过本次更新以防止数据覆盖
+	if (isEditInProgress) {
+		// 可选：记录被跳过的更新用于调试
+		console.debug('[KvEditor] Skipping render during edit, version:', payloadVersion);
 		return;
 	}
 	cancelColumnWidthSave();
