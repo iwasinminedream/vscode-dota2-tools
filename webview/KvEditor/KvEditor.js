@@ -3,6 +3,7 @@ const vscode = acquireVsCodeApi();
 const fileNameEl = document.getElementById('kv-file-name');
 const fileMetaEl = document.getElementById('kv-file-meta');
 const openTextEditorBtn = document.getElementById('kv-open-text-editor');
+const localizationSettingsBtn = document.getElementById('kv-localization-settings');
 const toggleCompactModeBtn = document.getElementById('kv-toggle-compact-mode');
 const toggleLocalizedModeBtn = document.getElementById('kv-toggle-localized-mode');
 const tableSection = document.getElementById('kv-table');
@@ -30,6 +31,20 @@ if (openTextEditorBtn) {
 		vscode.postMessage({ type: 'openTextEditor' });
 	});
 }
+
+// 绑定本地化设置按钮
+if (localizationSettingsBtn) {
+	localizationSettingsBtn.addEventListener('click', () => {
+		openLocalizationSettingsDialog();
+	});
+}
+
+// 本地化设置状态
+let localizationSettings = {
+	enabled: false,
+	language: 'schinese',
+	filePath: ''
+};
 
 // 精简模式状态管理
 let compactMode = false;
@@ -5978,6 +5993,55 @@ function closeAutofillPopup() {
 	autofillPopupState = null;
 }
 
+function getDecimalPlacesFromInput(value) {
+	const text = typeof value === 'string' ? value.trim() : '';
+	if (!text.includes('.')) {
+		return 0;
+	}
+	const fractional = text.split('.')[1];
+	if (!fractional) {
+		return 0;
+	}
+	const sanitized = fractional.split(/e|E/)[0]?.replace(/[^0-9]/g, '') ?? '';
+	return sanitized.length;
+}
+
+function formatAutofillValue(valueScaled, scale, decimals) {
+	if (decimals <= 0 || scale === 1) {
+		return valueScaled === 0 ? '0' : String(valueScaled);
+	}
+	const raw = (valueScaled / scale).toFixed(decimals);
+	const trimmedWhole = raw.replace(/\.0+$/, '');
+	const trimmed = trimmedWhole.replace(/(\.\d*?)0+$/, '$1');
+	const normalized = trimmed.length ? trimmed : '0';
+	return normalized === '-0' ? '0' : normalized;
+}
+
+function buildAutofillValues(baseValueText, stepValueText, levelValueText) {
+	const decimals = Math.max(
+		getDecimalPlacesFromInput(baseValueText),
+		getDecimalPlacesFromInput(stepValueText)
+	);
+	const scale = decimals > 0 ? Math.pow(10, decimals) : 1;
+	const baseNumber = parseFloat(baseValueText);
+	const stepNumber = parseFloat(stepValueText);
+	const safeBase = Number.isFinite(baseNumber) ? baseNumber : 0;
+	const safeStep = Number.isFinite(stepNumber) ? stepNumber : 0;
+	const baseScaled = Math.round(safeBase * scale);
+	const stepScaled = Math.round(safeStep * scale);
+	const levels = Math.max(1, parseInt(levelValueText, 10) || 1);
+	const values = [];
+	for (let i = 0; i < levels; i += 1) {
+		const scaledValue = baseScaled + stepScaled * i;
+		if (decimals > 0) {
+			values.push(formatAutofillValue(scaledValue, scale, decimals));
+		} else {
+			values.push(String(scaledValue));
+		}
+	}
+	return values;
+}
+
 function openAutofillPopup(context) {
 	if (!context || !context.input) {
 		return;
@@ -6051,13 +6115,7 @@ function openAutofillPopup(context) {
 
 	// 更新预览
 	const updatePreview = () => {
-		const base = parseFloat(baseInput.value) || 0;
-		const step = parseFloat(stepInput.value) || 0;
-		const levels = parseInt(levelsInput.value) || 1;
-		const values = [];
-		for (let i = 0; i < levels; i++) {
-			values.push(base + step * i);
-		}
+		const values = buildAutofillValues(baseInput.value, stepInput.value, levelsInput.value);
 		preview.textContent = '预览: ' + values.join(' ');
 	};
 
@@ -6102,13 +6160,7 @@ function openAutofillPopup(context) {
 	cancelButton.addEventListener('click', () => closeAutofillPopup());
 
 	applyButton.addEventListener('click', () => {
-		const base = parseFloat(baseInput.value) || 0;
-		const step = parseFloat(stepInput.value) || 0;
-		const levels = parseInt(levelsInput.value) || 1;
-		const values = [];
-		for (let i = 0; i < levels; i++) {
-			values.push(base + step * i);
-		}
+		const values = buildAutofillValues(baseInput.value, stepInput.value, levelsInput.value);
 		context.input.value = values.join(' ');
 
 		// 触发 input 事件以保存撤销历史
@@ -8462,9 +8514,186 @@ window.addEventListener('message', (event) => {
 		case 'textureMenuError':
 			handleTextureMenuError(message.payload);
 			break;
+		case 'localizationPathResponse':
+			handleLocalizationPathResponse(message.payload);
+			break;
 		default:
 			break;
 	}
 });
+
+function handleLocalizationPathResponse(payload) {
+	// 更新路径输入框
+	const pathInput = document.querySelector('.kv-localization-settings-overlay .kv-input[type="text"]');
+	if (pathInput && payload && typeof payload.path === 'string') {
+		pathInput.value = payload.path;
+		localizationSettings.filePath = payload.path;
+	}
+}
+
+function openLocalizationSettingsDialog() {
+	// 使用统一的对话框管理
+	const overlay = createManagedDialog({
+		className: 'kv-localization-settings-overlay',
+		onClose: () => {
+			// 清理状态
+		}
+	});
+
+	const dialog = document.createElement('div');
+	dialog.className = 'kv-modal kv-modal-sm';
+	overlay.appendChild(dialog);
+
+	// 标题栏
+	const header = document.createElement('div');
+	header.className = 'kv-modal-header';
+	const title = document.createElement('h3');
+	title.className = 'kv-modal-title';
+	title.textContent = '本地化设置';
+	header.appendChild(title);
+	dialog.appendChild(header);
+
+	// 内容区域
+	const body = document.createElement('div');
+	body.className = 'kv-modal-body';
+
+	// Toggle: 是否绑定本地化文件
+	const enabledField = document.createElement('div');
+	enabledField.className = 'kv-form-group';
+	const enabledLabel = document.createElement('label');
+	enabledLabel.className = 'kv-checkbox-wrapper';
+	const enabledCheckbox = document.createElement('input');
+	enabledCheckbox.type = 'checkbox';
+	enabledCheckbox.className = 'kv-checkbox-input';
+	enabledCheckbox.checked = localizationSettings.enabled;
+	const enabledIndicator = document.createElement('span');
+	enabledIndicator.className = 'kv-checkbox-indicator codicon codicon-check';
+	const enabledText = document.createElement('span');
+	enabledText.className = 'kv-checkbox-label';
+	enabledText.textContent = '绑定本地化文件';
+	enabledLabel.appendChild(enabledCheckbox);
+	enabledLabel.appendChild(enabledIndicator);
+	enabledLabel.appendChild(enabledText);
+	enabledField.appendChild(enabledLabel);
+	body.appendChild(enabledField);
+
+	// 下拉选项：语言
+	const languageField = document.createElement('div');
+	languageField.className = 'kv-form-group';
+	const languageLabel = document.createElement('label');
+	languageLabel.className = 'kv-form-label';
+	languageLabel.textContent = '语言';
+	languageField.appendChild(languageLabel);
+	const languageSelect = document.createElement('select');
+	languageSelect.className = 'kv-input';
+	const languages = [
+		{ value: 'schinese', label: 'schinese' },
+		{ value: 'english', label: 'english' },
+		{ value: 'russian', label: 'russian' }
+	];
+	languages.forEach(lang => {
+		const option = document.createElement('option');
+		option.value = lang.value;
+		option.textContent = lang.label;
+		if (lang.value === localizationSettings.language) {
+			option.selected = true;
+		}
+		languageSelect.appendChild(option);
+	});
+	languageField.appendChild(languageSelect);
+	body.appendChild(languageField);
+
+	// 输入框：本地化文件路径
+	const pathField = document.createElement('div');
+	pathField.className = 'kv-form-group';
+	const pathLabel = document.createElement('label');
+	pathLabel.className = 'kv-form-label';
+	pathLabel.textContent = '本地化文件路径';
+	pathField.appendChild(pathLabel);
+	const pathInput = createInput({
+		type: 'text',
+		className: 'kv-input',
+		placeholder: '路径格式: {localization_path}/{language}/{kv_path}.vdf',
+		value: localizationSettings.filePath,
+		attributes: {
+			readonly: true
+		}
+	});
+	pathField.appendChild(pathInput);
+	body.appendChild(pathField);
+
+	dialog.appendChild(body);
+
+	// 底部按钮
+	const footer = document.createElement('div');
+	footer.className = 'kv-modal-footer';
+	const cancelButton = document.createElement('button');
+	cancelButton.type = 'button';
+	cancelButton.className = 'kv-btn kv-btn-secondary';
+	cancelButton.textContent = '取消';
+	footer.appendChild(cancelButton);
+	const saveButton = document.createElement('button');
+	saveButton.type = 'button';
+	saveButton.className = 'kv-btn kv-btn-primary';
+	saveButton.textContent = '保存';
+	footer.appendChild(saveButton);
+	dialog.appendChild(footer);
+
+	// 更新路径预览函数
+	const updatePathPreview = () => {
+		// 发送消息到后端请求计算路径
+		vscode.postMessage({
+			type: 'requestLocalizationPath',
+			payload: {
+				language: languageSelect.value
+			}
+		});
+	};
+
+	// 事件处理
+	languageSelect.addEventListener('change', updatePathPreview);
+
+	cancelButton.addEventListener('click', () => {
+		overlay.remove();
+	});
+
+	saveButton.addEventListener('click', () => {
+		localizationSettings.enabled = enabledCheckbox.checked;
+		localizationSettings.language = languageSelect.value;
+		localizationSettings.filePath = pathInput.value;
+
+		// 发送设置到后端
+		vscode.postMessage({
+			type: 'saveLocalizationSettings',
+			payload: localizationSettings
+		});
+
+		overlay.remove();
+	});
+
+	const keyHandler = (event) => {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			overlay.remove();
+		}
+	};
+
+	document.addEventListener('keydown', keyHandler, true);
+	overlay.addEventListener('click', (event) => {
+		if (event.target === overlay) {
+			overlay.remove();
+		}
+	});
+
+	dialog.addEventListener('click', (event) => event.stopPropagation());
+
+	document.body.appendChild(overlay);
+
+	// 初始化时请求路径
+	updatePathPreview();
+
+	// 聚焦到第一个输入
+	requestAnimationFrame(() => enabledCheckbox.focus());
+}
 
 vscode.postMessage({ type: 'ready' });

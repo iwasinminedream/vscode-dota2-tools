@@ -1482,8 +1482,11 @@ body.kv-column-options-editor-open {
 
 .kv-modal-body {
 	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
 	overflow: auto;
 	padding: var(--kv-spacing-xl);
+	gap: var(--kv-spacing-md);
 }
 
 .kv-modal-footer {
@@ -1619,7 +1622,7 @@ body.kv-column-options-editor-open {
 .kv-form-group {
 	display: flex;
 	flex-direction: column;
-	gap: var(--kv-spacing-md);
+	gap: var(--kv-spacing-xs);
 }
 
 .kv-form-label {
@@ -1635,6 +1638,24 @@ body.kv-column-options-editor-open {
 	background: var(--vscode-inputValidation-errorBackground, transparent);
 	border: 1px solid var(--vscode-inputValidation-errorBorder, transparent);
 }
+
+/* ===========================================================================
+ * 本地化设置对话框 (Localization Settings Dialog)
+ * =========================================================================== */
+
+.kv-localization-settings-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10000;
+}
+
+/* ===========================================================================
+ * AbilityValues 编辑器 (AbilityValues Editor)
+ * =========================================================================== */
 
 .kv-ability-editor-overlay {
 	position: fixed;
@@ -1882,6 +1903,18 @@ body.kv-column-options-editor-open {
 .kv-autofill-popup-field input:focus {
 	outline: 1px solid var(--vscode-focusBorder);
 	border-color: var(--vscode-focusBorder);
+}
+
+/* 隐藏 number 输入框的微调按钮 */
+.kv-autofill-popup-field input[type="number"]::-webkit-inner-spin-button,
+.kv-autofill-popup-field input[type="number"]::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.kv-autofill-popup-field input[type="number"] {
+	-moz-appearance: textfield;
+	appearance: textfield;
 }
 
 .kv-autofill-popup-preview {

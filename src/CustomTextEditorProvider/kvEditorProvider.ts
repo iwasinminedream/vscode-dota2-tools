@@ -265,6 +265,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				void this.handleOpenFormulaHelp();
 				return;
 			}
+			if (message.type === 'requestLocalizationPath') {
+				void this.handleRequestLocalizationPath(document, webviewPanel.webview, message.payload);
+				return;
+			}
+			if (message.type === 'saveLocalizationSettings') {
+				void this.handleSaveLocalizationSettings(document, message.payload);
+				return;
+			}
 		});
 
 		webviewPanel.onDidDispose(() => {
@@ -2094,6 +2102,63 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			const message = error instanceof Error ? error.message : String(error);
 			void vscode.window.showErrorMessage(`无法打开公式帮助文档：${message}`);
 		}
+	}
+
+	private async handleRequestLocalizationPath(
+		document: vscode.TextDocument,
+		webview: vscode.Webview,
+		payload: any
+	): Promise<void> {
+		try {
+			const language = payload?.language || 'schinese';
+			const localizationBasePath = vscode.workspace.getConfiguration().get<string>('dota2-tools.A5.localization_path') || '';
+
+			// 从document.uri获取KV文件的完整路径
+			const kvFilePath = document.uri.fsPath;
+
+			// 提取scripts/npc之后的相对路径
+			let kvRelativePath = '';
+			const normalizedPath = kvFilePath.replace(/\\/g, '/');
+			const npcMatch = normalizedPath.match(/\/scripts\/npc\/(.+)$/i);
+			if (npcMatch && npcMatch[1]) {
+				kvRelativePath = npcMatch[1];
+				// 移除文件扩展名
+				kvRelativePath = kvRelativePath.replace(/\.(txt|kv)$/, '');
+			}
+
+			if (!kvRelativePath) {
+				webview.postMessage({
+					type: 'localizationPathResponse',
+					payload: { path: '' }
+				});
+				return;
+			}
+
+			// 构建完整路径
+			const fullPath = localizationBasePath
+				? `${localizationBasePath}/${language}/${kvRelativePath}.vdf`
+				: `{localization_path}/${language}/${kvRelativePath}.vdf`;
+
+			webview.postMessage({
+				type: 'localizationPathResponse',
+				payload: { path: fullPath }
+			});
+		} catch (error) {
+			console.error('Error calculating localization path:', error);
+			webview.postMessage({
+				type: 'localizationPathResponse',
+				payload: { path: '' }
+			});
+		}
+	}
+
+	private async handleSaveLocalizationSettings(
+		document: vscode.TextDocument,
+		payload: any
+	): Promise<void> {
+		// TODO: 实现保存本地化设置的逻辑
+		// 目前只是占位，后续会实现具体功能
+		console.log('Localization settings saved:', payload);
 	}
 
 	private async handleReorderRows(document: vscode.TextDocument, payload: KvEditorReorderMessage | undefined): Promise<void> {
