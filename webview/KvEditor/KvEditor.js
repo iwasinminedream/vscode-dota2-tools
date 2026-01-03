@@ -1649,7 +1649,7 @@ function commitFormulaValue() {
 // 获取字段配置中定义的分隔符
 // 为输入框添加撤销/重做支持
 function setupUndoRedo(input, maxHistory = 50) {
-	if (!input || !(input instanceof HTMLInputElement)) {
+	if (!input || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) {
 		return;
 	}
 
@@ -1713,6 +1713,114 @@ function setupUndoRedo(input, maxHistory = 50) {
 
 	input.addEventListener('keydown', handleKeyDown);
 	input.addEventListener('input', handleInput);
+}
+
+/**
+ * 创建输入框的统一接口
+ * @param {Object} options - 配置选项
+ * @param {string} options.type - 输入框类型 (text, number, search, color 等)
+ * @param {string} options.className - CSS 类名
+ * @param {string} options.placeholder - 占位符文本
+ * @param {string} options.value - 初始值
+ * @param {boolean} options.enableUndoRedo - 是否启用撤销/重做功能 (默认 true，仅对 text/number/search 类型)
+ * @param {number} options.maxHistory - 最大历史记录数 (默认 50)
+ * @param {Object} options.attributes - 其他 HTML 属性 (如 min, max, step, required 等)
+ * @returns {HTMLInputElement}
+ */
+function createInput(options = {}) {
+	const {
+		type = 'text',
+		className = '',
+		placeholder = '',
+		value = '',
+		enableUndoRedo = true,
+		maxHistory = 50,
+		attributes = {}
+	} = options;
+
+	const input = document.createElement('input');
+	input.type = type;
+	if (className) {
+		input.className = className;
+	}
+	if (placeholder) {
+		input.placeholder = placeholder;
+	}
+	if (value) {
+		input.value = value;
+	}
+
+	// 应用其他属性
+	Object.keys(attributes).forEach(key => {
+		if (key === 'dataset') {
+			// 特殊处理 dataset
+			Object.keys(attributes.dataset || {}).forEach(dataKey => {
+				input.dataset[dataKey] = attributes.dataset[dataKey];
+			});
+		} else {
+			input[key] = attributes[key];
+		}
+	});
+
+	// 对文本类输入框自动启用撤销/重做功能
+	const textInputTypes = ['text', 'number', 'search'];
+	if (enableUndoRedo && textInputTypes.includes(type)) {
+		setupUndoRedo(input, maxHistory);
+	}
+
+	return input;
+}
+
+/**
+ * 创建文本域的统一接口
+ * @param {Object} options - 配置选项
+ * @param {string} options.className - CSS 类名
+ * @param {string} options.placeholder - 占位符文本
+ * @param {string} options.value - 初始值
+ * @param {boolean} options.enableUndoRedo - 是否启用撤销/重做功能 (默认 true)
+ * @param {number} options.maxHistory - 最大历史记录数 (默认 50)
+ * @param {Object} options.attributes - 其他 HTML 属性 (如 rows, cols 等)
+ * @returns {HTMLTextAreaElement}
+ */
+function createTextarea(options = {}) {
+	const {
+		className = '',
+		placeholder = '',
+		value = '',
+		enableUndoRedo = true,
+		maxHistory = 50,
+		attributes = {}
+	} = options;
+
+	const textarea = document.createElement('textarea');
+	if (className) {
+		textarea.className = className;
+	}
+	if (placeholder) {
+		textarea.placeholder = placeholder;
+	}
+	if (value) {
+		textarea.value = value;
+	}
+
+	// 应用其他属性
+	Object.keys(attributes).forEach(key => {
+		if (key === 'dataset') {
+			// 特殊处理 dataset
+			Object.keys(attributes.dataset || {}).forEach(dataKey => {
+				textarea.dataset[dataKey] = attributes.dataset[dataKey];
+			});
+		} else {
+			textarea[key] = attributes[key];
+		}
+	});
+
+	// 自动启用撤销/重做功能
+	if (enableUndoRedo) {
+		setupUndoRedo(textarea, maxHistory);
+	}
+
+	return textarea;
 }
 
 function getFieldSeparator(fieldConfig) {
@@ -1984,10 +2092,11 @@ function openFillPopup() {
 	arithmeticWrapper.hidden = true;
 	const arithmeticLabel = document.createElement('label');
 	arithmeticLabel.textContent = '步长';
-	const arithmeticInput = document.createElement('input');
-	arithmeticInput.type = 'number';
-	arithmeticInput.value = String(FILL_DEFAULT_STEP);
-	arithmeticInput.step = 'any';
+	const arithmeticInput = createInput({
+		type: 'number',
+		value: String(FILL_DEFAULT_STEP),
+		attributes: { step: 'any' }
+	});
 	arithmeticWrapper.appendChild(arithmeticLabel);
 	arithmeticWrapper.appendChild(arithmeticInput);
 	form.appendChild(arithmeticWrapper);
@@ -1996,10 +2105,11 @@ function openFillPopup() {
 	geometricWrapper.hidden = true;
 	const geometricLabel = document.createElement('label');
 	geometricLabel.textContent = '比率';
-	const geometricInput = document.createElement('input');
-	geometricInput.type = 'number';
-	geometricInput.value = String(FILL_DEFAULT_RATIO);
-	geometricInput.step = 'any';
+	const geometricInput = createInput({
+		type: 'number',
+		value: String(FILL_DEFAULT_RATIO),
+		attributes: { step: 'any' }
+	});
 	geometricWrapper.appendChild(geometricLabel);
 	geometricWrapper.appendChild(geometricInput);
 	form.appendChild(geometricWrapper);
@@ -2008,9 +2118,10 @@ function openFillPopup() {
 	formulaWrapper.hidden = true;
 	const formulaLabel = document.createElement('label');
 	formulaLabel.textContent = '表达式 (可用: base, baseNumber, offset, rowIndex, rowNumber, direction)';
-	const formulaInput = document.createElement('input');
-	formulaInput.type = 'text';
-	formulaInput.placeholder = '例如: base + offset * 2';
+	const formulaInput = createInput({
+		type: 'text',
+		placeholder: '例如: base + offset * 2'
+	});
 	formulaWrapper.appendChild(formulaLabel);
 	formulaWrapper.appendChild(formulaInput);
 	form.appendChild(formulaWrapper);
@@ -2818,11 +2929,12 @@ function openMultiSelectDropdown(context) {
 	overlay.className = 'kv-quickpick';
 	const searchWrapper = document.createElement('div');
 	searchWrapper.className = 'kv-quickpick-search-wrapper';
-	const searchInput = document.createElement('input');
-	searchInput.type = 'search';
-	searchInput.className = 'kv-quickpick-search';
 	const placeholderName = context.columnName ? ` ${context.columnName}` : '';
-	searchInput.placeholder = `搜索${placeholderName}`.trim() || '搜索';
+	const searchInput = createInput({
+		type: 'search',
+		className: 'kv-quickpick-search',
+		placeholder: `搜索${placeholderName}`.trim() || '搜索'
+	});
 	searchWrapper.appendChild(searchInput);
 	overlay.appendChild(searchWrapper);
 	const list = document.createElement('div');
@@ -3972,19 +4084,21 @@ function renderTable(columns, rows, columnOptions) {
 			} else if (column === 'id') {
 				td.classList.add('kv-cell-id');
 				// 改为可编辑的 input 元素
-				const input = document.createElement('input');
-				input.type = 'text';
-				input.dataset.id = row.id ?? '';
-				input.dataset.key = column;
-				input.dataset.rowIndex = String(rowIndex);
 				const displayValue = getCellDisplayValue(rowIndex, row.id ?? '', column, row.id ?? '');
 				const formulaDefinition = getFormulaDefinition(column, row.id ?? '', rowIndex);
 				const computedEntry = getComputedFormulaEntry(column, rowIndex);
-				setElementValue(input, displayValue, undefined);
-				input.dataset.initialValue = input.value ?? '';
-
-				// 添加撤销/重做支持
-				setupUndoRedo(input);
+				const input = createInput({
+					type: 'text',
+					value: displayValue,
+					attributes: {
+						dataset: {
+							id: row.id ?? '',
+							key: column,
+							rowIndex: String(rowIndex),
+							initialValue: displayValue
+						}
+					}
+				});
 
 				if (formulaDefinition) {
 					input.dataset.formulaValue = formulaDefinition.formula;
@@ -4193,16 +4307,18 @@ function renderTable(columns, rows, columnOptions) {
 						});
 					}
 				} else {
-					const input = document.createElement('input');
-					input.type = 'text';
-					input.dataset.id = row.id ?? '';
-					input.dataset.key = column;
-					input.dataset.rowIndex = String(rowIndex);
-					setElementValue(input, displayValue, undefined);
-					input.dataset.initialValue = input.value ?? '';
-
-					// 添加撤销/重做支持
-					setupUndoRedo(input);
+					const input = createInput({
+						type: 'text',
+						value: displayValue,
+						attributes: {
+							dataset: {
+								id: row.id ?? '',
+								key: column,
+								rowIndex: String(rowIndex),
+								initialValue: displayValue
+							}
+						}
+					});
 
 					if (formulaDefinition) {
 						input.dataset.formulaValue = formulaDefinition.formula;
@@ -4628,11 +4744,12 @@ function requestColumnInsertion(position, referenceKey, referenceIndex) {
 	label.textContent = '列名';
 	label.className = 'kv-column-insert-dialog-label';
 
-	const input = document.createElement('input');
-	input.type = 'text';
-	input.className = 'kv-column-insert-dialog-input';
-	input.placeholder = '请输入列名';
-	input.required = true;
+	const input = createInput({
+		type: 'text',
+		className: 'kv-column-insert-dialog-input',
+		placeholder: '请输入列名',
+		attributes: { required: true }
+	});
 
 	label.appendChild(input);
 	form.appendChild(label);
@@ -4856,11 +4973,12 @@ function requestColumnDescription(columnKey, columnName) {
 	labelWrapper.textContent = '显示标签';
 	labelWrapper.className = 'kv-column-insert-dialog-label';
 
-	const labelInput = document.createElement('input');
-	labelInput.type = 'text';
-	labelInput.className = 'kv-column-insert-dialog-input';
-	labelInput.placeholder = '本地化显示名称（可选）';
-	labelInput.value = currentDesc.label || '';
+	const labelInput = createInput({
+		type: 'text',
+		className: 'kv-column-insert-dialog-input',
+		placeholder: '本地化显示名称（可选）',
+		value: currentDesc.label || ''
+	});
 
 	labelWrapper.appendChild(labelInput);
 	form.appendChild(labelWrapper);
@@ -4870,11 +4988,12 @@ function requestColumnDescription(columnKey, columnName) {
 	descWrapper.textContent = 'Tooltip 描述';
 	descWrapper.className = 'kv-column-insert-dialog-label';
 
-	const descInput = document.createElement('textarea');
-	descInput.className = 'kv-column-insert-dialog-input kv-column-insert-dialog-textarea';
-	descInput.placeholder = '鼠标悬停时显示的描述（可选）';
-	descInput.value = currentDesc.description || '';
-	descInput.rows = 3;
+	const descInput = createTextarea({
+		className: 'kv-column-insert-dialog-input kv-column-insert-dialog-textarea',
+		placeholder: '鼠标悬停时显示的描述（可选）',
+		value: currentDesc.description || '',
+		attributes: { rows: 3 }
+	});
 
 	descWrapper.appendChild(descInput);
 	form.appendChild(descWrapper);
@@ -5463,10 +5582,11 @@ function openAutofillPopup(context) {
 	baseField.className = 'kv-autofill-popup-field';
 	const baseLabel = document.createElement('label');
 	baseLabel.textContent = '基础值';
-	const baseInput = document.createElement('input');
-	baseInput.type = 'number';
-	baseInput.step = 'any';
-	baseInput.value = String(baseValue);
+	const baseInput = createInput({
+		type: 'number',
+		value: String(baseValue),
+		attributes: { step: 'any' }
+	});
 	baseField.appendChild(baseLabel);
 	baseField.appendChild(baseInput);
 	popup.appendChild(baseField);
@@ -5476,10 +5596,11 @@ function openAutofillPopup(context) {
 	stepField.className = 'kv-autofill-popup-field';
 	const stepLabel = document.createElement('label');
 	stepLabel.textContent = '升级间隔';
-	const stepInput = document.createElement('input');
-	stepInput.type = 'number';
-	stepInput.step = 'any';
-	stepInput.value = '1';
+	const stepInput = createInput({
+		type: 'number',
+		value: '1',
+		attributes: { step: 'any' }
+	});
 	stepField.appendChild(stepLabel);
 	stepField.appendChild(stepInput);
 	popup.appendChild(stepField);
@@ -5489,10 +5610,11 @@ function openAutofillPopup(context) {
 	levelsField.className = 'kv-autofill-popup-field';
 	const levelsLabel = document.createElement('label');
 	levelsLabel.textContent = '等级数';
-	const levelsInput = document.createElement('input');
-	levelsInput.type = 'number';
-	levelsInput.min = '1';
-	levelsInput.value = '4';
+	const levelsInput = createInput({
+		type: 'number',
+		value: '4',
+		attributes: { min: '1' }
+	});
 	levelsField.appendChild(levelsLabel);
 	levelsField.appendChild(levelsInput);
 	popup.appendChild(levelsField);
@@ -5733,26 +5855,35 @@ function renderAbilityValuesEditorEntries() {
 		mainRow.className = 'kv-ability-editor-entry-row kv-ability-editor-entry-main-row';
 
 		// 基础键输入框
-		const keyInput = document.createElement('input');
-		keyInput.type = 'text';
-		keyInput.className = 'kv-ability-editor-input kv-ability-editor-key-input';
-		keyInput.placeholder = '条目键';
-		keyInput.dataset.role = 'entry-key';
-		keyInput.dataset.entryIndex = String(entryIndex);
-		keyInput.value = entry.key;
+		const keyInput = createInput({
+			type: 'text',
+			className: 'kv-ability-editor-input kv-ability-editor-key-input',
+			placeholder: '条目键',
+			value: entry.key,
+			attributes: {
+				dataset: {
+					role: 'entry-key',
+					entryIndex: String(entryIndex)
+				}
+			}
+		});
 		mainRow.appendChild(keyInput);
 
 		// 基础值输入框组（包含内嵌的 autofill 按钮）
 		const valueWrapper = document.createElement('div');
 		valueWrapper.className = 'kv-ability-editor-value-wrapper';
-		const valueInput = document.createElement('input');
-		valueInput.type = 'text';
-		valueInput.className = 'kv-ability-editor-input kv-ability-editor-value-input';
-		valueInput.placeholder = '基础值';
-		valueInput.dataset.role = 'entry-value';
-		valueInput.dataset.entryIndex = String(entryIndex);
-		valueInput.value = entry.value;
-		setupUndoRedo(valueInput);
+		const valueInput = createInput({
+			type: 'text',
+			className: 'kv-ability-editor-input kv-ability-editor-value-input',
+			placeholder: '基础值',
+			value: entry.value,
+			attributes: {
+				dataset: {
+					role: 'entry-value',
+					entryIndex: String(entryIndex)
+				}
+			}
+		});
 		valueWrapper.appendChild(valueInput);
 		const autofillButton = document.createElement('button');
 		autofillButton.type = 'button';
@@ -5796,27 +5927,37 @@ function renderAbilityValuesEditorEntries() {
 			modifierRow.dataset.modifierIndex = String(modifierIndex);
 
 			// 修饰键输入框
-			const modifierKeyInput = document.createElement('input');
-			modifierKeyInput.type = 'text';
-			modifierKeyInput.className = 'kv-ability-editor-input kv-ability-editor-modifier-key';
-			modifierKeyInput.placeholder = '修饰键';
-			modifierKeyInput.dataset.role = 'modifier-key';
-			modifierKeyInput.dataset.entryIndex = String(entryIndex);
-			modifierKeyInput.dataset.modifierIndex = String(modifierIndex);
-			modifierKeyInput.value = modifier.key;
+			const modifierKeyInput = createInput({
+				type: 'text',
+				className: 'kv-ability-editor-input kv-ability-editor-modifier-key',
+				placeholder: '修饰键',
+				value: modifier.key,
+				attributes: {
+					dataset: {
+						role: 'modifier-key',
+						entryIndex: String(entryIndex),
+						modifierIndex: String(modifierIndex)
+					}
+				}
+			});
 			modifierRow.appendChild(modifierKeyInput);
 
 			// 修饰值输入框组（包含内嵌的 autofill 按钮）
 			const modifierValueWrapper = document.createElement('div');
 			modifierValueWrapper.className = 'kv-ability-editor-value-wrapper';
-			const modifierValueInput = document.createElement('input');
-			modifierValueInput.type = 'text';
-			modifierValueInput.className = 'kv-ability-editor-input kv-ability-editor-modifier-value';
-			modifierValueInput.placeholder = '修饰值';
-			modifierValueInput.dataset.role = 'modifier-value';
-			modifierValueInput.dataset.entryIndex = String(entryIndex);
-			modifierValueInput.dataset.modifierIndex = String(modifierIndex);
-			modifierValueInput.value = modifier.value;
+			const modifierValueInput = createInput({
+				type: 'text',
+				className: 'kv-ability-editor-input kv-ability-editor-modifier-value',
+				placeholder: '修饰值',
+				value: modifier.value,
+				attributes: {
+					dataset: {
+						role: 'modifier-value',
+						entryIndex: String(entryIndex),
+						modifierIndex: String(modifierIndex)
+					}
+				}
+			});
 			modifierValueWrapper.appendChild(modifierValueInput);
 			const modifierAutofillButton = document.createElement('button');
 			modifierAutofillButton.type = 'button';
@@ -6111,12 +6252,15 @@ function openColumnOptionsEditor(context) {
 	separatorLabel.textContent = '分隔符:';
 	separatorLabel.style.cssText = 'font-size: 12px; color: var(--vscode-descriptionForeground);';
 	separatorWrapper.appendChild(separatorLabel);
-	const separatorInput = document.createElement('input');
-	separatorInput.type = 'text';
-	separatorInput.className = 'kv-separator-input';
-	separatorInput.value = context.separator ?? '|';
-	separatorInput.style.cssText = 'width: 40px; padding: 2px 6px; font-size: 12px; text-align: center; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, transparent); border-radius: 2px;';
-	separatorInput.maxLength = 3;
+	const separatorInput = createInput({
+		type: 'text',
+		className: 'kv-separator-input',
+		value: context.separator ?? '|',
+		attributes: {
+			maxLength: 3,
+			style: 'width: 40px; padding: 2px 6px; font-size: 12px; text-align: center; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, transparent); border-radius: 2px;'
+		}
+	});
 	separatorWrapper.appendChild(separatorInput);
 	footerLeft.appendChild(separatorWrapper);
 
@@ -6256,29 +6400,45 @@ function renderColumnOptionsEditorOptions() {
 		colorPicker.title = '点击选择颜色';
 		row.appendChild(colorPicker);
 
-		const valueInput = document.createElement('input');
-		valueInput.type = 'text';
-		valueInput.className = 'kv-ability-editor-input kv-column-options-input';
-		valueInput.placeholder = '选项值';
-		valueInput.dataset.role = 'value';
-		valueInput.dataset.index = String(index);
-		valueInput.value = option.value;
+		const valueInput = createInput({
+			type: 'text',
+			className: 'kv-ability-editor-input kv-column-options-input',
+			placeholder: '选项值',
+			value: option.value,
+			attributes: {
+				dataset: {
+					role: 'value',
+					index: String(index)
+				}
+			}
+		});
 		row.appendChild(valueInput);
-		const labelInput = document.createElement('input');
-		labelInput.type = 'text';
-		labelInput.className = 'kv-ability-editor-input kv-column-options-input';
-		labelInput.placeholder = '显示文本（可选）';
-		labelInput.dataset.role = 'label';
-		labelInput.dataset.index = String(index);
+		const labelInput = createInput({
+			type: 'text',
+			className: 'kv-ability-editor-input kv-column-options-input',
+			placeholder: '显示文本（可选）',
+			value: option.labelIsFallback ? '' : (option.label || ''),
+			attributes: {
+				dataset: {
+					role: 'label',
+					index: String(index)
+				}
+			}
+		});
 		labelInput.value = option.labelIsFallback ? '' : option.label;
 		row.appendChild(labelInput);
-		const descriptionInput = document.createElement('input');
-		descriptionInput.type = 'text';
-		descriptionInput.className = 'kv-ability-editor-input kv-column-options-input';
-		descriptionInput.placeholder = '描述（可选）';
-		descriptionInput.dataset.role = 'description';
-		descriptionInput.dataset.index = String(index);
-		descriptionInput.value = option.description;
+		const descriptionInput = createInput({
+			type: 'text',
+			className: 'kv-ability-editor-input kv-column-options-input',
+			placeholder: 'Tooltip 描述（可选）',
+			value: option.description || '',
+			attributes: {
+				dataset: {
+					role: 'description',
+					index: String(index)
+				}
+			}
+		});
 		row.appendChild(descriptionInput);
 		const actions = document.createElement('div');
 		actions.className = 'kv-column-options-actions';
@@ -7140,10 +7300,12 @@ function populateTextureMenu(data) {
 	headerRow.appendChild(toggleGroup);
 	const searchWrapper = document.createElement('div');
 	searchWrapper.className = 'kv-texture-menu-search';
-	const searchInput = document.createElement('input');
-	searchInput.type = 'search';
-	searchInput.placeholder = '输入关键字（空格分隔）';
-	searchInput.value = textureMenuState.searchValue;
+	const searchInput = createInput({
+		type: 'search',
+		className: 'kv-texture-menu-search-input',
+		placeholder: '输入关键字（空格分隔）',
+		value: textureMenuState.searchValue
+	});
 	searchInput.addEventListener('input', () => handleTextureMenuSearchChange(searchInput.value));
 	searchWrapper.appendChild(searchInput);
 	headerRow.appendChild(searchWrapper);

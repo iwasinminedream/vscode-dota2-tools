@@ -1695,6 +1695,7 @@ body.kv-column-options-editor-open {
 .kv-ability-editor-input {
 	flex: 1 1 auto;
 	min-width: 0;
+	height: 18px;
 	border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
 	background: var(--vscode-input-background, var(--vscode-editor-background));
 	color: var(--vscode-input-foreground, var(--vscode-editor-foreground));
