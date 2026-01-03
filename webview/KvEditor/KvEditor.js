@@ -171,6 +171,7 @@ const FORMULA_ERROR_VALUE = '#ERROR!';
 const FORMULA_CYCLE_VALUE = '#CYCLE!';
 
 const formulaDefinitions = new Map();
+const columnFormulas = new Map(); // 列公式定义，键为 columnKey，值为公式字符串
 
 // 预定义的颜色选项
 const DEFAULT_COLORS = [
@@ -342,12 +343,26 @@ function getFormulaDefinition(column, rowId, rowIndex) {
 	const idKey = makeFormulaDefinitionKey(column, rowId, undefined);
 	const indexKey = makeFormulaDefinitionKey(column, undefined, rowIndex);
 
+	// 优先查找单元格公式
 	if (idKey && formulaDefinitions.has(idKey)) {
 		return formulaDefinitions.get(idKey);
 	}
 	if (indexKey && formulaDefinitions.has(indexKey)) {
 		return formulaDefinitions.get(indexKey);
 	}
+
+	// 如果没有单元格公式，查找列公式
+	if (column && columnFormulas.has(column)) {
+		const formula = columnFormulas.get(column);
+		return {
+			column,
+			rowId,
+			rowIndex: Number.isFinite(rowIndex) ? rowIndex : undefined,
+			formula,
+			isColumnFormula: true // 标记为列公式
+		};
+	}
+
 	return undefined;
 }
 
@@ -378,6 +393,30 @@ function updateFormulaDefinitionsOnIdRename(oldId, newId) {
 			formulaDefinitions.set(newKey, definition);
 		}
 	});
+}
+
+function setColumnFormula(columnKey, formula) {
+	if (!columnKey || typeof columnKey !== 'string') {
+		return;
+	}
+	const trimmedFormula = typeof formula === 'string' ? formula.trim() : '';
+	if (!trimmedFormula || !trimmedFormula.startsWith('=')) {
+		columnFormulas.delete(columnKey);
+	} else {
+		columnFormulas.set(columnKey, trimmedFormula);
+	}
+}
+
+function applyColumnFormulas(formulas) {
+	columnFormulas.clear();
+	if (!formulas || typeof formulas !== 'object') {
+		return;
+	}
+	for (const [columnKey, formula] of Object.entries(formulas)) {
+		if (typeof columnKey === 'string' && typeof formula === 'string' && formula.startsWith('=')) {
+			columnFormulas.set(columnKey, formula);
+		}
+	}
 }
 
 function applyFormulaDefinitions(entries) {
@@ -4142,6 +4181,14 @@ function createHeaderCell(column, columnIndex, ctx) {
 		titleRow.className = 'kv-column-header-title-row';
 		titleRow.appendChild(nameEl);
 
+		let formulaIndicator;
+		if (columnFormulas.has(column)) {
+			formulaIndicator = document.createElement('span');
+			formulaIndicator.className = 'kv-column-formula-indicator';
+			formulaIndicator.textContent = 'ƒ';
+			formulaIndicator.title = `列公式: ${columnFormulas.get(column)}`;
+		}
+
 		const columnFieldConfig = columnOptions?.[column];
 		const optionsButton = document.createElement('button');
 		optionsButton.type = 'button';
@@ -4165,6 +4212,9 @@ function createHeaderCell(column, columnIndex, ctx) {
 		});
 		titleRow.appendChild(optionsButton);
 		wrapper.appendChild(titleRow);
+		if (formulaIndicator) {
+			th.appendChild(formulaIndicator);
+		}
 		th.appendChild(wrapper);
 
 		// 为列标题添加右键菜单（允许 id 列）
@@ -5189,6 +5239,102 @@ function requestColumnDeletion(columnKey) {
 	});
 }
 
+function requestColumnFormula(columnKey, columnName) {
+	if (!columnKey || typeof columnKey !== 'string') {
+		return;
+	}
+
+	const currentFormula = columnFormulas.get(columnKey) || '';
+
+	const dialog = createManagedDialog({
+		className: 'kv-column-insert-dialog-overlay'
+	});
+
+	const form = document.createElement('form');
+	form.className = 'kv-column-insert-dialog';
+
+	const title = document.createElement('div');
+	title.className = 'kv-column-insert-dialog-title';
+	title.textContent = `为列 "${columnName}" 设置公式`;
+	form.appendChild(title);
+
+	const formulaWrapper = document.createElement('label');
+	formulaWrapper.textContent = '公式';
+	formulaWrapper.className = 'kv-column-insert-dialog-label';
+
+	const formulaInput = createInput({
+		type: 'text',
+		className: 'kv-column-insert-dialog-input',
+		placeholder: '例如：=row.id.toLowerCase()',
+		value: currentFormula
+	});
+
+	formulaWrapper.appendChild(formulaInput);
+	form.appendChild(formulaWrapper);
+
+	const hint = document.createElement('div');
+	hint.className = 'kv-column-insert-dialog-hint';
+	hint.textContent = '提示：列公式会应用到所有没有单独设置公式的单元格';
+	form.appendChild(hint);
+
+	const actions = document.createElement('div');
+	actions.className = 'kv-column-insert-dialog-actions';
+
+	const cancelBtn = document.createElement('button');
+	cancelBtn.type = 'button';
+	cancelBtn.className = 'kv-button kv-button-secondary';
+	cancelBtn.textContent = '取消';
+	actions.appendChild(cancelBtn);
+
+	const submitBtn = document.createElement('button');
+	submitBtn.type = 'submit';
+	submitBtn.className = 'kv-button kv-button-primary';
+	submitBtn.textContent = '保存';
+	actions.appendChild(submitBtn);
+
+	form.appendChild(actions);
+	dialog.appendChild(form);
+
+	const closeDialog = () => {
+		if (dialog.parentElement) {
+			dialog.remove();
+		}
+	};
+
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+
+		const formula = formulaInput.value.trim();
+		setColumnFormula(columnKey, formula);
+
+		// 发送消息保存列公式
+		vscode.postMessage({
+			type: 'saveColumnFormula',
+			payload: { columnKey, formula }
+		});
+
+		// 重新计算公式
+		updatePayloadFormulasSnapshot();
+		recalculateFormulas({ emitUpdates: true });
+		refreshFormulaResultsForTable();
+
+		// 刷新列 header 显示
+		if (latestPayload) {
+			renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+		}
+
+		closeDialog();
+	});
+
+	cancelBtn.addEventListener('click', closeDialog);
+
+	document.body.appendChild(dialog);
+	requestAnimationFrame(() => {
+		formulaInput.focus();
+		formulaInput.select();
+	});
+}
+
 function requestColumnDescription(columnKey, columnName) {
 	if (!columnKey || typeof columnKey !== 'string') {
 		return;
@@ -5461,6 +5607,35 @@ function openColumnContextMenu(invocationEvent, context) {
 	const separator2 = document.createElement('div');
 	separator2.className = 'kv-context-menu-separator';
 	menu.appendChild(separator2);
+
+	// 列公式
+	const hasColumnFormula = columnFormulas.has(columnKey);
+	const formulaButton = createMenuButton({
+		label: hasColumnFormula ? '取消列公式' : '添加列公式',
+		onClick: () => {
+			if (hasColumnFormula) {
+				// 取消列公式
+				setColumnFormula(columnKey, '');
+				vscode.postMessage({
+					type: 'saveColumnFormula',
+					payload: { columnKey, formula: '' }
+				});
+				// 重新计算公式
+				updatePayloadFormulasSnapshot();
+				recalculateFormulas({ emitUpdates: true });
+				refreshFormulaResultsForTable();
+				// 刷新列 header 显示
+				if (latestPayload) {
+					renderTable(latestPayload.columns, latestPayload.rows, columnOptionConfig);
+				}
+			} else {
+				// 添加列公式
+				requestColumnFormula(columnKey, resolvedContext.columnName || columnKey);
+			}
+			closeColumnContextMenu();
+		},
+	});
+	menu.appendChild(formulaButton);
 
 	// 描述
 	const descButton = createMenuButton({
@@ -8217,6 +8392,8 @@ function render(payload) {
 	}
 
 	applyFormulaDefinitions(payload.formulas);
+	console.log('[render] Received columnFormulas:', payload.columnFormulas);
+	applyColumnFormulas(payload.columnFormulas);
 	// 初始加载时重新计算公式，如果发现值不一致则同步到文件
 	recalculateFormulas({ emitUpdates: true });
 	const metaParts = [];
