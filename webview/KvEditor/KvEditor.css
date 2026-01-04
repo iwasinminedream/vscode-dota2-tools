@@ -1453,11 +1453,11 @@ body.kv-column-options-editor-open {
 }
 
 .kv-modal-sm {
-	width: min(400px, 90vw);
+	width: min(500px, 90vw);
 }
 
 .kv-modal-lg {
-	width: min(800px, 92vw);
+	width: min(900px, 92vw);
 }
 
 .kv-modal-xl {
@@ -1651,6 +1651,75 @@ body.kv-column-options-editor-open {
 	align-items: center;
 	justify-content: center;
 	z-index: 10000;
+}
+
+/* 本地化映射表格样式 */
+.kv-localization-mappings-table-wrapper {
+	border: 1px solid var(--vscode-input-border);
+	border-radius: 4px;
+	overflow: hidden;
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.kv-localization-mappings-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.kv-localization-mappings-table thead {
+	position: sticky;
+	top: 0;
+	background: var(--vscode-editor-background);
+	z-index: 1;
+}
+
+.kv-localization-mappings-table th {
+	padding: 8px;
+	text-align: left;
+	font-weight: 600;
+	font-size: 12px;
+	color: var(--vscode-foreground);
+	border-bottom: 1px solid var(--vscode-input-border);
+	background: var(--vscode-editor-background);
+}
+
+.kv-localization-mappings-table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--vscode-input-border);
+}
+
+.kv-localization-mappings-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.kv-localization-mappings-table tbody tr:hover {
+	background: var(--vscode-list-hoverBackground);
+}
+
+.kv-localization-mappings-table .kv-input-sm {
+	width: 100%;
+	font-size: 12px;
+	padding: 4px 8px;
+	min-height: 26px;
+}
+
+.kv-localization-mappings-empty {
+	padding: 20px;
+	text-align: center;
+	color: var(--vscode-descriptionForeground);
+	font-size: 13px;
+}
+
+.kv-btn-icon {
+	padding: 4px 6px;
+	min-width: unset;
+}
+
+.kv-btn-sm {
+	font-size: 12px;
+	padding: 4px 10px;
+	min-height: 26px;
 }
 
 /* ===========================================================================

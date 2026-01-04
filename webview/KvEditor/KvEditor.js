@@ -43,7 +43,8 @@ if (localizationSettingsBtn) {
 let localizationSettings = {
 	enabled: false,
 	language: 'schinese',
-	filePath: ''
+	filePath: '',
+	mappings: [] // { columnName: string, rule: string }[]
 };
 
 // 精简模式状态管理
@@ -8443,6 +8444,15 @@ function render(payload) {
 		}
 	}
 
+	// 加载本地化设置
+	if (payload.localizationSettings && typeof payload.localizationSettings === 'object') {
+		localizationSettings.enabled = Boolean(payload.localizationSettings.enabled);
+		localizationSettings.language = String(payload.localizationSettings.language || 'schinese');
+		localizationSettings.mappings = Array.isArray(payload.localizationSettings.mappings)
+			? payload.localizationSettings.mappings
+			: [];
+	}
+
 	applyFormulaDefinitions(payload.formulas);
 	console.log('[render] Received columnFormulas:', payload.columnFormulas);
 	applyColumnFormulas(payload.columnFormulas);
@@ -8541,7 +8551,7 @@ function openLocalizationSettingsDialog() {
 	});
 
 	const dialog = document.createElement('div');
-	dialog.className = 'kv-modal kv-modal-sm';
+	dialog.className = 'kv-modal kv-modal-lg';
 	overlay.appendChild(dialog);
 
 	// 标题栏
@@ -8621,6 +8631,134 @@ function openLocalizationSettingsDialog() {
 	});
 	pathField.appendChild(pathInput);
 	body.appendChild(pathField);
+
+	// 映射表格：本地化列名 -> 本地化规则
+	const mappingsField = document.createElement('div');
+	mappingsField.className = 'kv-form-group';
+	const mappingsLabel = document.createElement('label');
+	mappingsLabel.className = 'kv-form-label';
+	mappingsLabel.textContent = '本地化导出映射';
+	mappingsField.appendChild(mappingsLabel);
+
+	// 表格容器
+	const tableWrapper = document.createElement('div');
+	tableWrapper.className = 'kv-localization-mappings-table-wrapper';
+	const table = document.createElement('table');
+	table.className = 'kv-localization-mappings-table';
+
+	// 表头
+	const thead = document.createElement('thead');
+	const headerRow = document.createElement('tr');
+	const colNameHeader = document.createElement('th');
+	colNameHeader.textContent = '本地化列名';
+	const ruleHeader = document.createElement('th');
+	ruleHeader.textContent = '本地化规则';
+	const actionHeader = document.createElement('th');
+	actionHeader.textContent = '操作';
+	actionHeader.style.width = '60px';
+	headerRow.appendChild(colNameHeader);
+	headerRow.appendChild(ruleHeader);
+	headerRow.appendChild(actionHeader);
+	thead.appendChild(headerRow);
+	table.appendChild(thead);
+
+	// 表体
+	const tbody = document.createElement('tbody');
+	table.appendChild(tbody);
+	tableWrapper.appendChild(table);
+	mappingsField.appendChild(tableWrapper);
+
+	// 渲染映射行
+	const renderMappingRows = () => {
+		tbody.innerHTML = '';
+		const currentMappings = localizationSettings.mappings || [];
+		currentMappings.forEach((mapping, index) => {
+			const row = document.createElement('tr');
+
+			// 列名输入
+			const colNameCell = document.createElement('td');
+			const colNameInput = createInput({
+				type: 'text',
+				className: 'kv-input kv-input-sm',
+				value: mapping.columnName,
+				placeholder: 'Note'
+			});
+			colNameInput.addEventListener('input', () => {
+				mapping.columnName = colNameInput.value;
+			});
+			colNameCell.appendChild(colNameInput);
+			row.appendChild(colNameCell);
+
+			// 规则输入
+			const ruleCell = document.createElement('td');
+			const ruleInput = createInput({
+				type: 'text',
+				className: 'kv-input kv-input-sm',
+				value: mapping.rule,
+				placeholder: 'DOTA_Tooltip_ability_${id}'
+			});
+			ruleInput.addEventListener('input', () => {
+				mapping.rule = ruleInput.value;
+			});
+			ruleCell.appendChild(ruleInput);
+			row.appendChild(ruleCell);
+
+			// 删除按钮
+			const actionCell = document.createElement('td');
+			const deleteBtn = document.createElement('button');
+			deleteBtn.type = 'button';
+			deleteBtn.className = 'kv-btn kv-btn-icon kv-btn-sm';
+			deleteBtn.innerHTML = '<span class="codicon codicon-trash"></span>';
+			deleteBtn.title = '删除';
+			deleteBtn.addEventListener('click', () => {
+				localizationSettings.mappings.splice(index, 1);
+				renderMappingRows();
+			});
+			actionCell.appendChild(deleteBtn);
+			row.appendChild(actionCell);
+
+			tbody.appendChild(row);
+		});
+
+		// 空状态提示
+		if (currentMappings.length === 0) {
+			const emptyRow = document.createElement('tr');
+			const emptyCell = document.createElement('td');
+			emptyCell.colSpan = 3;
+			emptyCell.className = 'kv-localization-mappings-empty';
+			emptyCell.textContent = '暂无映射规则，点击下方按钮添加';
+			emptyRow.appendChild(emptyCell);
+			tbody.appendChild(emptyRow);
+		}
+	};
+
+	renderMappingRows();
+
+	// 添加按钮
+	const addMappingBtn = document.createElement('button');
+	addMappingBtn.type = 'button';
+	addMappingBtn.className = 'kv-btn kv-btn-secondary kv-btn-sm';
+	addMappingBtn.style.marginTop = '8px';
+	addMappingBtn.innerHTML = '<span class="codicon codicon-add"></span> 添加映射';
+	addMappingBtn.addEventListener('click', () => {
+		if (!localizationSettings.mappings) {
+			localizationSettings.mappings = [];
+		}
+		localizationSettings.mappings.push({ columnName: '', rule: '' });
+		renderMappingRows();
+		// 聚焦到新添加行的第一个输入框
+		requestAnimationFrame(() => {
+			const rows = tbody.querySelectorAll('tr');
+			if (rows.length > 0) {
+				const lastRow = rows[rows.length - 1];
+				const firstInput = lastRow.querySelector('input');
+				if (firstInput) firstInput.focus();
+			}
+		});
+	});
+	mappingsField.appendChild(addMappingBtn);
+
+	body.appendChild(mappingsField);
 
 	dialog.appendChild(body);
 
