@@ -2446,8 +2446,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			const vdfContent = writeKeyValue(vdfObject, 0);
 
 			// 添加文件头部注释
-			const fileHeader = '// 此文件由Dota2 KV编辑器自动生成\n// 请勿手动编辑 - 更改将在下次导出时被覆盖\n\n';
-			const finalContent = fileHeader + vdfContent;
+			// const fileHeader = '// 此文件由Dota2 KV编辑器自动生成\n// 请勿手动编辑 - 更改将在下次导出时被覆盖\n\n';
+			const finalContent = vdfContent;
 
 			// 确保目录存在
 			const dir = path.dirname(vdfPath);
