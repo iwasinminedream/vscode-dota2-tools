@@ -174,6 +174,10 @@ let fillPopupState = null;
 let columnDragState = null;
 let autofillPopupState = null;
 
+// AbilityValues 描述数据缓存 - 从 payload 接收
+// 格式: { rowId: { key: description } }
+let abilityValuesDescriptions = {};
+
 // 行选择状态管理
 let selectedRows = new Set(); // 存储选中的行索引
 let lastSelectedRowIndex = null; // 用于 Shift 多选
@@ -6360,6 +6364,10 @@ function renderAbilityValuesEditorEntries() {
 		const mainRow = document.createElement('div');
 		mainRow.className = 'kv-ability-editor-entry-row kv-ability-editor-entry-main-row';
 
+		// 检查是否启用了 AbilityValues 本地化映射
+		const hasAbilityValuesLocalization = localizationSettings.enabled &&
+			localizationSettings.mappings.some(m => m.columnName === 'AbilityValues');
+
 		// 基础键输入框
 		const keyInput = createInput({
 			type: 'text',
@@ -6374,6 +6382,31 @@ function renderAbilityValuesEditorEntries() {
 			}
 		});
 		mainRow.appendChild(keyInput);
+
+		// 如果启用了 AbilityValues 本地化，添加描述输入框
+		if (hasAbilityValuesLocalization && abilityValuesEditorState) {
+			const rowId = abilityValuesEditorState.rowId;
+			console.log('[renderAbilityValuesEditor] rowId:', rowId, 'entry.key:', entry.key);
+			console.log('[renderAbilityValuesEditor] abilityValuesDescriptions:', abilityValuesDescriptions);
+			const rowDescriptions = abilityValuesDescriptions[rowId] || {};
+			console.log('[renderAbilityValuesEditor] rowDescriptions:', rowDescriptions);
+			const description = rowDescriptions[entry.key] || '';
+			console.log('[renderAbilityValuesEditor] description for key', entry.key, ':', description);
+
+			const descriptionInput = createInput({
+				type: 'text',
+				className: 'kv-ability-editor-input kv-ability-editor-description-input',
+				placeholder: '描述(本地化)',
+				value: description,
+				attributes: {
+					dataset: {
+						role: 'entry-description',
+						entryIndex: String(entryIndex)
+					}
+				}
+			});
+			mainRow.appendChild(descriptionInput);
+		}
 
 		// 基础值输入框组（包含内嵌的 autofill 按钮）
 		const valueWrapper = document.createElement('div');
@@ -6666,6 +6699,36 @@ function submitAbilityValuesEditor() {
 			entries: payloadEntries,
 		},
 	});
+
+	// 如果启用了 AbilityValues 本地化，收集并保存描述
+	const hasAbilityValuesLocalization = localizationSettings.enabled &&
+		localizationSettings.mappings.some(m => m.columnName === 'AbilityValues');
+
+	if (hasAbilityValuesLocalization && abilityValuesEditorState.entriesContainer) {
+		const descriptions = {};
+		const descriptionInputs = abilityValuesEditorState.entriesContainer.querySelectorAll('[data-role="entry-description"]');
+
+		descriptionInputs.forEach((input) => {
+			const entryIndex = parseInt(input.dataset.entryIndex, 10);
+			if (Number.isFinite(entryIndex) && entryIndex >= 0 && entryIndex < entries.length) {
+				const key = entries[entryIndex].key;
+				const description = input.value.trim();
+				if (key && description) {
+					descriptions[key] = description;
+				}
+			}
+		});
+
+		// 发送描述到后端
+		vscode.postMessage({
+			type: 'saveAbilityValuesDescriptions',
+			payload: {
+				rowId: rowId,
+				descriptions: descriptions
+			}
+		});
+	}
+
 	closeAbilityValuesEditor();
 }
 
@@ -8476,6 +8539,15 @@ function render(payload) {
 			: [];
 	}
 
+	// 加载 AbilityValues 描述数据
+	if (payload.abilityValuesDescriptions && typeof payload.abilityValuesDescriptions === 'object') {
+		abilityValuesDescriptions = { ...payload.abilityValuesDescriptions };
+		console.log('[render] Loaded abilityValuesDescriptions:', abilityValuesDescriptions);
+	} else {
+		abilityValuesDescriptions = {};
+		console.log('[render] No abilityValuesDescriptions in payload');
+	}
+
 	applyFormulaDefinitions(payload.formulas);
 	console.log('[render] Received columnFormulas:', payload.columnFormulas);
 	applyColumnFormulas(payload.columnFormulas);
@@ -8731,7 +8803,7 @@ function openLocalizationSettingsDialog() {
 				type: 'text',
 				className: 'kv-input kv-input-sm',
 				value: mapping.columnName,
-				placeholder: 'Note'
+				placeholder: 'Name'
 			});
 			colNameInput.addEventListener('input', () => {
 				mapping.columnName = colNameInput.value;
@@ -8745,7 +8817,7 @@ function openLocalizationSettingsDialog() {
 				type: 'text',
 				className: 'kv-input kv-input-sm',
 				value: mapping.rule,
-				placeholder: 'DOTA_Tooltip_ability_${id}'
+				placeholder: 'DOTA_Tooltip_ability_${id}_${key}'
 			});
 			ruleInput.addEventListener('input', () => {
 				mapping.rule = ruleInput.value;

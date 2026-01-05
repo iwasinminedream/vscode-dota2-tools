@@ -32,6 +32,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	private readonly textureMenuCache = new Map<string, TextureMenuRawIcon[]>();
 	private readonly localizationCache = new Map<string, LocalizationCacheEntry>();
 	private readonly localizationSettingsCache = new Map<string, any>(); // 存储每个文档的本地化设置
+	private readonly abilityValuesDescriptionCache = new Map<string, Map<string, Map<string, string>>>(); // 存储 AbilityValues 描述: documentKey -> rowId -> key -> description
 	private readonly userSettingsCache = new Map<string, { settings: KvEditorUserSettings; mtimeMs: number; }>();
 	private readonly columnOptionOverridesCache = new Map<string, { overrides: KvEditorColumnOptionsFile; mtimeMs: number; }>();
 	private readonly fileWatchers = new Map<string, vscode.FileSystemWatcher>();
@@ -100,8 +101,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				} else {
 					updateWebview();
 				}
-				// 检查是否需要自动更新本地化
-				this.checkAndAutoUpdateLocalization(document).catch((error: unknown) => {
+				// 检查是否需要自动更新本地化，如果导入了描述则刷新前端
+				this.checkAndAutoUpdateLocalization(document, updateWebview).catch((error: unknown) => {
 					console.error('Auto update localization failed:', error);
 				});
 				return;
@@ -287,6 +288,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				void this.handleSaveLocalizationSettings(document, message.payload);
 				return;
 			}
+			if (message.type === 'saveAbilityValuesDescriptions') {
+				void this.handleSaveAbilityValuesDescriptions(document, message.payload);
+				return;
+			}
 		});
 
 		webviewPanel.onDidDispose(() => {
@@ -321,6 +326,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		let frozenColumns: string | undefined;
 		let columnDescriptions: Record<string, { label?: string; description?: string; }> | undefined;
 		let localizationSettings: { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; } | undefined;
+		let abilityValuesDescriptions: Record<string, Record<string, string>> | undefined; // rowId -> key -> description
 		if (workspaceFolder && documentKey) {
 			const userSettings = this.getUserSettings(workspaceFolder);
 			const fileSettings = userSettings.files[documentKey];
@@ -342,7 +348,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				this.localizationSettingsCache.set(documentKey, localizationSettings);
 			}
 
-			// 合并内置默认 -> 工作区默认 -> 文件级覆盖
+			// 加载 AbilityValues 描述
+			const docDescriptions = this.abilityValuesDescriptionCache.get(documentKey);
+			if (docDescriptions && docDescriptions.size > 0) {
+				abilityValuesDescriptions = {};
+				docDescriptions.forEach((keyMap, rowId) => {
+					abilityValuesDescriptions![rowId] = Object.fromEntries(keyMap);
+				});
+			}
 			const baseDefaults = this.readColumnLocalizationConfig();
 			const workspaceDefaults = columnOptionOverrides.columnDescriptions ?? {};
 			const fileColumnOptions = columnOptionOverrides.files && columnOptionOverrides.files[documentKey];
@@ -375,6 +388,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			columnDescriptions,
 			frozenColumns,
 			localizationSettings,
+			abilityValuesDescriptions,
 		};
 	}
 
@@ -1263,7 +1277,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			const raw = fs.readFileSync(localizationPath, 'utf8');
 			const parsed = readKeyValue2(raw ?? '');
-			const tokensSection = (parsed?.lang as Record<string, unknown> | undefined)?.Tokens;
+			const tokensSection = parsed?.Tokens;
 			if (!tokensSection || typeof tokensSection !== 'object') {
 				return cached?.tokens;
 			}
@@ -2146,7 +2160,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
-	private async checkAndAutoUpdateLocalization(document: vscode.TextDocument): Promise<void> {
+	private async checkAndAutoUpdateLocalization(document: vscode.TextDocument, onRefresh?: () => void): Promise<void> {
 		try {
 			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 			if (!workspaceFolder) {
@@ -2161,6 +2175,16 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			// 读取配置
 			const overrides = this.getColumnOptionOverrides(workspaceFolder);
 			const settings = overrides.localizationSettings?.[docKey];
+
+			// 如果启用了本地化且有映射配置，加载 AbilityValues 描述缓存
+			// 这个操作独立于 autoUpdateOnOpen，确保重启后缓存能恢复
+			if (settings && settings.enabled && settings.mappings && settings.mappings.length > 0) {
+				const imported = await this.importAbilityValuesDescriptions(document, settings, docKey);
+				// 如果成功导入了描述，通知前端刷新
+				if (imported > 0 && onRefresh) {
+					onRefresh();
+				}
+			}
 
 			// 检查是否启用了自动更新
 			if (!settings || !settings.enabled || !settings.autoUpdateOnOpen) {
@@ -2358,6 +2382,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			// 构建tokens对象
 			const tokens: Record<string, string> = {};
 
+			// 获取 documentKey 和 AbilityValues 描述缓存
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			const documentKey = workspaceFolder ? this.getDocumentSettingsKey(document.uri, workspaceFolder) : undefined;
+			const docDescriptions = documentKey ? this.abilityValuesDescriptionCache.get(documentKey) : undefined;
+
 			// 遍历KV数据的每一行
 			for (const [id, rowData] of Object.entries(kvData)) {
 				if (!rowData || typeof rowData !== 'object') {
@@ -2373,7 +2402,27 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 						continue;
 					}
 
-					// 获取该列的值
+					// 特殊处理 AbilityValues
+					if (columnName === 'AbilityValues') {
+						const abilityValues = (rowData as any)[columnName];
+						if (abilityValues && typeof abilityValues === 'object') {
+							const rowDescriptions = docDescriptions?.get(id);
+							// 遍历 AbilityValues 的每个 key，导出其描述
+							for (const key of Object.keys(abilityValues)) {
+								const description = rowDescriptions?.get(key);
+								if (description) {
+									// 替换规则中的 ${id} 和 ${key}
+									const tokenKey = rule
+										.replace(/\$\{id\}/g, id)
+										.replace(/\$\{key\}/g, key);
+									tokens[tokenKey] = description;
+								}
+							}
+						}
+						continue;
+					}
+
+					// 普通列的处理
 					const columnValue = (rowData as any)[columnName];
 					if (columnValue === undefined || columnValue === null) {
 						continue;
@@ -2520,6 +2569,161 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		} catch (error) {
 			console.error('Error importing localization file:', error);
 			throw error;
+		}
+	}
+
+	private async importAbilityValuesDescriptions(document: vscode.TextDocument, settings: any, documentKey: string): Promise<number> {
+		try {
+			const language = settings.language || 'schinese';
+			const mappings = settings.mappings || [];
+
+			// 查找 AbilityValues 的映射规则
+			const abilityValuesMapping = mappings.find((m: any) => m.columnName === 'AbilityValues');
+			if (!abilityValuesMapping || !abilityValuesMapping.rule) {
+				return 0;
+			}
+
+			// 构建VDF文件路径
+			const contentDir = getContentDir();
+			if (!contentDir) {
+				return 0;
+			}
+
+			const kvFilePath = document.uri.fsPath;
+			const normalizedPath = kvFilePath.replace(/\\/g, '/');
+			const npcMatch = normalizedPath.match(/\/scripts\/npc\/(.+)$/i);
+			if (!npcMatch || !npcMatch[1]) {
+				return 0;
+			}
+
+			let kvRelativePath = npcMatch[1];
+			kvRelativePath = kvRelativePath.replace(/\.(txt|kv)$/, '');
+			const vdfPath = path.join(contentDir, 'localization', language, kvRelativePath + '.vdf');
+
+			if (!fs.existsSync(vdfPath)) {
+				return 0;
+			}
+
+			// 读取VDF文件中的 tokens
+			const tokens = this.loadLocalizationTokens(vdfPath);
+			if (!tokens) {
+				return 0;
+			}
+
+			// 解析KV文件以获取所有行的id和AbilityValues的key
+			const kvText = document.getText();
+			const kvObject = readKeyValue2(kvText);
+			const rootKey = Object.keys(kvObject)[0];
+			if (!rootKey) {
+				console.log('[importAbilityValuesDescriptions] No root key in KV');
+				return 0;
+			}
+
+			const kvData = kvObject[rootKey];
+			if (!kvData || typeof kvData !== 'object') {
+				console.log('[importAbilityValuesDescriptions] Invalid KV data');
+				return 0;
+			}
+
+			// 创建或获取文档的描述缓存
+			let docDescriptions = this.abilityValuesDescriptionCache.get(documentKey);
+			if (!docDescriptions) {
+				docDescriptions = new Map();
+				this.abilityValuesDescriptionCache.set(documentKey, docDescriptions);
+			}
+
+			// 清空现有描述
+			docDescriptions.clear();
+
+			let totalDescriptionsFound = 0;
+
+			// 遍历每一行，提取 AbilityValues 的描述
+			for (const [id, rowData] of Object.entries(kvData)) {
+				if (!rowData || typeof rowData !== 'object') {
+					continue;
+				}
+
+				const abilityValues = (rowData as any)['AbilityValues'];
+				if (!abilityValues || typeof abilityValues !== 'object') {
+					continue;
+				}
+
+				const rowDescriptions = new Map<string, string>();
+
+				// 遍历 AbilityValues 的每个key
+				for (const key of Object.keys(abilityValues)) {
+					// 根据规则生成 token key: ${id} 和 ${key}
+					const tokenKey = abilityValuesMapping.rule
+						.replace(/\$\{id\}/g, id)
+						.replace(/\$\{key\}/g, key);
+
+					const description = tokens.get(tokenKey.toLowerCase());
+					if (description) {
+						rowDescriptions.set(key, description);
+						totalDescriptionsFound++;
+					}
+				}
+
+				if (rowDescriptions.size > 0) {
+					docDescriptions.set(id, rowDescriptions);
+				}
+			}
+
+			return totalDescriptionsFound;
+		} catch (error) {
+			console.error('Error importing AbilityValues descriptions:', error);
+			return 0;
+		}
+	}
+
+	private async handleSaveAbilityValuesDescriptions(
+		document: vscode.TextDocument,
+		payload: any
+	): Promise<void> {
+		try {
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			if (!workspaceFolder) {
+				throw new Error('未找到工作区文件夹');
+			}
+
+			const docKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+			if (!docKey) {
+				throw new Error('无法获取文档相对路径');
+			}
+
+			const rowId = payload?.rowId;
+			const descriptions = payload?.descriptions; // Record<string, string>
+
+			if (!rowId || typeof descriptions !== 'object') {
+				throw new Error('无效的payload');
+			}
+
+			// 获取或创建文档的描述缓存
+			let docDescriptions = this.abilityValuesDescriptionCache.get(docKey);
+			if (!docDescriptions) {
+				docDescriptions = new Map();
+				this.abilityValuesDescriptionCache.set(docKey, docDescriptions);
+			}
+
+			// 更新该行的描述
+			const rowDescriptions = new Map<string, string>();
+			for (const [key, description] of Object.entries(descriptions)) {
+				if (description && typeof description === 'string') {
+					rowDescriptions.set(key, description);
+				}
+			}
+			docDescriptions.set(rowId, rowDescriptions);
+
+			// 检查是否启用了本地化，如果启用则立即导出
+			const settings = this.localizationSettingsCache.get(docKey);
+			if (settings?.enabled && settings.autoUpdateOnOpen) {
+				await this.exportLocalizationFile(document, settings, true);
+			}
+
+			console.log('AbilityValues descriptions saved for row:', rowId);
+		} catch (error) {
+			console.error('Error saving AbilityValues descriptions:', error);
+			vscode.window.showErrorMessage(`保存描述失败: ${error}`);
 		}
 	}
 
@@ -5138,6 +5342,7 @@ interface KvEditorPayload {
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
 	frozenColumns?: string;
 	localizationSettings?: { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; };
+	abilityValuesDescriptions?: Record<string, Record<string, string>>; // rowId -> { key: description }
 }
 
 interface ParsedKvTable {
