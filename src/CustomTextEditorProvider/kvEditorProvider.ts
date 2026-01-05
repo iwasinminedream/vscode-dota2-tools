@@ -306,7 +306,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		let localizedMode: boolean | undefined;
 		let frozenColumns: string | undefined;
 		let columnDescriptions: Record<string, { label?: string; description?: string; }> | undefined;
-		let localizationSettings: { enabled: boolean; language: string; mappings: Array<{ columnName: string; rule: string; }>; } | undefined;
+		let localizationSettings: { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; } | undefined;
 		if (workspaceFolder && documentKey) {
 			const userSettings = this.getUserSettings(workspaceFolder);
 			const fileSettings = userSettings.files[documentKey];
@@ -322,11 +322,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 			// 加载本地化设置
 			const columnOptionOverrides = this.getColumnOptionOverrides(workspaceFolder);
-			const docKey = this.getRelativeDocumentKey(document.uri);
-			if (columnOptionOverrides.localizationSettings && columnOptionOverrides.localizationSettings[docKey]) {
-				localizationSettings = columnOptionOverrides.localizationSettings[docKey];
+			if (columnOptionOverrides.localizationSettings && columnOptionOverrides.localizationSettings[documentKey]) {
+				localizationSettings = columnOptionOverrides.localizationSettings[documentKey];
 				// 更新缓存
-				this.localizationSettingsCache.set(docKey, localizationSettings);
+				this.localizationSettingsCache.set(documentKey, localizationSettings);
 			}
 
 			// 合并内置默认 -> 工作区默认 -> 文件级覆盖
@@ -2199,22 +2198,27 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				overrides.localizationSettings = {};
 			}
 
-			// 使用相对路径作为key（团队协作友好）
-			const docKey = this.getRelativeDocumentKey(document.uri);
+			// 使用工作区相对路径作为key，与其他配置保持一致
+			const docKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+			if (!docKey) {
+				throw new Error('无法获取文档相对路径');
+			}
+
 			overrides.localizationSettings[docKey] = {
 				enabled: Boolean(payload?.enabled),
 				language: String(payload?.language || 'schinese'),
+				filePath: String(payload?.filePath || ''),
 				mappings: Array.isArray(payload?.mappings) ? payload.mappings : []
 			};
 
 			// 写入文件
 			this.writeColumnOptionOverrides(workspaceFolder, overrides);
 
-			// 更新缓存（缓存也使用相对路径）
+			// 更新缓存
 			this.localizationSettingsCache.set(docKey, overrides.localizationSettings[docKey]);
 
 			// 如果启用了绑定，立即导出一次本地化文件
-			if (payload?.enabled && payload?.mappings && Array.isArray(payload.mappings)) {
+			if (payload?.enabled && payload?.mappings && Array.isArray(payload.mappings) && payload?.filePath) {
 				await this.exportLocalizationFile(document, payload);
 			}
 
@@ -4069,7 +4073,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		// 解析localizationSettings
 		const localizationSettingsSection = container.localizationSettings;
 		if (localizationSettingsSection && typeof localizationSettingsSection === 'object') {
-			const localizationSettings: Record<string, { enabled: boolean; language: string; mappings: Array<{ columnName: string; rule: string; }>; }> = {};
+			const localizationSettings: Record<string, { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; }> = {};
 			for (const [docKey, settings] of Object.entries(localizationSettingsSection as Record<string, unknown>)) {
 				if (typeof docKey !== 'string' || !settings || typeof settings !== 'object') {
 					continue;
@@ -4077,11 +4081,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const settingsObj = settings as Record<string, unknown>;
 				const enabled = Boolean(settingsObj.enabled);
 				const language = typeof settingsObj.language === 'string' ? settingsObj.language : 'schinese';
+				const filePath = typeof settingsObj.filePath === 'string' ? settingsObj.filePath : '';
 				const mappings = Array.isArray(settingsObj.mappings) ? settingsObj.mappings.filter((m: any) =>
 					m && typeof m === 'object' && typeof m.columnName === 'string' && typeof m.rule === 'string'
 				) : [];
 
-				localizationSettings[docKey] = { enabled, language, mappings };
+				localizationSettings[docKey] = { enabled, language, filePath, mappings };
 			}
 			if (Object.keys(localizationSettings).length) {
 				result.localizationSettings = localizationSettings;
@@ -4186,6 +4191,20 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		}
 
+		// 复制本地化设置
+		let localizationSettings: Record<string, { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; }> | undefined;
+		if (source.localizationSettings && typeof source.localizationSettings === 'object') {
+			localizationSettings = {};
+			for (const [docKey, settings] of Object.entries(source.localizationSettings)) {
+				localizationSettings[docKey] = {
+					enabled: settings.enabled,
+					language: settings.language,
+					filePath: settings.filePath || '',
+					mappings: settings.mappings.map((mapping) => ({ ...mapping }))
+				};
+			}
+		}
+
 		const result: KvEditorColumnOptionsFile = { columns };
 		if (formulas) {
 			result.formulas = formulas;
@@ -4201,6 +4220,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		if (files && Object.keys(files).length) {
 			result.files = files;
+		}
+		if (localizationSettings && Object.keys(localizationSettings).length) {
+			result.localizationSettings = localizationSettings;
 		}
 		return result;
 	}
@@ -5210,7 +5232,7 @@ interface KvEditorColumnOptionsFile {
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
 	columnSettings?: Record<string, Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>>>;
 	files?: Record<string, KvEditorFileColumnOptions>;
-	localizationSettings?: Record<string, { enabled: boolean; language: string; mappings: Array<{ columnName: string; rule: string; }>; }>; // documentKey -> settings
+	localizationSettings?: Record<string, { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; }>; // documentKey -> settings
 }
 
 interface KvEditorColumnMultiSelectSettings {
