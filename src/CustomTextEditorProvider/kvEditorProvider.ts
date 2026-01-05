@@ -79,6 +79,15 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		});
 
+		const saveDocumentSubscription = vscode.workspace.onDidSaveTextDocument((savedDocument) => {
+			if (savedDocument.uri.toString() === document.uri.toString()) {
+				// 在保存后自动导出本地化文件
+				this.exportLocalizationOnSave(savedDocument).catch((error: unknown) => {
+					console.error('Auto export localization failed:', error);
+				});
+			}
+		});
+
 		const messageListener = webviewPanel.webview.onDidReceiveMessage((message) => {
 			if (!message || typeof message.type !== 'string') {
 				return;
@@ -91,6 +100,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				} else {
 					updateWebview();
 				}
+				// 检查是否需要自动更新本地化
+				this.checkAndAutoUpdateLocalization(document).catch((error: unknown) => {
+					console.error('Auto update localization failed:', error);
+				});
 				return;
 			}
 			if (message.type === 'editAbilityValues') {
@@ -278,6 +291,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 		webviewPanel.onDidDispose(() => {
 			changeDocumentSubscription.dispose();
+			saveDocumentSubscription.dispose();
 			messageListener.dispose();
 		});
 
@@ -306,7 +320,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		let localizedMode: boolean | undefined;
 		let frozenColumns: string | undefined;
 		let columnDescriptions: Record<string, { label?: string; description?: string; }> | undefined;
-		let localizationSettings: { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; } | undefined;
+		let localizationSettings: { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; } | undefined;
 		if (workspaceFolder && documentKey) {
 			const userSettings = this.getUserSettings(workspaceFolder);
 			const fileSettings = userSettings.files[documentKey];
@@ -2132,6 +2146,74 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
+	private async checkAndAutoUpdateLocalization(document: vscode.TextDocument): Promise<void> {
+		try {
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			if (!workspaceFolder) {
+				return;
+			}
+
+			const docKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+			if (!docKey) {
+				return;
+			}
+
+			// 读取配置
+			const overrides = this.getColumnOptionOverrides(workspaceFolder);
+			const settings = overrides.localizationSettings?.[docKey];
+
+			// 检查是否启用了自动更新
+			if (!settings || !settings.enabled || !settings.autoUpdateOnOpen) {
+				return;
+			}
+
+			// 检查是否有映射配置和文件路径
+			if (!settings.mappings || settings.mappings.length === 0 || !settings.filePath) {
+				return;
+			}
+
+			// 执行自动导入（从VDF更新到KV）
+			await this.importLocalizationFile(document, settings);
+		} catch (error) {
+			// 静默失败，不打扰用户
+			console.error('Auto update localization error:', error);
+		}
+	}
+
+	private async exportLocalizationOnSave(document: vscode.TextDocument): Promise<void> {
+		try {
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			if (!workspaceFolder) {
+				return;
+			}
+
+			const docKey = this.getDocumentSettingsKey(document.uri, workspaceFolder);
+			if (!docKey) {
+				return;
+			}
+
+			// 读取配置
+			const overrides = this.getColumnOptionOverrides(workspaceFolder);
+			const settings = overrides.localizationSettings?.[docKey];
+
+			// 检查是否启用了本地化绑定
+			if (!settings || !settings.enabled) {
+				return;
+			}
+
+			// 检查是否有映射配置和文件路径
+			if (!settings.mappings || settings.mappings.length === 0 || !settings.filePath) {
+				return;
+			}
+
+			// 执行导出（从KV导出到VDF）
+			await this.exportLocalizationFile(document, settings, true);
+		} catch (error) {
+			// 静默失败，不打扰用户
+			console.error('Auto export localization error:', error);
+		}
+	}
+
 	private async handleRequestLocalizationPath(
 		document: vscode.TextDocument,
 		webview: vscode.Webview,
@@ -2208,6 +2290,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				enabled: Boolean(payload?.enabled),
 				language: String(payload?.language || 'schinese'),
 				filePath: String(payload?.filePath || ''),
+				autoUpdateOnOpen: Boolean(payload?.autoUpdateOnOpen),
 				mappings: Array.isArray(payload?.mappings) ? payload.mappings : []
 			};
 
@@ -2229,7 +2312,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 	}
 
-	private async exportLocalizationFile(document: vscode.TextDocument, settings: any): Promise<void> {
+	private async exportLocalizationFile(document: vscode.TextDocument, settings: any, silent = false): Promise<void> {
 		try {
 			const language = settings.language || 'schinese';
 			const mappings = settings.mappings || [];
@@ -2322,9 +2405,116 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			// 写入文件
 			fs.writeFileSync(vdfPath, vdfContent, 'utf8');
 
-			vscode.window.showInformationMessage(`本地化文件已导出: ${path.basename(vdfPath)}`);
+			if (!silent) {
+				vscode.window.showInformationMessage(`本地化文件已导出: ${path.basename(vdfPath)}`);
+			}
 		} catch (error) {
 			console.error('Error exporting localization file:', error);
+			throw error;
+		}
+	}
+
+	private async importLocalizationFile(document: vscode.TextDocument, settings: any): Promise<void> {
+		try {
+			const language = settings.language || 'schinese';
+			const mappings = settings.mappings || [];
+
+			if (mappings.length === 0) {
+				return;
+			}
+
+			// 构建实际的文件路径
+			const contentDir = getContentDir();
+			if (!contentDir) {
+				throw new Error('未找到content目录');
+			}
+
+			// 从document.uri获取KV文件的相对路径
+			const kvFilePath = document.uri.fsPath;
+			const normalizedPath = kvFilePath.replace(/\\/g, '/');
+			const npcMatch = normalizedPath.match(/\/scripts\/npc\/(.+)$/i);
+			if (!npcMatch || !npcMatch[1]) {
+				throw new Error('无法解析KV文件路径');
+			}
+
+			let kvRelativePath = npcMatch[1];
+			// 移除文件扩展名
+			kvRelativePath = kvRelativePath.replace(/\.(txt|kv)$/, '');
+
+			// 构建VDF文件路径
+			const vdfPath = path.join(contentDir, 'localization', language, kvRelativePath + '.vdf');
+
+			// 检查VDF文件是否存在
+			if (!fs.existsSync(vdfPath)) {
+				console.warn(`本地化文件不存在: ${vdfPath}`);
+				return;
+			}
+
+			// 读取并解析VDF文件
+			const tokens = this.loadLocalizationTokens(vdfPath);
+			if (!tokens) {
+				console.warn('无法加载本地化tokens');
+				return;
+			}
+
+			// 解析KV文件
+			const kvText = document.getText();
+			const kvObject = readKeyValue2(kvText);
+			const rootKey = Object.keys(kvObject)[0];
+			if (!rootKey) {
+				return;
+			}
+
+			const kvData = kvObject[rootKey];
+			if (!kvData || typeof kvData !== 'object') {
+				return;
+			}
+
+			let hasChanges = false;
+
+			// 遍历KV数据的每一行
+			for (const [id, rowData] of Object.entries(kvData)) {
+				if (!rowData || typeof rowData !== 'object') {
+					continue;
+				}
+
+				// 对每个映射规则进行处理
+				for (const mapping of mappings) {
+					const columnName = mapping.columnName;
+					const rule = mapping.rule;
+
+					if (!columnName || !rule) {
+						continue;
+					}
+
+					// 替换规则中的${id}生成token key
+					const tokenKey = rule.replace(/\$\{id\}/g, id);
+					const tokenValue = tokens.get(tokenKey.toLowerCase());
+
+					if (tokenValue !== undefined) {
+						const currentValue = (rowData as any)[columnName];
+						// 只有当值不同时才更新
+						if (currentValue !== tokenValue) {
+							(rowData as any)[columnName] = tokenValue;
+							hasChanges = true;
+						}
+					}
+				}
+			}
+
+			// 如果有修改，写回文件
+			if (hasChanges) {
+				const newKvText = writeKeyValue(kvObject, 0);
+				const edit = new vscode.WorkspaceEdit();
+				const fullRange = new vscode.Range(
+					document.positionAt(0),
+					document.positionAt(document.getText().length)
+				);
+				edit.replace(document.uri, fullRange, newKvText);
+				await vscode.workspace.applyEdit(edit);
+			}
+		} catch (error) {
+			console.error('Error importing localization file:', error);
 			throw error;
 		}
 	}
@@ -4073,7 +4263,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		// 解析localizationSettings
 		const localizationSettingsSection = container.localizationSettings;
 		if (localizationSettingsSection && typeof localizationSettingsSection === 'object') {
-			const localizationSettings: Record<string, { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; }> = {};
+			const localizationSettings: Record<string, { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; }> = {};
 			for (const [docKey, settings] of Object.entries(localizationSettingsSection as Record<string, unknown>)) {
 				if (typeof docKey !== 'string' || !settings || typeof settings !== 'object') {
 					continue;
@@ -4082,11 +4272,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				const enabled = Boolean(settingsObj.enabled);
 				const language = typeof settingsObj.language === 'string' ? settingsObj.language : 'schinese';
 				const filePath = typeof settingsObj.filePath === 'string' ? settingsObj.filePath : '';
+				const autoUpdateOnOpen = Boolean(settingsObj.autoUpdateOnOpen);
 				const mappings = Array.isArray(settingsObj.mappings) ? settingsObj.mappings.filter((m: any) =>
 					m && typeof m === 'object' && typeof m.columnName === 'string' && typeof m.rule === 'string'
 				) : [];
 
-				localizationSettings[docKey] = { enabled, language, filePath, mappings };
+				localizationSettings[docKey] = { enabled, language, filePath, autoUpdateOnOpen, mappings };
 			}
 			if (Object.keys(localizationSettings).length) {
 				result.localizationSettings = localizationSettings;
@@ -4192,7 +4383,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 
 		// 复制本地化设置
-		let localizationSettings: Record<string, { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; }> | undefined;
+		let localizationSettings: Record<string, { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; }> | undefined;
 		if (source.localizationSettings && typeof source.localizationSettings === 'object') {
 			localizationSettings = {};
 			for (const [docKey, settings] of Object.entries(source.localizationSettings)) {
@@ -4200,6 +4391,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					enabled: settings.enabled,
 					language: settings.language,
 					filePath: settings.filePath || '',
+					autoUpdateOnOpen: settings.autoUpdateOnOpen || false,
 					mappings: settings.mappings.map((mapping) => ({ ...mapping }))
 				};
 			}
@@ -4356,6 +4548,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					localizationOutput[docKey] = {
 						enabled: Boolean(settings.enabled),
 						language: String(settings.language || 'schinese'),
+						filePath: String(settings.filePath || ''),
+						autoUpdateOnOpen: Boolean(settings.autoUpdateOnOpen),
 						mappings: Array.isArray(settings.mappings) ? settings.mappings : []
 					};
 				}
@@ -4939,7 +5133,7 @@ interface KvEditorPayload {
 	localizedMode?: boolean;
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
 	frozenColumns?: string;
-	localizationSettings?: { enabled: boolean; language: string; mappings: Array<{ columnName: string; rule: string; }>; };
+	localizationSettings?: { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; };
 }
 
 interface ParsedKvTable {
@@ -5232,7 +5426,7 @@ interface KvEditorColumnOptionsFile {
 	columnDescriptions?: Record<string, { label?: string; description?: string; }>;
 	columnSettings?: Record<string, Partial<Record<KvEditorColumnOptionsScope, KvEditorColumnMultiSelectSettings>>>;
 	files?: Record<string, KvEditorFileColumnOptions>;
-	localizationSettings?: Record<string, { enabled: boolean; language: string; filePath: string; mappings: Array<{ columnName: string; rule: string; }>; }>; // documentKey -> settings
+	localizationSettings?: Record<string, { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; }>; // documentKey -> settings
 }
 
 interface KvEditorColumnMultiSelectSettings {

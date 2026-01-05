@@ -44,6 +44,7 @@ let localizationSettings = {
 	enabled: false,
 	language: 'schinese',
 	filePath: '',
+	autoUpdateOnOpen: false, // 打开文件时自动更新本地化
 	mappings: [] // { columnName: string, rule: string }[]
 };
 
@@ -8448,6 +8449,8 @@ function render(payload) {
 	if (payload.localizationSettings && typeof payload.localizationSettings === 'object') {
 		localizationSettings.enabled = Boolean(payload.localizationSettings.enabled);
 		localizationSettings.language = String(payload.localizationSettings.language || 'schinese');
+		localizationSettings.filePath = String(payload.localizationSettings.filePath || '');
+		localizationSettings.autoUpdateOnOpen = Boolean(payload.localizationSettings.autoUpdateOnOpen);
 		localizationSettings.mappings = Array.isArray(payload.localizationSettings.mappings)
 			? payload.localizationSettings.mappings
 			: [];
@@ -8561,6 +8564,13 @@ function openLocalizationSettingsDialog() {
 	title.className = 'kv-modal-title';
 	title.textContent = '本地化设置';
 	header.appendChild(title);
+	const closeButton = document.createElement('button');
+	closeButton.type = 'button';
+	closeButton.className = 'kv-button kv-button-icon';
+	closeButton.title = '关闭';
+	closeButton.innerHTML = '<span class="codicon codicon-close"></span>';
+	closeButton.style.marginLeft = 'auto';
+	header.appendChild(closeButton);
 	dialog.appendChild(header);
 
 	// 内容区域
@@ -8586,6 +8596,26 @@ function openLocalizationSettingsDialog() {
 	enabledLabel.appendChild(enabledText);
 	enabledField.appendChild(enabledLabel);
 	body.appendChild(enabledField);
+
+	// Toggle: 打开文件时自动更新
+	const autoUpdateField = document.createElement('div');
+	autoUpdateField.className = 'kv-form-group';
+	const autoUpdateLabel = document.createElement('label');
+	autoUpdateLabel.className = 'kv-checkbox-wrapper';
+	const autoUpdateCheckbox = document.createElement('input');
+	autoUpdateCheckbox.type = 'checkbox';
+	autoUpdateCheckbox.className = 'kv-checkbox-input';
+	autoUpdateCheckbox.checked = localizationSettings.autoUpdateOnOpen;
+	const autoUpdateIndicator = document.createElement('span');
+	autoUpdateIndicator.className = 'kv-checkbox-indicator codicon codicon-check';
+	const autoUpdateText = document.createElement('span');
+	autoUpdateText.className = 'kv-checkbox-label';
+	autoUpdateText.textContent = '打开文件时自动更新本地化';
+	autoUpdateLabel.appendChild(autoUpdateCheckbox);
+	autoUpdateLabel.appendChild(autoUpdateIndicator);
+	autoUpdateLabel.appendChild(autoUpdateText);
+	autoUpdateField.appendChild(autoUpdateLabel);
+	body.appendChild(autoUpdateField);
 
 	// 下拉选项：语言
 	const languageField = document.createElement('div');
@@ -8707,7 +8737,7 @@ function openLocalizationSettingsDialog() {
 			const actionCell = document.createElement('td');
 			const deleteBtn = document.createElement('button');
 			deleteBtn.type = 'button';
-			deleteBtn.className = 'kv-btn kv-btn-icon kv-btn-sm';
+			deleteBtn.className = 'kv-button kv-button-icon';
 			deleteBtn.innerHTML = '<span class="codicon codicon-trash"></span>';
 			deleteBtn.title = '删除';
 			deleteBtn.addEventListener('click', () => {
@@ -8737,7 +8767,7 @@ function openLocalizationSettingsDialog() {
 	// 添加按钮
 	const addMappingBtn = document.createElement('button');
 	addMappingBtn.type = 'button';
-	addMappingBtn.className = 'kv-btn kv-btn-secondary kv-btn-sm';
+	addMappingBtn.className = 'kv-button kv-button-secondary';
 	addMappingBtn.style.marginTop = '8px';
 	addMappingBtn.innerHTML = '<span class="codicon codicon-add"></span> 添加映射';
 	addMappingBtn.addEventListener('click', () => {
@@ -8767,12 +8797,12 @@ function openLocalizationSettingsDialog() {
 	footer.className = 'kv-modal-footer';
 	const cancelButton = document.createElement('button');
 	cancelButton.type = 'button';
-	cancelButton.className = 'kv-btn kv-btn-secondary';
+	cancelButton.className = 'kv-button kv-button-secondary';
 	cancelButton.textContent = '取消';
 	footer.appendChild(cancelButton);
 	const saveButton = document.createElement('button');
 	saveButton.type = 'button';
-	saveButton.className = 'kv-btn kv-btn-primary';
+	saveButton.className = 'kv-button kv-button-primary';
 	saveButton.textContent = '保存';
 	footer.appendChild(saveButton);
 	dialog.appendChild(footer);
@@ -8791,12 +8821,17 @@ function openLocalizationSettingsDialog() {
 	// 事件处理
 	languageSelect.addEventListener('change', updatePathPreview);
 
+	closeButton.addEventListener('click', () => {
+		overlay.remove();
+	});
+
 	cancelButton.addEventListener('click', () => {
 		overlay.remove();
 	});
 
 	saveButton.addEventListener('click', () => {
 		localizationSettings.enabled = enabledCheckbox.checked;
+		localizationSettings.autoUpdateOnOpen = autoUpdateCheckbox.checked;
 		localizationSettings.language = languageSelect.value;
 		localizationSettings.filePath = pathInput.value;
 
