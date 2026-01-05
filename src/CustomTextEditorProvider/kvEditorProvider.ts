@@ -2396,6 +2396,10 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			// 写入VDF文件
 			const vdfContent = writeKeyValue(vdfObject, 0);
 
+			// 添加文件头部注释
+			const fileHeader = '// 此文件由Dota2 KV编辑器自动生成\n// 请勿手动编辑 - 更改将在下次导出时被覆盖\n\n';
+			const finalContent = fileHeader + vdfContent;
+
 			// 确保目录存在
 			const dir = path.dirname(vdfPath);
 			if (!fs.existsSync(dir)) {
@@ -2403,7 +2407,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 
 			// 写入文件
-			fs.writeFileSync(vdfPath, vdfContent, 'utf8');
+			fs.writeFileSync(vdfPath, finalContent, 'utf8');
 
 			if (!silent) {
 				vscode.window.showInformationMessage(`本地化文件已导出: ${path.basename(vdfPath)}`);
