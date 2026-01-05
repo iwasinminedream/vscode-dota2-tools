@@ -489,7 +489,8 @@ function recalculateFormulas(options = {}) {
 	const { emitUpdates = false } = options;
 	const rows = latestPayload.rows;
 	const columns = latestPayload.columns;
-	if (!formulaDefinitions.size) {
+	// 检查是否有任何公式需要计算（单元格公式或列公式）
+	if (!formulaDefinitions.size && !columnFormulas.size) {
 		clearComputedFormulaEntries();
 		updatePayloadFormulasSnapshot();
 		return;
@@ -505,6 +506,8 @@ function recalculateFormulas(options = {}) {
 		}
 	});
 	const positionDefinitions = new Map();
+
+	// 处理单元格公式
 	formulaDefinitions.forEach((definition) => {
 		if (!definition || typeof definition.column !== 'string' || typeof definition.formula !== 'string') {
 			return;
@@ -534,6 +537,23 @@ function recalculateFormulas(options = {}) {
 			formula: definition.formula,
 		});
 	});
+
+	// 处理列公式：为每一行生成公式定义
+	columnFormulas.forEach((formula, columnKey) => {
+		rows.forEach((row, rowIndex) => {
+			const key = makeComputedFormulaKey(columnKey, rowIndex);
+			// 如果该位置没有单元格公式，则使用列公式
+			if (!positionDefinitions.has(key)) {
+				positionDefinitions.set(key, {
+					column: columnKey,
+					rowId: row.id,
+					rowIndex: rowIndex,
+					formula: formula,
+				});
+			}
+		});
+	});
+
 	const previousComputed = new Map(formulaComputedValues);
 	clearComputedFormulaEntries();
 	if (!positionDefinitions.size) {

@@ -795,8 +795,7 @@ body {
 }
 
 .kv-column-insert-dialog {
-	min-width: 320px;
-	max-width: 480px;
+	width: 480px;
 	padding: 16px;
 	background: var(--vscode-editorWidget-background, #2d2d30);
 	border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
