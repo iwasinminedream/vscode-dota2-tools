@@ -3086,9 +3086,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				}
 
 				// 处理 Creature 字段（如果存在）
-				this.rebuildCreatureStructure(newRowValue);
+				const rebuiltRowValue = this.rebuildCreatureStructure(newRowValue);
 
-				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, newRowValue]);
+				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, rebuiltRowValue]);
 				insertedCount++;
 			}
 
