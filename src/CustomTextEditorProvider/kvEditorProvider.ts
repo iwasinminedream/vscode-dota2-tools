@@ -3107,68 +3107,73 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 				// 只有在使用扁平化 values 时才需要重建 Creature 结构
 				// 使用 rawObject 时 Creature 已经是正确的嵌套结构
-				let rebuiltRowValue = {};
 				if (!usedRawObject) {
-					rebuiltRowValue = this.rebuildCreatureStructure(newRowValue);
+					const rebuiltRowValue = this.rebuildCreatureStructure(newRowValue);
+					newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, rebuiltRowValue]);
+				} else {
+					newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, newRowValue]);
 				}
-
-				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, rebuiltRowValue]);
 				insertedCount++;
-				const formulasToSave: Array<{ column: string; rowId: string; rowIndex: number; formula: string; }> = [];
-				message.rows.forEach((rowData, index) => {
-					if (rowData.formulas && typeof rowData.formulas === 'object') {
-						const targetRowIndex = insertionRowIndex + index;
-						const newRowKey = newEntries[insertionEntryIndex + index]?.[0] as string;
-						if (newRowKey) {
-							for (const [column, formula] of Object.entries(rowData.formulas)) {
-								if (typeof formula === 'string' && formula.trim().startsWith('=')) {
-									formulasToSave.push({
-										column,
-										rowId: newRowKey,
-										rowIndex: targetRowIndex,
-										formula: formula.trim(),
-									});
-								}
+			}
+
+			console.log(`[handleBulkInsertRows] 完成插入，共插入 ${insertedCount} 行`);
+
+			// 收集所有需要保存的公式
+			const formulasToSave: Array<{ column: string; rowId: string; rowIndex: number; formula: string; }> = [];
+			message.rows.forEach((rowData, index) => {
+				if (rowData.formulas && typeof rowData.formulas === 'object') {
+					const targetRowIndex = insertionRowIndex + index;
+					const newRowKey = newEntries[insertionEntryIndex + index]?.[0] as string;
+					if (newRowKey) {
+						for (const [column, formula] of Object.entries(rowData.formulas)) {
+							if (typeof formula === 'string' && formula.trim().startsWith('=')) {
+								formulasToSave.push({
+									column,
+									rowId: newRowKey,
+									rowIndex: targetRowIndex,
+									formula: formula.trim(),
+								});
 							}
 						}
 					}
-				});
-
-				const reorderedBlock: Record<string, unknown> = {};
-				newEntries.forEach(([key, value]) => {
-					reorderedBlock[key] = value;
-				});
-
-				kvObject[header] = reorderedBlock;
-				const newContent = writeKeyValue(kvObject);
-				const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
-				const edit = new vscode.WorkspaceEdit();
-				edit.replace(document.uri, fullRange, newContent);
-				const applied = await vscode.workspace.applyEdit(edit);
-				if (!applied) {
-					throw new Error('写入 KV 文本失败。');
 				}
+			});
 
-				try {
-					this.shiftFormulaRowIndices(document, insertionRowIndex, insertedCount);
-				} catch (error) {
-					console.warn('[kvEditorProvider] Failed to shift formula row indices after bulk insertion:', error);
+			const reorderedBlock: Record<string, unknown> = {};
+			newEntries.forEach(([key, value]) => {
+				reorderedBlock[key] = value;
+			});
+
+			kvObject[header] = reorderedBlock;
+			const newContent = writeKeyValue(kvObject);
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+			const edit = new vscode.WorkspaceEdit();
+			edit.replace(document.uri, fullRange, newContent);
+			const applied = await vscode.workspace.applyEdit(edit);
+			if (!applied) {
+				throw new Error('写入 KV 文本失败。');
+			}
+
+			// 调整公式行索引
+			try {
+				this.shiftFormulaRowIndices(document, insertionRowIndex, insertedCount);
+			} catch (error) {
+				console.warn('[kvEditorProvider] Failed to shift formula row indices after bulk insertion:', error);
+			}
+
+			// 保存所有公式
+			if (formulasToSave.length > 0) {
+				console.log(`[handleBulkInsertRows] 保存 ${formulasToSave.length} 个公式`);
+				for (const formulaData of formulasToSave) {
+					await this.handleSaveFormula(document, formulaData);
 				}
+			}
 
-				// 保存所有公式
-				if (formulasToSave.length > 0) {
-					console.log(`[handleBulkInsertRows] 保存 ${formulasToSave.length} 个公式`);
-					for (const formulaData of formulasToSave) {
-						await this.handleSaveFormula(document, formulaData);
-					}
-				}
-
-				const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
-				if (autoSaveMode && autoSaveMode !== 'off') {
-					const saved = await document.save();
-					if (!saved) {
-						throw new Error('保存 KV 文件失败。');
-					}
+			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+			if (autoSaveMode && autoSaveMode !== 'off') {
+				const saved = await document.save();
+				if (!saved) {
+					throw new Error('保存 KV 文件失败。');
 				}
 			}
 		});
