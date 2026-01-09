@@ -3107,11 +3107,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 				// 只有在使用扁平化 values 时才需要重建 Creature 结构
 				// 使用 rawObject 时 Creature 已经是正确的嵌套结构
+				let rebuiltRowValue = {};
 				if (!usedRawObject) {
-					this.rebuildCreatureStructure(newRowValue);
+					rebuiltRowValue = this.rebuildCreatureStructure(newRowValue);
 				}
 
-				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, newRowValue]);
+				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, rebuiltRowValue]);
 				insertedCount++;
 				const formulasToSave: Array<{ column: string; rowId: string; rowIndex: number; formula: string; }> = [];
 				message.rows.forEach((rowData, index) => {
