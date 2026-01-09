@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { getGameDir, isValidFolder } from '../module/addonInfo';
 import { StatusBarState, changeStatusBarState, refreshStatusBarMessage, showStatusBarMessage } from '../module/statusBar';
 import { getPathConfiguration } from '../utils/getPathConfiguration';
+import { readKeyValue2 } from '../utils/kvUtils';
 
 export async function combineLocalization(languageType: string = "") {
 	if (isValidFolder() === false) {
@@ -71,24 +72,75 @@ async function readLanguage(path: string): Promise<string> {
 	for (let i = 0; i < files.length; i++) {
 		const [fileName, fileType] = files[i];
 		if (Number(fileType) === vscode.FileType.File) {
-			let document: vscode.TextDocument = await vscode.workspace.openTextDocument(path + '/' + fileName);
-			const langContent = document.getText();
-			const modifiedContent = langContent.replace(/^"lang"\s*{\s*"Language"\s*"[^"]*"\s*"Tokens"\s*{\s*/, '').replace(/\s*}\s*}$/, '');
-			lang += "\t\t//" + path.split("localization/")[1] + '/' + fileName + os.EOL;
-			lang += modifiedContent + os.EOL;
-			// for (let line: number = 0; line < document.lineCount; line++) {
-			// 	const textLine: vscode.TextLine = document.lineAt(line);
-			// 	const charStart: number = textLine.firstNonWhitespaceCharacterIndex;
-			// 	let lineText: string = document.lineAt(line).text;
-			// 	lineText = lineText.substr(charStart, lineText.length);
+			try {
+				let document: vscode.TextDocument = await vscode.workspace.openTextDocument(path + '/' + fileName);
+				const langContent = document.getText();
 
-			// 	lang += '\t\t' + lineText + os.EOL;
-			// }
-			lang += os.EOL;
+				// 使用 KV 解析器提取 Tokens 内容，更健壮地处理各种格式
+				const parsed = readKeyValue2(langContent);
+				const langBlock = parsed?.lang;
+				const tokens = (langBlock && typeof langBlock === 'object')
+					? (langBlock as Record<string, unknown>).Tokens
+					: undefined;
+
+				if (tokens && typeof tokens === 'object') {
+					// 添加文件路径注释
+					lang += "\t\t//" + path.split("localization/")[1] + '/' + fileName + os.EOL;
+
+					// 手动生成 Tokens 内容，确保格式正确
+					for (const [key, value] of Object.entries(tokens as Record<string, unknown>)) {
+						if (typeof value === 'string') {
+							// 转义引号并格式化
+							const escapedValue = value.replace(/"/g, '\\"');
+							lang += `\t\t"${key}"\t\t"${escapedValue}"${os.EOL}`;
+						}
+					}
+					lang += os.EOL;
+				} else {
+					// 如果解析失败，使用改进的正则表达式作为后备方案
+					// 支持首尾的注释、空行和空白字符
+					const modifiedContent = extractTokensContent(langContent);
+					if (modifiedContent) {
+						lang += "\t\t//" + path.split("localization/")[1] + '/' + fileName + os.EOL;
+						lang += modifiedContent + os.EOL;
+						lang += os.EOL;
+					}
+				}
+			} catch (error) {
+				console.error(`Failed to process file ${path}/${fileName}:`, error);
+			}
 		} else if (Number(fileType) === vscode.FileType.Directory) {
 			let promise: string = await readLanguage(path + '/' + fileName);
 			lang += promise;
 		}
 	}
 	return Promise.resolve(lang);
+}
+
+/**
+ * 提取 VDF 文件中的 Tokens 内容（后备方案）
+ * 使用改进的正则表达式，支持注释、空行等
+ */
+function extractTokensContent(content: string): string {
+	// 移除首尾的空白字符和注释
+	const trimmed = content.trim();
+
+	// 尝试匹配 "lang" { ... "Tokens" { ... } }
+	// 使用 [\s\S] 匹配包括换行符在内的所有字符
+	const tokensMatch = trimmed.match(/"lang"[\s\S]*?"Tokens"[\s\S]*?\{([\s\S]*)\}[\s\S]*?\}[\s\S]*$/);
+
+	if (tokensMatch && tokensMatch[1]) {
+		// 提取 Tokens 块内容
+		let tokensContent = tokensMatch[1];
+
+		// 清理内容：移除首尾空白，但保留中间的格式
+		const lines = tokensContent.split(/\r?\n/);
+		const filteredLines = lines
+			.map(line => line.trim())
+			.filter(line => line.length > 0 && !line.startsWith('//'));
+
+		return filteredLines.join(os.EOL);
+	}
+
+	return '';
 }

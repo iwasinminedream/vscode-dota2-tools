@@ -2,20 +2,24 @@
 	"BaseClass": {
 		"options": [
 			{
-				"value": "ability_lua"
+				"value": "ability_lua",
+				"label": "脚本"
 			},
 			{
-				"value": "ability_datadriven"
+				"value": "ability_datadriven",
+				"label": "数据驱动"
 			}
 		],
 		"overrides": {
 			"item": {
 				"options": [
 					{
-						"value": "item_lua"
+						"value": "item_lua",
+						"label": "脚本"
 					},
 					{
-						"value": "item_datadriven"
+						"value": "item_datadriven",
+						"label": "数据驱动"
 					}
 				]
 			},

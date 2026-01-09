@@ -991,9 +991,12 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 						}
 						rowValues[key] = this.coerceKvScalar(field);
 					}
-					return abilityValues && abilityValues.length
-						? { id, values: rowValues, abilityValues }
-						: { id, values: rowValues };
+					// 保存完整的原始对象，用于复制粘贴时保留嵌套结构
+					const row: ParsedKvRow = { id, values: rowValues, rawObject: entry };
+					if (abilityValues && abilityValues.length) {
+						row.abilityValues = abilityValues;
+					}
+					return row;
 				});
 
 			const columns = ['id', ...columnOrder];
@@ -3051,8 +3054,25 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 				console.log(`[handleBulkInsertRows] 插入第 ${insertedCount + 1} 行，新 key: ${newRowKey}`);
 
-				// 复制所有字段值
-				if (rowData.values && typeof rowData.values === 'object') {
+				// 优先使用 rawObject 完整复制（保留嵌套结构），否则使用 values
+				const usedRawObject = !!(rowData.rawObject && typeof rowData.rawObject === 'object');
+
+				if (usedRawObject) {
+					// 深拷贝原始对象，保留所有嵌套结构（如 AttackRangeActivityModifiers, animation_transitions 等）
+					for (const [key, value] of Object.entries(rowData.rawObject!)) {
+						if (key === 'AbilityValues') {
+							// AbilityValues 特殊处理，稍后覆盖
+							continue;
+						}
+						if (this.isPlainObject(value)) {
+							// 深拷贝嵌套对象
+							newRowValue[key] = JSON.parse(JSON.stringify(value));
+						} else {
+							newRowValue[key] = value;
+						}
+					}
+				} else if (rowData.values && typeof rowData.values === 'object') {
+					// 后备方案：使用扁平化的 values
 					Object.assign(newRowValue, rowData.values);
 				}
 
@@ -3085,70 +3105,69 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					}
 				}
 
-				// 处理 Creature 字段（如果存在）
-				this.rebuildCreatureStructure(newRowValue);
+				// 只有在使用扁平化 values 时才需要重建 Creature 结构
+				// 使用 rawObject 时 Creature 已经是正确的嵌套结构
+				if (!usedRawObject) {
+					this.rebuildCreatureStructure(newRowValue);
+				}
 
 				newEntries.splice(insertionEntryIndex + insertedCount, 0, [newRowKey, newRowValue]);
 				insertedCount++;
-			}
-
-			console.log(`[handleBulkInsertRows] 完成插入，共插入 ${insertedCount} 行`);
-
-			// 收集所有需要保存的公式
-			const formulasToSave: Array<{ column: string; rowId: string; rowIndex: number; formula: string; }> = [];
-			message.rows.forEach((rowData, index) => {
-				if (rowData.formulas && typeof rowData.formulas === 'object') {
-					const targetRowIndex = insertionRowIndex + index;
-					const newRowKey = newEntries[insertionEntryIndex + index]?.[0] as string;
-					if (newRowKey) {
-						for (const [column, formula] of Object.entries(rowData.formulas)) {
-							if (typeof formula === 'string' && formula.trim().startsWith('=')) {
-								formulasToSave.push({
-									column,
-									rowId: newRowKey,
-									rowIndex: targetRowIndex,
-									formula: formula.trim(),
-								});
+				const formulasToSave: Array<{ column: string; rowId: string; rowIndex: number; formula: string; }> = [];
+				message.rows.forEach((rowData, index) => {
+					if (rowData.formulas && typeof rowData.formulas === 'object') {
+						const targetRowIndex = insertionRowIndex + index;
+						const newRowKey = newEntries[insertionEntryIndex + index]?.[0] as string;
+						if (newRowKey) {
+							for (const [column, formula] of Object.entries(rowData.formulas)) {
+								if (typeof formula === 'string' && formula.trim().startsWith('=')) {
+									formulasToSave.push({
+										column,
+										rowId: newRowKey,
+										rowIndex: targetRowIndex,
+										formula: formula.trim(),
+									});
+								}
 							}
 						}
 					}
+				});
+
+				const reorderedBlock: Record<string, unknown> = {};
+				newEntries.forEach(([key, value]) => {
+					reorderedBlock[key] = value;
+				});
+
+				kvObject[header] = reorderedBlock;
+				const newContent = writeKeyValue(kvObject);
+				const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
+				const edit = new vscode.WorkspaceEdit();
+				edit.replace(document.uri, fullRange, newContent);
+				const applied = await vscode.workspace.applyEdit(edit);
+				if (!applied) {
+					throw new Error('写入 KV 文本失败。');
 				}
-			});
 
-			const reorderedBlock: Record<string, unknown> = {};
-			newEntries.forEach(([key, value]) => {
-				reorderedBlock[key] = value;
-			});
-
-			kvObject[header] = reorderedBlock;
-			const newContent = writeKeyValue(kvObject);
-			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(originalText.length));
-			const edit = new vscode.WorkspaceEdit();
-			edit.replace(document.uri, fullRange, newContent);
-			const applied = await vscode.workspace.applyEdit(edit);
-			if (!applied) {
-				throw new Error('写入 KV 文本失败。');
-			}
-
-			try {
-				this.shiftFormulaRowIndices(document, insertionRowIndex, insertedCount);
-			} catch (error) {
-				console.warn('[kvEditorProvider] Failed to shift formula row indices after bulk insertion:', error);
-			}
-
-			// 保存所有公式
-			if (formulasToSave.length > 0) {
-				console.log(`[handleBulkInsertRows] 保存 ${formulasToSave.length} 个公式`);
-				for (const formulaData of formulasToSave) {
-					await this.handleSaveFormula(document, formulaData);
+				try {
+					this.shiftFormulaRowIndices(document, insertionRowIndex, insertedCount);
+				} catch (error) {
+					console.warn('[kvEditorProvider] Failed to shift formula row indices after bulk insertion:', error);
 				}
-			}
 
-			const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
-			if (autoSaveMode && autoSaveMode !== 'off') {
-				const saved = await document.save();
-				if (!saved) {
-					throw new Error('保存 KV 文件失败。');
+				// 保存所有公式
+				if (formulasToSave.length > 0) {
+					console.log(`[handleBulkInsertRows] 保存 ${formulasToSave.length} 个公式`);
+					for (const formulaData of formulasToSave) {
+						await this.handleSaveFormula(document, formulaData);
+					}
+				}
+
+				const autoSaveMode = vscode.workspace.getConfiguration('files').get<string>('autoSave', 'off');
+				if (autoSaveMode && autoSaveMode !== 'off') {
+					const saved = await document.save();
+					if (!saved) {
+						throw new Error('保存 KV 文件失败。');
+					}
 				}
 			}
 		});
@@ -5357,6 +5376,7 @@ interface ParsedKvRow {
 	values: Record<string, string>;
 	abilityValues?: AbilityValuesEntry[];
 	localization?: ParsedKvRowLocalization;
+	rawObject?: Record<string, unknown>; // 保存完整的原始对象，用于复制粘贴保留嵌套结构
 }
 
 interface ParsedKvRowLocalization {
@@ -5425,6 +5445,7 @@ interface KvEditorBulkInsertRowsMessage {
 	rows: Array<{
 		id: string;
 		values: Record<string, string>;
+		rawObject?: Record<string, unknown>; // 完整的原始对象，用于保留嵌套结构
 		abilityValues?: Array<Record<string, unknown>>;
 		formulas?: Record<string, string>;
 	}>;

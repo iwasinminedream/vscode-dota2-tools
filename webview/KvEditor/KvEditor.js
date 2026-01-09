@@ -1440,6 +1440,11 @@ function copySelectedRows() {
 				rowIndex: rowIndex,
 			};
 
+			// 复制完整的原始对象（包含嵌套结构）
+			if (row.rawObject) {
+				rowCopy.rawObject = JSON.parse(JSON.stringify(row.rawObject));
+			}
+
 			// 复制 abilityValues 如果存在
 			if (row.abilityValues) {
 				rowCopy.abilityValues = cloneAbilityValuesEntries(row.abilityValues);
@@ -1499,6 +1504,10 @@ function pasteRows() {
 			id: rowData.id,
 			values: rowData.values,
 		};
+		// 传递完整的原始对象（包含嵌套结构）
+		if (rowData.rawObject) {
+			adjustedRow.rawObject = rowData.rawObject;
+		}
 		if (rowData.abilityValues) {
 			adjustedRow.abilityValues = rowData.abilityValues;
 		}
