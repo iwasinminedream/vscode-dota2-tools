@@ -1280,7 +1280,31 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 			const raw = fs.readFileSync(localizationPath, 'utf8');
 			const parsed = readKeyValue2(raw ?? '');
-			const tokensSection = parsed?.Tokens;
+
+			// Localization VDFs commonly look like:
+			// "lang" { "Language" "schinese" "Tokens" { ... } }
+			// Some KV parsers (or files) may also produce { Tokens: { ... } } directly.
+			// Be robust and accept both shapes.
+			let tokensSection: unknown = (parsed as Record<string, unknown> | undefined)?.Tokens;
+			if (!tokensSection || typeof tokensSection !== 'object') {
+				const langBlock = (parsed as Record<string, unknown> | undefined)?.lang;
+				if (langBlock && typeof langBlock === 'object') {
+					tokensSection = (langBlock as Record<string, unknown>).Tokens;
+				}
+			}
+			if (!tokensSection || typeof tokensSection !== 'object') {
+				// Fallback: if root has exactly one object child, check its Tokens.
+				const rootKeys = parsed && typeof parsed === 'object' ? Object.keys(parsed as Record<string, unknown>) : [];
+				if (rootKeys.length === 1) {
+					const rootChild = (parsed as Record<string, unknown>)[rootKeys[0]];
+					if (rootChild && typeof rootChild === 'object') {
+						const candidate = (rootChild as Record<string, unknown>).Tokens;
+						if (candidate && typeof candidate === 'object') {
+							tokensSection = candidate;
+						}
+					}
+				}
+			}
 			if (!tokensSection || typeof tokensSection !== 'object') {
 				return cached?.tokens;
 			}
