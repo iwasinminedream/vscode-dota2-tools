@@ -78,17 +78,33 @@ async function readLanguage(path: string): Promise<string> {
 
 				// 使用 KV 解析器提取 Tokens 内容，更健壮地处理各种格式
 				const parsed = readKeyValue2(langContent);
+
+				// 尝试多种结构：
+				// 1. 标准结构：lang.Tokens
+				// 2. 旧版本：直接就是 tokens（没有外层包裹）
+				let tokens: Record<string, unknown> | undefined;
+
 				const langBlock = parsed?.lang;
-				const tokens = (langBlock && typeof langBlock === 'object')
-					? (langBlock as Record<string, unknown>).Tokens
-					: undefined;
+				if (langBlock && typeof langBlock === 'object') {
+					tokens = (langBlock as Record<string, unknown>).Tokens as Record<string, unknown> | undefined;
+				}
+
+				// 如果没有找到 lang.Tokens，检查是否直接就是 tokens（旧版本格式）
+				if (!tokens && parsed && typeof parsed === 'object') {
+					// 如果 parsed 包含的都是字符串值，说明这是旧版本的直接 token 格式
+					const entries = Object.entries(parsed as Record<string, unknown>);
+					const hasStringValues = entries.length > 0 && entries.some(([_, value]) => typeof value === 'string');
+					if (hasStringValues) {
+						tokens = parsed as Record<string, unknown>;
+					}
+				}
 
 				if (tokens && typeof tokens === 'object') {
 					// 添加文件路径注释
 					lang += "\t\t//" + path.split("localization/")[1] + '/' + fileName + os.EOL;
 
 					// 手动生成 Tokens 内容，确保格式正确
-					for (const [key, value] of Object.entries(tokens as Record<string, unknown>)) {
+					for (const [key, value] of Object.entries(tokens)) {
 						if (typeof value === 'string') {
 							// 转义引号并格式化
 							const escapedValue = value.replace(/"/g, '\\"');
