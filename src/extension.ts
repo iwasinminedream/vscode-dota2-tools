@@ -28,6 +28,7 @@ import { localizationBackup, localizationCompare, localizationImportTool } from 
 import { luaApiChangelog } from './command/cmdLuaApiChangelog';
 import { openKV } from './command/cmdOpenKV';
 import { parseMapEntities } from './command/cmdParseMapEntities';
+import { pasteCssImageSnippet } from './command/cmdPasteCssImage';
 import { preProcessing } from './command/cmdPreProcessing';
 import { quickStart } from './command/cmdQuickStart';
 import { translateSelection } from './command/cmdTranslateSelection';
@@ -86,6 +87,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.backup_localization', () => localizationBackup()));
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.compare_localization', () => localizationCompare()));
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.import_localization', () => localizationImportTool()));
+	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.paste_css_image_snippet', () => pasteCssImageSnippet()));
 	// context.subscriptions.push(vmdlEditorProvider.register(context));
 	context.subscriptions.push(lazayboyProvider.register());
 	context.subscriptions.push(BehaviorTreeProvider.register(context));

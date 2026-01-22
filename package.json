@@ -414,6 +414,19 @@
 				"command": "dota2tools.kvEditor.openFile",
 				"title": "%dota2tools.kvEditor.openFile%",
 				"category": "Dota2 Tools"
+			},
+			{
+				"command": "dota2tools.paste_css_image_snippet",
+				"title": "%dota2tools.paste_css_image_snippet%",
+				"category": "Dota2 Tools"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "dota2tools.paste_css_image_snippet",
+				"key": "ctrl+v",
+				"mac": "cmd+v",
+				"when": "editorTextFocus && editorLangId == less && config.dota2-tools.A10.less_image_paste.enabled"
 			}
 		],
 		"menus": {
@@ -1014,6 +1027,11 @@
 						"type": "string",
 						"default": "",
 						"description": "用于饰品查询工具显示饰品图片，自行解包饰品图片到本地后将目录配置到这里，范例:C:/Users/bigciba/Documents/Dota Addons/dota2 tracking/root/panorama/images/"
+					},
+					"dota2-tools.A10.less_image_paste.enabled": {
+						"type": "boolean",
+						"default": true,
+						"description": "%dota2-tools.A10.less_image_paste.enabled%"
 					},
 					"dota2-tools.A7.translate service": {
 						"type": "string",
