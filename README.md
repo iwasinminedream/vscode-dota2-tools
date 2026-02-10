@@ -9,6 +9,57 @@
 
 ## 功能
 
+### KV编辑器
+
+![kv_editor_1](./images/welcome/kv_editor_1.png)
+- 支持将 `.kv` / `.txt` 以表格形式打开编辑（命令：`Dota2 Tools: Open KV in KV Editor`）。
+- 支持在活动栏 `Dota2 Kv Editor` 中浏览并打开 KV 文件（`Kv Explorer`）。
+- 支持按目录类型识别配置：`ability` / `item` / `unit` / `custom`。
+
+#### 使用前配置
+
+1. 在设置中开启模块：`dota2-tools.A1.module_list.dota2kv`。
+2. 配置 KV 路径映射：`dota2-tools.A10.kv_editor.paths`。
+
+示例：
+
+```json
+"dota2-tools.A10.kv_editor.paths": {
+	"${game}/scripts/npc/npc_abilities_custom.txt": "ability",
+	"${game}/scripts/npc/npc_items_custom.txt": "item",
+	"${game}/scripts/npc/npc_heroes_custom.txt": "unit",
+	"${game}/scripts/npc/npc_units_custom.txt": "unit",
+	"${game}/scripts/npc/abilities": "ability",
+	"${game}/scripts/npc/items": "item",
+	"${game}/scripts/npc/units": "unit",
+	"${content}/scripts/vscripts/framework/property_system/properties.kv": "custom",
+	"${game}/scripts/npc/service": "custom"
+},
+```
+
+路径支持变量：`${workspace}`、`${game}`、`${content}`。
+
+#### 主要功能
+
+- 行编辑：插入、批量插入、删除、拖拽排序、复制/粘贴行。
+- 列编辑：插入、删除、拖拽排序、冻结列、列宽保存。
+- 单元格编辑：普通文本、下拉选项、快速填充、公式计算（支持引用如 `A1`、`B2`）。
+- AbilityValues 专项编辑：支持结构化编辑与回写。
+- 贴图选择器：可为纹理字段快速选择技能/物品图标。
+- 本地化联动：支持读取/映射本地化文本，支持保存本地化导出设置。
+- 与文本编辑器互跳：可一键切回文本模式编辑。
+
+#### 相关配置文件
+
+- 工作区 KV 编辑器设置：`.vscode/kv_editor_setting.json`
+  - 保存列选项覆盖、公式、列公式、列描述、本地化映射等。
+- 用户布局设置：`.vscode/kv_editor_user_setting.json`
+  - 保存列宽、紧凑模式、本地化显示模式等个人偏好。
+
+#### 公式说明
+
+- 公式语法与示例见：`docs/kv-editor-formula-guide.md`
+
 ### DOTA2 文档
 
 - DOTA2 API: lua api查询。支持查看class列表、常量列表与function详情、更新历史、搜寻功能、常用列表、展开折叠、点击复制api。
