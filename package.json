@@ -1,7 +1,7 @@
 {
 	"name": "dota2-tools",
-	"displayName": "dota2-作图工具",
-	"description": "dota2 作图工具",
+	"displayName": "%ext.displayName%",
+	"description": "%ext.description%",
 	"version": "3.1.113",
 	"icon": "images/logo.png",
 	"publisher": "bigciba",
@@ -366,35 +366,35 @@
 			},
 			{
 				"command": "dota2tools.fetch_all_sheet",
-				"title": "云配置表: 获取【所有】表格到本地KV"
+				"title": "%dota2tools.fetch_all_sheet%"
 			},
 			{
 				"command": "dota2tools.show_fetch_sheet_list",
-				"title": "云配置表: 获取【指定】表格到本地KV"
+				"title": "%dota2tools.show_fetch_sheet_list%"
 			},
 			{
 				"command": "dota2tools.fetch_files",
-				"title": "云配置表: 更新文件列表"
+				"title": "%dota2tools.fetch_files%"
 			},
 			{
 				"command": "dota2tools.sheet_cloud_show_branch",
-				"title": "云配置表: 显示分支选项"
+				"title": "%dota2tools.sheet_cloud_show_branch%"
 			},
 			{
 				"command": "dota2tools.backup_localization",
-				"title": "生成本地化文本备份"
+				"title": "%dota2tools.backup_localization%"
 			},
 			{
 				"command": "dota2tools.compare_localization",
-				"title": "对比本地化文本备份"
+				"title": "%dota2tools.compare_localization%"
 			},
 			{
 				"command": "dota2tools.import_localization",
-				"title": "导入本地化文本"
+				"title": "%dota2tools.import_localization%"
 			},
 			{
 				"command": "dota2tools.export_record",
-				"title": "下载多维表格文本"
+				"title": "%dota2tools.export_record%"
 			},
 			{
 				"command": "dota2tools.logs.open",
@@ -646,57 +646,57 @@
 							"lua_api_tree": {
 								"type": "boolean",
 								"default": true,
-								"description": "树状图lua api文档"
+								"description": "%module.lua_api_tree%"
 							},
 							"js_api_tree": {
 								"type": "boolean",
 								"default": true,
-								"description": "树状图js api文档"
+								"description": "%module.js_api_tree%"
 							},
 							"css_api_tree": {
 								"type": "boolean",
 								"default": true,
-								"description": "树状图css api文档"
+								"description": "%module.css_api_tree%"
 							},
 							"panel_tree": {
 								"type": "boolean",
 								"default": true,
-								"description": "树状图panel文档"
+								"description": "%module.panel_tree%"
 							},
 							"lua_completion": {
 								"type": "boolean",
 								"default": true,
-								"description": "lua代码补全"
+								"description": "%module.lua_completion%"
 							},
 							"js_completion": {
 								"type": "boolean",
 								"default": true,
-								"description": "js代码补全"
+								"description": "%module.js_completion%"
 							},
 							"css_completion": {
 								"type": "boolean",
 								"default": true,
-								"description": "css代码补全"
+								"description": "%module.css_completion%"
 							},
 							"kv_lua_associated": {
 								"type": "boolean",
 								"default": true,
-								"description": "技能物品kv与lua脚本互相跳转"
+								"description": "%module.kv_lua_associated%"
 							},
 							"translate": {
 								"type": "boolean",
 								"default": true,
-								"description": "翻译服务"
+								"description": "%module.translate%"
 							},
 							"sheet_cloud": {
 								"type": "boolean",
 								"default": true,
-								"description": "云表格模块"
+								"description": "%module.sheet_cloud%"
 							},
 							"dota2kv": {
 								"type": "boolean",
 								"default": false,
-								"description": "kv编辑器"
+								"description": "%module.dota2kv%"
 							},
 							"error_logs": {
 								"type": "boolean",
@@ -722,36 +722,36 @@
 							"ability_icon": {
 								"type": "boolean",
 								"default": true,
-								"description": "是否显示Dota2图标按钮"
+								"description": "%display.ability_icon%"
 							},
 							"items_game": {
 								"type": "boolean",
 								"default": true,
-								"description": "是否显示Dota2饰品查询工具按钮"
+								"description": "%display.items_game%"
 							},
 							"vsnd_picker": {
 								"type": "boolean",
 								"default": true,
-								"description": "是否显示Dota2 vsnd音效查询按钮"
+								"description": "%display.vsnd_picker%"
 							},
 							"kv_editor": {
 								"type": "boolean",
 								"default": true,
-								"description": "是否显示KV编辑器打开按钮"
+								"description": "%display.kv_editor%"
 							},
 							"ability_export": {
 								"type": "boolean",
 								"default": true,
-								"description": "是否显示技能导出按钮"
+								"description": "%display.ability_export%"
 							},
 							"unit_export": {
 								"type": "boolean",
 								"default": true,
-								"description": "是否显示单位导出按钮"
+								"description": "%display.unit_export%"
 							}
 						},
 						"additionalProperties": false,
-						"markdownDescription": "显示相关设置，隐藏不需要的图标。如需禁用相关功能请在模块列表中取消。"
+						"markdownDescription": "%display.markdownDescription%"
 					},
 					"dota2-tools.A3.listener": {
 						"scope": "resource",
@@ -767,31 +767,31 @@
 							"localization": {
 								"type": "boolean",
 								"default": false,
-								"description": "监听文本变更自动合并文本"
+								"description": "%listener.localization%"
 							},
 							"kv2js": {
 								"type": "boolean",
 								"default": false,
-								"description": "监听kv文件变更自动生成js"
+								"description": "%listener.kv2js%"
 							},
 							"ability_excel": {
 								"type": "boolean",
 								"default": false,
-								"description": "监听双行技能excel变更自动生成kv"
+								"description": "%listener.ability_excel%"
 							},
 							"unit_excel": {
 								"type": "boolean",
 								"default": false,
-								"description": "监听单行单位excel变更自动生成kv"
+								"description": "%listener.unit_excel%"
 							},
 							"cloud_sheet": {
 								"type": "boolean",
 								"default": false,
-								"description": "监听云表格变更自动生成kv"
+								"description": "%listener.cloud_sheet%"
 							}
 						},
 						"additionalProperties": false,
-						"markdownDescription": "监听文件变更相关设置。"
+						"markdownDescription": "%listener.markdownDescription%"
 					}
 				}
 			},
@@ -831,18 +831,18 @@
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "双行技能excel表路径配置\n- kv路径对应excel路径\n- 可填写具体文件名也可以填写文件夹\n- 可以使用相对当前工作区的相对路径\n- 可使用${game}或者${content}可以指代当前game或者content目录用于拼接文件路径"
+						"markdownDescription": "%dota2-tools.A4.AbilityExcel%"
 					},
 					"dota2-tools.A4.UnitExcel": {
 						"type": "object",
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "单行excel表路径配置\n- kv路径对应excel路径\n- 可填写具体文件名也可以填写文件夹\n- 可以使用相对当前工作区的相对路径\n- 可使用${game}或者${content}可以指代当前game或者content目录用于拼接文件路径"
+						"markdownDescription": "%dota2-tools.A4.UnitExcel%"
 					},
 					"dota2-tools.A4.extnameList": {
 						"type": "string",
-						"markdownDescription": "excel导出kv功能中导出的后缀为.kv，需要修改为.txt的文件名写在该配置里面，逗号分隔"
+						"markdownDescription": "%dota2-tools.A4.extnameList%"
 					}
 				}
 			},
@@ -894,14 +894,14 @@
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "复合型配置表，一般用来作为技能配置表，每两行作为一个数据\n- 左侧为导出的kv路径，右侧为云文件夹的token\n- 可使用${game}或者${content}可以指代当前game或者content目录用于拼接文件路径"
+						"markdownDescription": "%dota2-tools.A8.CloudSheetComposite%"
 					},
 					"dota2-tools.A8.CloudSheetSingle": {
 						"type": "object",
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "普通配置表，一般用来作为单位配置表，每行作为一个数据\n- 左侧为导出的kv路径，右侧为云文件夹的token\n- 可使用${game}或者${content}可以指代当前game或者content目录用于拼接文件路径"
+						"markdownDescription": "%dota2-tools.A8.CloudSheetSingle%"
 					},
 					"dota2-tools.A8.current_branch": {
 						"type": "string",
@@ -913,28 +913,28 @@
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "云配置表分支用的，插件会自动设置，不需要配置"
+						"markdownDescription": "%dota2-tools.A8.BranchConfig%"
 					},
 					"dota2-tools.A8.Branch Single": {
 						"type": "object",
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "云配置表分支用的，插件会自动设置，不需要配置"
+						"markdownDescription": "%dota2-tools.A8.BranchConfig%"
 					},
 					"dota2-tools.A8.CloudSheetToCsv": {
 						"type": "object",
 						"additionalProperties": {
 							"type": "string"
 						},
-						"markdownDescription": "云配置表导出csv到本地\n- 左侧为云文件夹的token，右侧为本地文件夹路径\n- 可使用${game}或者${content}可以指代当前game或者content目录用于拼接文件路径"
+						"markdownDescription": "%dota2-tools.A8.CloudSheetToCsv%"
 					},
 					"dota2-tools.A8.CloudSheetMerge": {
 						"type": "object",
 						"additionalProperties": {
 							"type": "boolean"
 						},
-						"markdownDescription": "云配置表复合型，将同一个表下不同sheet合并一起导出\n- 左侧为指定云文档的token，右侧true表示根据sheetid套一层，false表示只是合并。"
+						"markdownDescription": "%dota2-tools.A8.CloudSheetMerge%"
 					}
 				}
 			},
@@ -990,7 +990,7 @@
 					"dota2-tools.KV to Js Config": {
 						"type": "string",
 						"default": "/scripts/npc/kv_js_config.txt",
-						"description": "KV导出JS配置文件"
+						"description": "%dota2-tools.KV_to_Js_Config%"
 					},
 					"dota2-tools.LuaTemplateFiles": {
 						"type": "object",
@@ -1001,14 +1001,14 @@
 							"ability": "/eom/lua_ability_snippet.lua",
 							"item": "/eom/lua_item_snippet.lua"
 						},
-						"description": "lua代码模板"
+						"description": "%dota2-tools.LuaTemplateFiles%"
 					},
 					"dota2-tools.ability class constructor": {
 						"type": "array",
 						"default": [
 							"eom_ability"
 						],
-						"description": "如果你自己封装了class，比如death_pulse = eom_ability({})，可以在此处添加关键字eom_ability，否则lua跳转kv功能不会生效。",
+						"description": "%dota2-tools.ability_class_constructor%",
 						"items": {
 							"type": "string"
 						}
@@ -1021,12 +1021,27 @@
 					"dota2-tools.A5.localization_path": {
 						"type": "string",
 						"default": "${game}/localization",
-						"description": "合并文本的目录，${game}或者${content}可以指代当前game或者content目录"
+						"description": "%dota2-tools.A5.localization_path%"
 					},
 					"dota2-tools.A5.econ_path": {
 						"type": "string",
 						"default": "",
-						"description": "用于饰品查询工具显示饰品图片，自行解包饰品图片到本地后将目录配置到这里，范例:C:/Users/bigciba/Documents/Dota Addons/dota2 tracking/root/panorama/images/"
+						"description": "%dota2-tools.A5.econ_path%"
+					},
+					"dota2-tools.language": {
+						"type": "string",
+						"default": "auto",
+						"description": "%dota2-tools.language%",
+						"enum": [
+							"auto",
+							"schinese",
+							"english"
+						],
+						"enumDescriptions": [
+							"%dota2-tools.language.auto%",
+							"%dota2-tools.language.schinese%",
+							"%dota2-tools.language.english%"
+						]
 					},
 					"dota2-tools.A10.less_image_paste.enabled": {
 						"type": "boolean",
@@ -1106,7 +1121,7 @@
 					"dota2-tools.lua api document path": {
 						"type": "string",
 						"default": "${game}/scripts/vscripts/libraries",
-						"description": "lua api文档生成相对路径，用于Emmylua插件补全相关功能，${game}或者${content}可以指代当前game或者content目录"
+						"description": "%dota2-tools.lua_api_document_path%"
 					},
 					"dota2-tools.csv_db_config": {
 						"type": "object"

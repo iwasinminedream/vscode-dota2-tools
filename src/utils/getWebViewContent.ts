@@ -3,6 +3,7 @@ import { getUri } from "./getUri";
 import * as path from 'path';
 import { readFile } from "./readFile";
 import { log } from "console";
+import { getExtensionLang } from "./getExtensionLang";
 
 /**
  * 获取webview的html，自动将格式替换成对应
@@ -40,8 +41,8 @@ export async function getWebviewContent(webview: Webview, extensionUri: Uri, web
 		return $1 + $2 + '"';
 	});
 	// 本地化
-	const config = JSON.parse(String(process.env.VSCODE_NLS_CONFIG));
-	html = html.replace(/<html lang="(.*)">/, `<html lang="${config['locale'] || 'en'}">`);
+	const extensionLang = getExtensionLang();
+	html = html.replace(/<html lang="(.*)">/, `<html lang="${extensionLang}">`);
 
 	// 接入工具包与codicon
 	html = html.replace("</head>", `\t<script type="module" src="${toolkitUri}"></script>\n\t<link href="${codiconsUri}" rel="stylesheet" />\n</head>`);

@@ -12,9 +12,9 @@
 <body>
 	<div class="search">
 		<div class="texture-type-content">
-			<input class="texture-type selected" type="button" name="texture-type" value="技能"
+			<input class="texture-type selected" type="button" name="texture-type" value="技能" data-i18n-value="abilities"
 				onclick="toggleType(this)">
-			<input class="texture-type" type="button" name="texture-type" value="物品" onclick="toggleType(this)">
+			<input class="texture-type" type="button" name="texture-type" value="物品" data-i18n-value="items" onclick="toggleType(this)">
 		</div>
 		<div class="search-content">
 			<div class="dropdown">
@@ -39,7 +39,7 @@
 				<div class="dropdown-blur">
 				</div>
 			</div>
-			<input id="filter" type="text" placeholder="搜索，支持中文但只支持基础物品" oninput="onInput()">
+			<input id="filter" type="text" placeholder="搜索，支持中文但只支持基础物品" data-i18n-placeholder="searchPlaceholder" oninput="onInput()">
 		</div>
 		<!-- <i class="fa fa-cog" style="font-size:36px"></i> -->
 	</div>
@@ -51,6 +51,26 @@
 		<!-- 用于代码替换的内容 -->
 		<div>__replace__</div>
 	</div>
+	<script>
+	// 国际化：HTML默认是中文，只在英文时覆盖
+	(function() {
+		const lang = document.documentElement.lang;
+		if (lang !== 'en') return;
+		const en = {
+			abilities: 'Abilities',
+			items: 'Items',
+			searchPlaceholder: 'Search, supports basic items only'
+		};
+		document.querySelectorAll('[data-i18n-value]').forEach(el => {
+			const key = el.getAttribute('data-i18n-value');
+			if (en[key]) el.value = en[key];
+		});
+		document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+			const key = el.getAttribute('data-i18n-placeholder');
+			if (en[key]) el.placeholder = en[key];
+		});
+	})();
+	</script>
 </body>
 
 </html>

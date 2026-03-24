@@ -4,6 +4,7 @@ import { DotaApiNote } from '../Class/DotaApiNote';
 import { apiParse } from '../utils/apiParse';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { showStatusBarMessage } from '../module/statusBar';
+import { localize } from '../utils/localize';
 // import { GetApiNote, GetClassList, GetEnumList } from '../init';
 
 // 类型
@@ -48,7 +49,7 @@ export class ApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		// 复制
 		vscode.commands.registerCommand("dota2tools.dota2api.copy", async (data) => {
 			vscode.env.clipboard.writeText(data.label);
-			showStatusBarMessage('复制到剪切板：' + data.label);
+			showStatusBarMessage(localize('msg_copied_clipboard', [data.label]));
 		});
 		// 编辑
 		vscode.commands.registerCommand('dota2tools.dota2api.edit', async (nodeItem: NodeItem) => {
@@ -56,7 +57,7 @@ export class ApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			if (args) {
 				const panel = vscode.window.createWebviewPanel(
 					'dota2api', // viewType
-					"Dota2 API", // 视图标题
+					localize('panel_dota2_api'), // 视图标题
 					vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 					{
 						enableScripts: true, // 启用JS，默认禁用
@@ -140,7 +141,7 @@ export class ApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		});
 		// 输入过滤词搜索API
 		vscode.commands.registerCommand("dota2tools.dota2api.filter", async () => {
-			vscode.window.showInputBox({ prompt: "输入过滤词搜索API" }).then((msg) => {
+			vscode.window.showInputBox({ prompt: localize('msg_filter_api_prompt') }).then((msg) => {
 				let classList = this.dotaApiNote.getClassList();
 				let enumList = this.dotaApiNote.getEnumList();
 				if (msg !== undefined) {
@@ -206,7 +207,7 @@ export class ApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			if (this.apiBrowserView === undefined) {
 				this.apiBrowserView = vscode.window.createWebviewPanel(
 					'APIBrowser', // viewType
-					"API Browser", // 视图标题
+					localize('panel_api_browser'), // 视图标题
 					vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 					{
 						enableScripts: true, // 启用JS，默认禁用
@@ -229,10 +230,10 @@ export class ApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			this.apiBrowserView.webview.html = await getWebviewContent(this.apiBrowserView.webview, context.extensionUri, 'apiBrowser');
 			if (infoType === APIType.function) {
 				vscode.env.clipboard.writeText(funInfo.function);
-				showStatusBarMessage('复制到剪切板：' + funInfo.function);
+				showStatusBarMessage(localize('msg_copied_clipboard', [funInfo.function]));
 			} else if (infoType === APIType.enum) {
 				vscode.env.clipboard.writeText(funInfo.name);
-				showStatusBarMessage('复制到剪切板：' + funInfo.name);
+				showStatusBarMessage(localize('msg_copied_clipboard', [funInfo.name]));
 			}
 			if (infoType === APIType.function) {
 				this.apiBrowserView.webview.postMessage({

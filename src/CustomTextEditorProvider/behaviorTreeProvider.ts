@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2, writeKeyValue } from '../utils/kvUtils';
+import { localize } from '../utils/localize';
 
 /**
  * 行为树节点类型
@@ -78,7 +79,7 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 				const treeData = this.parseDocument(document);
 				postData(treeData);
 			} catch (error) {
-				vscode.window.showErrorMessage(`解析行为树文件失败: ${error}`);
+				vscode.window.showErrorMessage(localize('msg_failed_parse_btree', [String(error)]));
 			}
 		};
 
@@ -108,7 +109,7 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 
 				case 'save':
 					this.saveDocument(document, message.data).catch((error) => {
-						vscode.window.showErrorMessage(`保存行为树失败: ${error}`);
+						vscode.window.showErrorMessage(localize('msg_failed_save_btree', [String(error)]));
 					});
 					break;
 
@@ -123,13 +124,13 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 
 				case 'saveTemplate':
 					this.saveTemplate(message.template).then(() => {
-						vscode.window.showInformationMessage(`模板 "${message.template.name}" 已保存`);
+						vscode.window.showInformationMessage(localize('msg_template_saved', [message.template.name]));
 						// 发送更新后的模板列表
 						this.getTemplates().then(templates => {
 							webviewPanel.webview.postMessage({ type: 'templatesUpdated', templates });
 						});
 					}).catch(error => {
-						vscode.window.showErrorMessage(`保存模板失败: ${error}`);
+						vscode.window.showErrorMessage(localize('msg_failed_save_template', [String(error)]));
 					});
 					break;
 
@@ -137,19 +138,19 @@ export class BehaviorTreeProvider implements vscode.CustomTextEditorProvider {
 					this.getTemplates().then(templates => {
 						webviewPanel.webview.postMessage({ type: 'templatesUpdated', templates });
 					}).catch(error => {
-						vscode.window.showErrorMessage(`获取模板失败: ${error}`);
+						vscode.window.showErrorMessage(localize('msg_failed_load_templates', [String(error)]));
 					});
 					break;
 
 				case 'deleteTemplate':
 					this.deleteTemplate(message.templateName).then(() => {
-						vscode.window.showInformationMessage(`模板 "${message.templateName}" 已删除`);
+						vscode.window.showInformationMessage(localize('msg_template_deleted', [message.templateName]));
 						// 发送更新后的模板列表
 						this.getTemplates().then(templates => {
 							webviewPanel.webview.postMessage({ type: 'templatesUpdated', templates });
 						});
 					}).catch(error => {
-						vscode.window.showErrorMessage(`删除模板失败: ${error}`);
+						vscode.window.showErrorMessage(localize('msg_failed_delete_template', [String(error)]));
 					});
 					break;
 			}

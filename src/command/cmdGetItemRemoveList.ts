@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { getKeyValueObjectByIndex, readKeyValueWithBase } from '../utils/kvUtils';
+import { localize } from '../utils/localize';
 
 /** 复制dota2官方物品删除列表到剪切板 */
 export async function getItemRemoveList(context: vscode.ExtensionContext) {
@@ -15,5 +16,5 @@ export async function getItemRemoveList(context: vscode.ExtensionContext) {
 	}
 
 	vscode.env.clipboard.writeText(str);
-	vscode.window.showInformationMessage('官方物品删除列表生成完毕，已复制到剪切板');
+	vscode.window.showInformationMessage(localize('msg_item_remove_list'));
 }

@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import { getWebviewContent } from '../utils/getWebViewContent';
+import { localize } from '../utils/localize';
 
 export async function quickStart(context: vscode.ExtensionContext, tag?: string) {
 	console.log(tag);
 
 	const panel = vscode.window.createWebviewPanel(
 		'Welcome', // viewType
-		"Welcome", // 视图标题
+		localize('msg_welcome'), // 视图标题
 		vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 		{
 			enableScripts: true, // 启用JS，默认禁用

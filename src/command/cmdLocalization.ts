@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { window } from "vscode";
 import { getGameDir } from "../module/addonInfo";
+import { localize } from '../utils/localize';
 import { csv2obj, isEmptyCSVValue, obj2csv } from "../utils/csvUtils";
 import { getPathConfiguration } from "../utils/getPathConfiguration";
 import { getKeyValueObjectByIndex, readKeyValue2, writeKeyValue } from "../utils/kvUtils";
@@ -100,13 +101,13 @@ export function localizationCompare() {
 		fs.mkdirSync(sDir);
 	}
 
-	window.showInputBox({ prompt: "输入第1个版本号数字，它较小" }).then((str) => {
+	window.showInputBox({ prompt: localize('msg_enter_version_small') }).then((str) => {
 		if (str == undefined) {
 			return;
 		}
 		let n1 = Number(str);
 
-		window.showInputBox({ prompt: "输入第2个版本号数字，它较大" }).then((str) => {
+		window.showInputBox({ prompt: localize('msg_enter_version_large') }).then((str) => {
 			if (str == undefined) {
 				return;
 			}
@@ -253,7 +254,7 @@ export async function localizationImportTool() {
 			}
 		}
 	});
-	const sFile = await window.showQuickPick(files, { title: "选择导入的文件" });
+	const sFile = await window.showQuickPick(files, { title: localize('msg_select_file_import') });
 	if (sFile == undefined) {
 		return;
 	}
@@ -270,7 +271,7 @@ export async function localizationImportTool() {
 
 	const importTokens: Record<string, Record<string, any>> = csv2obj(fs.readFileSync(sImport, 'utf-8'));
 	const keys = Object.keys(importTokens.__key_sc).filter(v => v != "key" && v != "schinese" && !v.includes("_state"));
-	const sLanguage = await window.showQuickPick(keys, { title: "选择导入的语言" });
+	const sLanguage = await window.showQuickPick(keys, { title: localize('msg_select_lang_import') });
 	if (sLanguage == undefined) {
 		return;
 	}
@@ -314,7 +315,7 @@ export async function localizationImportTool() {
 	let sFileName = path.join(localizationPath, sLanguage, "auto_generate.txt");
 	fs.writeFileSync(sFileName, autoGenerateTitle + os.EOL + Object.values(tokens).join(os.EOL));
 	if (bWarning) {
-		window.showErrorMessage(`有冲突,请手动处理`);
+		window.showErrorMessage(localize('msg_conflicts_found'));
 	}
 }
 

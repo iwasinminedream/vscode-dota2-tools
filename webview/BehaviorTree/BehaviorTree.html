@@ -221,6 +221,91 @@
         </div>
     </div>
 
+    <!-- i18n: 中文是默认语言，英文通过脚本覆盖 -->
+    <script>
+    (function() {
+        const lang = document.documentElement.lang;
+        if (lang !== 'en') return;
+
+        // Toolbar
+        document.querySelector('#saveBtn').title = 'Save (Ctrl+S)';
+        document.querySelector('#saveBtn').lastChild.textContent = ' Save';
+        document.querySelector('#addNodeBtn').title = 'Add Node';
+        document.querySelector('#addNodeBtn').lastChild.textContent = ' Add Node';
+        document.querySelector('#addFromTemplateBtn').title = 'Add Node from Template';
+        document.querySelector('#addFromTemplateBtn').lastChild.textContent = ' Template';
+        document.querySelector('#deleteNodeBtn').title = 'Delete Selected Node (Delete)';
+        document.querySelector('#deleteNodeBtn').lastChild.textContent = ' Delete';
+        document.querySelector('#zoomInBtn').title = 'Zoom In';
+        document.querySelector('#zoomOutBtn').title = 'Zoom Out';
+        document.querySelector('#fitBtn').title = 'Fit Canvas';
+        document.querySelector('#fitBtn').lastChild.textContent = ' Fit';
+        document.querySelector('.tree-name-label').childNodes[0].textContent = 'Tree Name: ';
+        document.querySelector('#treeNameInput').placeholder = 'Behavior tree name';
+        document.querySelector('#openTextBtn').title = 'Open in Text Editor (Split Right)';
+        document.querySelector('#openTextBtn').lastChild.textContent = ' Text Mode';
+
+        // Properties panel
+        document.querySelector('#propertiesPanel .panel-header h3').textContent = 'Properties';
+        document.querySelector('#propertiesContent .empty-state').textContent = 'Please select a node';
+
+        // Add node dialog
+        document.querySelector('#addNodeDialog .dialog-header h3').textContent = 'Add Node';
+        const addLabels = document.querySelectorAll('#addNodeDialog .form-group label');
+        addLabels[0].textContent = 'Node Type:';
+        addLabels[1].textContent = 'Identifier (Key):';
+        addLabels[2].textContent = 'Display Name (Name):';
+        addLabels[3].textContent = 'Description (optional):';
+        const nodeTypeOpts = document.querySelectorAll('#nodeTypeSelect option');
+        nodeTypeOpts[0].textContent = 'Sequence';
+        nodeTypeOpts[1].textContent = 'Selector';
+        nodeTypeOpts[2].textContent = 'Parallel';
+        nodeTypeOpts[3].textContent = 'Condition';
+        nodeTypeOpts[4].textContent = 'Action';
+        nodeTypeOpts[5].textContent = 'Decorator';
+        document.querySelector('#nodeKeyInput').placeholder = 'e.g.: Heal, Attack, CheckHealth';
+        document.querySelector('#nodeNameInput').placeholder = 'e.g.: Heal, Attack, Check Health';
+        document.querySelector('#nodeDescInput').placeholder = 'Enter node description';
+        const addBtns = document.querySelectorAll('#addNodeDialog .dialog-footer .btn');
+        addBtns[0].textContent = 'Cancel';
+        addBtns[1].textContent = 'Add';
+
+        // Template dialog
+        document.querySelector('#templateDialog .dialog-header h3').textContent = 'Select Template';
+        document.querySelector('#templateSearchInput').placeholder = 'Search templates (name, description, type, key)';
+        document.querySelector('.clear-search-btn').title = 'Clear Search';
+        document.querySelector('.type-filter-btn[data-type="all"]').innerHTML = '<span class="codicon codicon-filter"></span> All';
+        const sortLabel = document.querySelector('.template-sort-bar label');
+        sortLabel.textContent = 'Sort:';
+        const sortOpts = document.querySelectorAll('#templateSortSelect option');
+        sortOpts[0].textContent = 'Name A-Z';
+        sortOpts[1].textContent = 'Name Z-A';
+        sortOpts[2].textContent = 'Type A-Z';
+        sortOpts[3].textContent = 'Newest';
+        sortOpts[4].textContent = 'Oldest';
+        document.querySelector('#templateList .empty-state').textContent = 'Loading templates...';
+        document.querySelector('#templateDialog .dialog-footer .btn').textContent = 'Cancel';
+
+        // Save template dialog
+        document.querySelector('#saveTemplateDialog .dialog-header h3').textContent = 'Save as Template';
+        const saveLabels = document.querySelectorAll('#saveTemplateDialog .form-group label');
+        saveLabels[0].textContent = 'Template Name:';
+        saveLabels[1].textContent = 'Template Description (optional):';
+        document.querySelector('#templateNameInput').placeholder = 'e.g.: Heal Ability';
+        document.querySelector('#templateDescInput').placeholder = 'Enter template description';
+        document.querySelector('#saveTemplateDialog .checkbox-text').textContent = 'Include Children';
+        const saveBtns = document.querySelectorAll('#saveTemplateDialog .dialog-footer .btn');
+        saveBtns[0].textContent = 'Cancel';
+        saveBtns[1].textContent = 'Save';
+
+        // Confirm dialog
+        document.querySelector('#confirmDialog .dialog-header h3').textContent = 'Confirm';
+        document.querySelector('#confirmMessage').textContent = 'Are you sure?';
+        const confirmBtns = document.querySelectorAll('#confirmDialog .dialog-footer .btn');
+        confirmBtns[0].textContent = 'Cancel';
+        confirmBtns[1].textContent = 'OK';
+    })();
+    </script>
     <script src="BehaviorTree.js"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { localize } from '../utils/localize';
 
 export enum KvNodeType {
 	/** 默认 */
@@ -41,14 +42,14 @@ export class KvNode extends vscode.TreeItem {
 			this.iconPath = new vscode.ThemeIcon("symbol-method");
 			this.command = {
 				command: 'extension.openFileAtPosition',
-				title: 'Open File at Position',
+				title: localize('msg_open_file_at_position'),
 				arguments: [this.filePath, this.label]
 			};
 		} else if (this.itemType === KvNodeType.file) {
 			this.iconPath = path.join(__filename, '..', '..', 'images', 'kv.svg');
 			this.command = {
 				command: 'vscode.open',
-				title: 'Open File',
+				title: localize('msg_open_file'),
 				arguments: [vscode.Uri.file(this.filePath as string)]
 			};
 		}

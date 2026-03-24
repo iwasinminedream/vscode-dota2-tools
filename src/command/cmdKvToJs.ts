@@ -54,7 +54,7 @@ export async function kvToJs(context: vscode.ExtensionContext) {
 	}
 
 	changeStatusBarState(StatusBarState.ALL_DONE);
-	showStatusBarMessage("JS文件生成完毕");
+	showStatusBarMessage(localize('msg_js_gen_complete'));
 }
 
 /** 生成js文件 */
@@ -105,7 +105,7 @@ export async function generateJS(context: vscode.ExtensionContext, kvJsConfig: T
 			kv = overrideKeyValue(replaceKeyValue(itemsKv, npcAbilitiesOverrideKv), kv);
 		}
 	} catch (error) {
-		showStatusBarMessage("[warning]：官方的KV可能存在格式问题");
+		showStatusBarMessage(localize('msg_kv_format_warning'));
 	}
 
 	let js = obj2Str(kv);
@@ -114,9 +114,9 @@ export async function generateJS(context: vscode.ExtensionContext, kvJsConfig: T
 	// fs.writeFileSync(jsPath, fileData);
 	fs.writeFile(jsPath, fileData, (err) => {
 		if (err) {
-			showStatusBarMessage(`[写入失败]：${sKVName}，原因：${err.message}`);
+			showStatusBarMessage(localize('msg_write_failed', [sKVName, err.message]));
 		} else {
-			showStatusBarMessage(`[生成js]：${sKVName}`);
+			showStatusBarMessage(localize('msg_generate_js', [sKVName]));
 		}
 	});
 	// 生成定义文件

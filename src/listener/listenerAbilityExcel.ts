@@ -7,8 +7,7 @@ import { getRootPath } from "../utils/getRootPath";
 import { eachExcelConfig } from "../command/cmdExcel2KV";
 import { abilityCSV2KV } from "../utils/csvUtils";
 import { showStatusBarMessage } from "../module/statusBar";
-import { writeKeyValue } from "../utils/kvUtils";
-
+import { writeKeyValue } from "../utils/kvUtils";import { localize } from '../utils/localize';
 let eventID: number;
 let fileWatcher: fs.FSWatcher | undefined;
 const configName = "dota2-tools.A3.listener";
@@ -40,7 +39,7 @@ function startWatch(context: vscode.ExtensionContext) {
 	if (fileWatcher === undefined) {
 		const rootPath = getRootPath();
 		if (rootPath) {
-			showStatusBarMessage("[监听目录]：技能excel");
+			showStatusBarMessage(localize('msg_watching_ability'));
 			let abilityExcelConfig: Table | undefined = vscode.workspace.getConfiguration().get('dota2-tools.A4.AbilityExcel');
 			fileWatcher = watch(rootPath, { recursive: true, filter: /\.csv$/ }, function (evt, name) {
 				if (abilityExcelConfig) {
@@ -49,7 +48,7 @@ function startWatch(context: vscode.ExtensionContext) {
 							const kvName = path.join(kvDir, path.basename(name).replace(path.extname(name), getExtname(path.basename(name))));
 							let csv = fs.readFileSync(name, 'utf-8');
 							fs.writeFileSync(kvName, writeKeyValue({ KeyValue: abilityCSV2KV(csv) }));
-							showStatusBarMessage("[excel导出kv]：" + path.basename(name).replace(path.extname(name), getExtname(path.basename(name))));
+							showStatusBarMessage(localize('msg_excel_to_kv', [path.basename(name).replace(path.extname(name), getExtname(path.basename(name)))]));
 							// excel2kv(kvDir, path.join(excelDir, path.basename(name).replace(path.extname(name), ".xlsm")), abilityCSV2KV);
 							return false;
 						}
@@ -64,7 +63,7 @@ function startWatch(context: vscode.ExtensionContext) {
 /** 停止监听 */
 export function stopWatch() {
 	if (fileWatcher) {
-		showStatusBarMessage("[停止监听目录]：技能excel");
+		showStatusBarMessage(localize('msg_stop_watching_ability'));
 		fileWatcher.close();
 		fileWatcher = undefined;
 	}

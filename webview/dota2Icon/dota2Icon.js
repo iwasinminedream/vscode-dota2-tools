@@ -28,10 +28,11 @@ function toggleType(btn) {
 	btn.className = 'texture-type selected';
 	let textureContainer = document.getElementById("texture-content");
 	let itemTextureContainer = document.getElementById("item-texture-content");
-	if (btn.value === '技能') {
+	const key = btn.getAttribute('data-i18n-value') || '';
+	if (key === 'abilities') {
 		textureContainer.style.display = 'grid';
 		itemTextureContainer.style.display = 'none';
-	} else if (btn.value === '物品') {
+	} else if (key === 'items') {
 		textureContainer.style.display = 'none';
 		itemTextureContainer.style.display = 'grid';
 	}

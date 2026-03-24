@@ -5,6 +5,7 @@ import { getGameDir, isValidFolder } from '../module/addonInfo';
 import { StatusBarState, changeStatusBarState, refreshStatusBarMessage, showStatusBarMessage } from '../module/statusBar';
 import { getPathConfiguration } from '../utils/getPathConfiguration';
 import { readKeyValue2 } from '../utils/kvUtils';
+import { localize } from '../utils/localize';
 
 export async function combineLocalization(languageType: string = "") {
 	if (isValidFolder() === false) {
@@ -12,7 +13,7 @@ export async function combineLocalization(languageType: string = "") {
 	}
 	// 消息
 	changeStatusBarState(StatusBarState.LOADING);
-	let messageIndex = showStatusBarMessage("[合并文本]：" + languageType == "" ? "ALL" : languageType);
+	let messageIndex = showStatusBarMessage(localize('msg_merge_text', [languageType == "" ? "ALL" : languageType]));
 	const gameDir = getGameDir();
 	const localizationPath = getPathConfiguration("dota2-tools.A5.localization_path");
 	if (localizationPath) {
@@ -20,7 +21,7 @@ export async function combineLocalization(languageType: string = "") {
 			let language = await getLanguageContent(localizationPath, languageType);
 			if (language != undefined) {
 				fs.writeFileSync(gameDir + '/resource/addon_' + languageType + '.txt', language);
-				refreshStatusBarMessage(messageIndex, "[合并文本]：" + localizationPath + '/' + languageType);
+				refreshStatusBarMessage(messageIndex, localize('msg_merge_text', [localizationPath + '/' + languageType]));
 			}
 		} else {
 			let langFolders: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(vscode.Uri.file(localizationPath));
@@ -32,7 +33,7 @@ export async function combineLocalization(languageType: string = "") {
 					let language = await getLanguageContent(localizationPath, folderName);
 					if (language != undefined) {
 						fs.writeFileSync(gameDir + '/resource/addon_' + folderName + '.txt', language);
-						refreshStatusBarMessage(messageIndex, "[合并文本]：" + localizationPath + '/' + folderName);
+						refreshStatusBarMessage(messageIndex, localize('msg_merge_text', [localizationPath + '/' + folderName]));
 					}
 					// let text_editor: vscode.TextEditor = await vscode.window.showTextDocument(vscode.Uri.file(root_path + '/game/dota_addons/dota_imba/resource/addon_' + folder_name + '.txt'));
 					// text_editor.edit(function (edit_builder) {
@@ -41,7 +42,7 @@ export async function combineLocalization(languageType: string = "") {
 					// });
 				}
 			}
-			refreshStatusBarMessage(messageIndex, "[合并文本]：全部完成");
+			refreshStatusBarMessage(messageIndex, localize('msg_merge_text_done'));
 		}
 		changeStatusBarState(StatusBarState.ALL_DONE);
 	}

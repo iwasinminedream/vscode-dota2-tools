@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { showStatusBarMessage } from '../module/statusBar';
+import { localize } from '../utils/localize';
 
 // 类型
 enum APIType {
@@ -25,7 +26,7 @@ export class JsApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		// 复制
 		vscode.commands.registerCommand("dota2tools.dota2jsapi.copy", async (data) => {
 			vscode.env.clipboard.writeText(data.label);
-			showStatusBarMessage('复制到剪切板：' + data.label);
+			showStatusBarMessage(localize('msg_copied_clipboard', [data.label]));
 		});
 		vscode.commands.registerCommand('dota2tools.dota2jsapi.list', (nodeItem: NodeItem) => {
 			if (nodeItem.itemType === ItemType.class) {
@@ -34,7 +35,7 @@ export class JsApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		});
 		// 搜索
 		vscode.commands.registerCommand("dota2tools.dota2jsapi.filter", async () => {
-			vscode.window.showInputBox({ prompt: "输入过滤词搜索API" }).then((msg) => {
+			vscode.window.showInputBox({ prompt: localize('msg_filter_api_prompt') }).then((msg) => {
 				if (msg !== undefined) {
 					this.filteredApiTreeData = {};
 					for (const className in this.apiTreeData) {
@@ -79,14 +80,14 @@ export class JsApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		// 复制
 		vscode.commands.registerCommand("dota2tools.js_api_browser.copy", async (funcName) => {
 			vscode.env.clipboard.writeText(funcName);
-			showStatusBarMessage('复制到剪切板：' + funcName);
+			showStatusBarMessage(localize('msg_copied_clipboard', [funcName]));
 		});
 		// JS API 相关
 		vscode.commands.registerCommand("dota2tools.js_api_browser", async (funInfo, infoType: APIType, name) => {
 			if (this.jsAPIBrowserView === undefined) {
 				this.jsAPIBrowserView = vscode.window.createWebviewPanel(
 					'JSAPIBrowser', // viewType
-					"JS API Browser", // 视图标题
+					localize('panel_js_api_browser'), // 视图标题
 					vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 					{
 						enableScripts: true, // 启用JS，默认禁用

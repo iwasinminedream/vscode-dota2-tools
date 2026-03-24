@@ -36,7 +36,7 @@ export function localize(text: string, dialogVariables?: Table, language?: "zh-c
 	if (langData === undefined || text === undefined) {
 		return text;
 	}
-	let langType = language ?? vscode.env.language === "zh-cn" ? "zh-cn" : "en";
+	let langType = language ?? (vscode.env.language === "zh-cn" ? "zh-cn" : "en");
 	let langInfo = langData[langType];
 	if (langInfo[text] !== undefined) {
 		return langInfo[text];
@@ -56,7 +56,7 @@ export function reverseLocalize(text: string, dialogVariables?: Table, language?
 	if (reverseLangData === undefined || text === undefined) {
 		return text;
 	}
-	let langType = language ?? vscode.env.language === "zh-cn" ? "zh-cn" : "en";
+	let langType = language ?? (vscode.env.language === "zh-cn" ? "zh-cn" : "en");
 	let langInfo = reverseLangData[langType];
 	if (langInfo[text] !== undefined) {
 		return langInfo[text];
@@ -74,7 +74,7 @@ export function hasLocalize(text: string, language?: "zh-cn" | "en") {
 	if (langData === undefined) {
 		return false;
 	}
-	let langType = language ?? vscode.env.language === "zh-cn" ? "zh-cn" : "en";
+	let langType = language ?? (vscode.env.language === "zh-cn" ? "zh-cn" : "en");
 	let langInfo = langData[langType];
 	if (langInfo[text] !== undefined) {
 		return true;
@@ -86,7 +86,7 @@ export function hasReverseLocalize(text: string, language?: "zh-cn" | "en") {
 	if (reverseLangData === undefined) {
 		return false;
 	}
-	let langType = language ?? vscode.env.language === "zh-cn" ? "zh-cn" : "en";
+	let langType = language ?? (vscode.env.language === "zh-cn" ? "zh-cn" : "en");
 	let langInfo = reverseLangData[langType];
 	if (langInfo[text] !== undefined) {
 		return true;

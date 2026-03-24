@@ -140,7 +140,7 @@ export async function sheetCloudInit(context: vscode.ExtensionContext) {
 		const vsndPick = vscode.window.createQuickPick();
 		vsndPick.canSelectMany = false;
 		vsndPick.ignoreFocusOut = true;
-		vsndPick.placeholder = '选择一个配置表';
+		vsndPick.placeholder = localize('msg_select_config_sheet');
 		vsndPick.matchOnDescription = true;
 		vsndPick.items = getFilesQuickPick();
 
@@ -165,7 +165,7 @@ export async function sheetCloudInit(context: vscode.ExtensionContext) {
 		const getBranchOptionItems = () => {
 			const result: vscode.QuickPickItem[] = [
 				{
-					label: "$(add) 创建新分支...",
+					label: localize('msg_create_new_branch'),
 					alwaysShow: true,
 				},
 				{
@@ -174,12 +174,12 @@ export async function sheetCloudInit(context: vscode.ExtensionContext) {
 				},
 				{
 					label: "$(git-branch) main",
-					description: "主分支"
+					description: localize('msg_main_branch')
 				}
 			];
 			for (const branchName in branchList) {
 				result.push({
-					label: "$(git-branch) " + branchName + "(暂时没用)",
+					label: "$(git-branch) " + branchName + localize('msg_not_yet_functional'),
 					description: branchList[branchName]
 				});
 			}
@@ -191,12 +191,12 @@ export async function sheetCloudInit(context: vscode.ExtensionContext) {
 				return item;
 			});
 		};
-		vscode.window.showQuickPick(getBranchOptionItems(), { placeHolder: '选择要签出的云配置表分支' }).then(async (t) => {
+		vscode.window.showQuickPick(getBranchOptionItems(), { placeHolder: localize('msg_select_branch') }).then(async (t) => {
 			if (t && t.alwaysShow) {
-				vscode.window.showInputBox({ placeHolder: `分支名称（按"Enter"以确认或按"Esc"以取消）` }).then((t) => {
+				vscode.window.showInputBox({ placeHolder: localize('msg_branch_name_prompt') }).then((t) => {
 					if (t && t != "") {
 						const branchName = t;
-						vscode.window.showQuickPick(getBranchFiles(), { placeHolder: '选择要复制到分支的配置表', canPickMany: true }).then(async (t) => {
+						vscode.window.showQuickPick(getBranchFiles(), { placeHolder: localize('msg_select_sheets_copy'), canPickMany: true }).then(async (t) => {
 							if (t && t.length > 0) {
 								// 切换分支
 								await switchBranch(branchName);
@@ -261,12 +261,12 @@ export async function sheetCloudInit(context: vscode.ExtensionContext) {
 							}
 						});
 					} else {
-						vscode.window.showErrorMessage("分支名称不能为空");
+						vscode.window.showErrorMessage(localize('msg_branch_name_empty'));
 					}
 				});
 			} else {
 				if (t?.description) {
-					if (t.description == "主分支") {
+					if (t.description == localize('msg_main_branch')) {
 						await switchBranch("main");
 						await resyncCloudFiles("main");
 					} else {
@@ -280,9 +280,13 @@ export async function sheetCloudInit(context: vscode.ExtensionContext) {
 	}));
 	// 下载多维表格文本
 	context.subscriptions.push(vscode.commands.registerCommand("dota2tools.export_record", async (data) => {
-		vscode.window.showQuickPick([{ label: "Schinese" }, { label: "English" }, { label: "Russian" }], { placeHolder: '选择语言' }).then(async (t) => {
+		vscode.window.showQuickPick([
+			{ label: localize('lang_schinese'), description: "Schinese" },
+			{ label: localize('lang_english'), description: "English" },
+			{ label: localize('lang_russian'), description: "Russian" }
+		], { placeHolder: localize('msg_select_language') }).then(async (t) => {
 			if (t) {
-				const language = t.label;
+				const language = t.description;
 				const result = await sheetCloud.exportRecords(language);
 				let insert = "";
 				for (const key in result) {
@@ -792,13 +796,13 @@ function refreshStatusBar(syncNameList?: string[]) {
 	if (syncNameList && syncNameList.length > 0) {
 		const count = syncNameList.length;
 		statusBarItem.text = `$(sync) ${count}↓`;
-		statusBarItem.tooltip = new vscode.MarkdownString(`云配置表: 获取以下kv` + syncNameList.map((name) => { return "\n- " + name; }).join(""));
+		statusBarItem.tooltip = new vscode.MarkdownString(localize('msg_cloud_fetching_kvs') + syncNameList.map((name) => { return "\n- " + name; }).join(""));
 		if (getConfiguration()) {
 			syncCloundSheet();
 		}
 	} else {
 		if (statusBarItem) {
-			statusBarItem.tooltip = new vscode.MarkdownString(`云配置表: 获取所有表格到本地KV`);
+			statusBarItem.tooltip = new vscode.MarkdownString(localize('msg_cloud_fetching_all'));
 			statusBarItem.text = '$(sync)';
 		}
 	}

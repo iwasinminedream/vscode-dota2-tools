@@ -1,5 +1,25 @@
 const vscode = acquireVsCodeApi();
 let rootElement = document.querySelector('.markdown-body');
+
+const i18n = {
+	"en": {
+		value: "Value",
+		confirm: "Confirm",
+		longDesc: "Long description",
+		conciseDesc: "Concise description",
+		example: "Example"
+	},
+	"zh-cn": {
+		value: "值",
+		confirm: "确认",
+		longDesc: "长描述",
+		conciseDesc: "简洁描述",
+		example: "范例"
+	}
+};
+const uiLang = document.documentElement.lang || 'en';
+const t = i18n[uiLang] || i18n['en'];
+
 function renderFunction(funInfo) {
 	console.log(funInfo);
 	// 清空面板
@@ -7,7 +27,7 @@ function renderFunction(funInfo) {
 	let titleElement = rootElement.createChild('h1', { text: funInfo.function });
 	let descriptionTitleElement = rootElement.createChild('h1', { text: "Function Description" });
 	let descriptionElement = rootElement.createChild('pre');
-	let textareaElement = descriptionElement.createChild('textarea', { className: 'list-object-value', placeholder: '值', type: 'text', rows: '1', text: funInfo.description || "" });
+	let textareaElement = descriptionElement.createChild('textarea', { className: 'list-object-value', placeholder: t.value, type: 'text', rows: '1', text: funInfo.description || "" });
 	// textarea自适应高度
 	textareaElement.addEventListener('input', (event) => {
 		event.target.style.height = event.target.scrollHeight + "px";
@@ -57,7 +77,7 @@ function renderFunction(funInfo) {
 	// 范例
 	let exampleTitleElement = rootElement.createChild('h1', { text: "Example" });
 	let exampleElement = rootElement.createChild('pre');
-	exampleTextareaElement = exampleElement.createChild('textarea', { className: 'list-object-value', placeholder: '值', type: 'text', rows: '1', text: funInfo.example || "" });
+	exampleTextareaElement = exampleElement.createChild('textarea', { className: 'list-object-value', placeholder: t.value, type: 'text', rows: '1', text: funInfo.example || "" });
 	exampleTextareaElement.style.height = exampleTextareaElement.scrollHeight + "px";
 	// textarea自适应高度
 	exampleTextareaElement.addEventListener('input', (event) => {
@@ -66,7 +86,7 @@ function renderFunction(funInfo) {
 	});
 
 	// 确认
-	let btnConfirmElement = rootElement.createChild('a', { className: 'monaco-text-button', text: '确认' });
+	let btnConfirmElement = rootElement.createChild('a', { className: 'monaco-text-button', text: t.confirm });
 	btnConfirmElement.addEventListener('click', () => {
 		console.log(funInfo);
 		vscode.postMessage({
@@ -83,7 +103,7 @@ function renderEnum(enumInfo) {
 	// 描述
 	let descriptionTitleElement = rootElement.createChild('h1', { text: "Description" });
 	let descriptionElement = rootElement.createChild('pre');
-	let textareaElement = descriptionElement.createChild('textarea', { className: 'list-object-value', placeholder: '长描述', type: 'text', rows: '1', text: enumInfo.description || enumInfo.description_lite || "" });
+	let textareaElement = descriptionElement.createChild('textarea', { className: 'list-object-value', placeholder: t.longDesc, type: 'text', rows: '1', text: enumInfo.description || enumInfo.description_lite || "" });
 	// textarea自适应高度
 	textareaElement.addEventListener('input', (event) => {
 		event.target.style.height = event.target.scrollHeight + "px";
@@ -92,7 +112,7 @@ function renderEnum(enumInfo) {
 	// 简洁描述
 	let descriptionLiteTitleElement = rootElement.createChild('h1', { text: "Concise Description" });
 	let descriptionLiteElement = rootElement.createChild('pre');
-	let textareaLiteElement = descriptionLiteElement.createChild('textarea', { className: 'list-object-value', placeholder: '简洁描述', type: 'text', rows: '1', text: enumInfo.description_lite || enumInfo.description || "" });
+	let textareaLiteElement = descriptionLiteElement.createChild('textarea', { className: 'list-object-value', placeholder: t.conciseDesc, type: 'text', rows: '1', text: enumInfo.description_lite || enumInfo.description || "" });
 	// textarea自适应高度
 	textareaLiteElement.addEventListener('input', (event) => {
 		event.target.style.height = event.target.scrollHeight + "px";
@@ -101,7 +121,7 @@ function renderEnum(enumInfo) {
 	// 范例
 	let exampleTitleElement = rootElement.createChild('h1', { text: "Example" });
 	let exampleElement = rootElement.createChild('pre');
-	exampleTextareaElement = exampleElement.createChild('textarea', { className: 'list-object-value', placeholder: '范例', type: 'text', rows: '1', text: enumInfo.example || "" });
+	exampleTextareaElement = exampleElement.createChild('textarea', { className: 'list-object-value', placeholder: t.example, type: 'text', rows: '1', text: enumInfo.example || "" });
 	exampleTextareaElement.style.height = exampleTextareaElement.scrollHeight + "px";
 	// textarea自适应高度
 	exampleTextareaElement.addEventListener('input', (event) => {
@@ -110,7 +130,7 @@ function renderEnum(enumInfo) {
 	});
 
 	// 确认
-	let btnConfirmElement = rootElement.createChild('a', { className: 'monaco-text-button', text: '确认' });
+	let btnConfirmElement = rootElement.createChild('a', { className: 'monaco-text-button', text: t.confirm });
 	btnConfirmElement.addEventListener('click', () => {
 		console.log(enumInfo);
 		vscode.postMessage({

@@ -10,6 +10,7 @@ import { readFile } from '../utils/readFile';
 import { showStatusBarMessage } from '../module/statusBar';
 import { getContentDir, getGameDir } from '../module/addonInfo';
 import { getPathInfo } from '../utils/pathUtils';
+import { localize } from '../utils/localize';
 
 let spellicons: Table;
 let items: Table;
@@ -76,7 +77,7 @@ export async function dota2IconPanel(context: vscode.ExtensionContext) {
 	// 创建一个Webview视图
 	const panel = vscode.window.createWebviewPanel(
 		'dota2IconPanel', // viewType
-		"Dota2图标", // 视图标题
+		localize('panel_dota2_icons'), // 视图标题
 		vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 		{
 			enableScripts: true, // 启用JS，默认禁用
@@ -179,7 +180,7 @@ export async function dota2IconPanel(context: vscode.ExtensionContext) {
 			case "copy_ability_name":	// 复制技能名
 				let texture: string = text.replace(/_png\.png/, '').replace(/\\/g, "/");
 				vscode.env.clipboard.writeText(texture);
-				showStatusBarMessage('已将图标路径复制到剪切板：' + texture);
+				showStatusBarMessage(localize('msg_icon_copied', [texture]));
 				return;
 			case "copy_ability_file":	// 复制文件
 				let fullpath = path.join(context.extensionPath, 'images', text);

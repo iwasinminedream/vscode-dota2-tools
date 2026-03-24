@@ -35,7 +35,7 @@ export function translateInit(content: vscode.ExtensionContext) {
 				const vsndPick = vscode.window.createQuickPick();
 				vsndPick.canSelectMany = false;
 				vsndPick.ignoreFocusOut = true;
-				vsndPick.placeholder = '选择翻译的语言';
+				vsndPick.placeholder = localize('msg_select_translation_lang');
 				vsndPick.matchOnDescription = true;
 				vsndPick.items = getQuickPickLangList();
 

@@ -1,5 +1,22 @@
 const vscode = acquireVsCodeApi();
 
+const i18n = {
+	"en": {
+		propertyValue: "Property Values",
+		value: "Value",
+		description: "Description",
+		example: "Example"
+	},
+	"zh-cn": {
+		propertyValue: "属性值",
+		value: "值",
+		description: "描述",
+		example: "范例"
+	}
+};
+const uiLang = document.documentElement.lang || 'en';
+const t = i18n[uiLang] || i18n['en'];
+
 function renderCss(cssInfo) {
 	console.log(cssInfo);
 	let css = '';
@@ -9,13 +26,13 @@ function renderCss(cssInfo) {
 ${element.description}
 `;
 		if (element.value && Object.keys(element.value).length > 0) {
-			css += '## 属性值\n值|描述\n--|--\n';
+			css += `## ${t.propertyValue}\n${t.value}|${t.description}\n--|--\n`;
 			for (let value in element.value) {
 				css += value.replace(/</, "\\\<").replace(/>/, "\\\>") + '|' + element.value[value].description + '\n';
 			}
 		}
 		if (element.example) {
-			css += `## 范例
+			css += `## ${t.example}
 \`\`\`css
 ${element.example}
 \`\`\`

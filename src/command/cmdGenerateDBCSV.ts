@@ -30,7 +30,7 @@ export function CSV_ExportDB(context: vscode.ExtensionContext, uri: vscode.Uri) 
 
 	let dbConfig = vscode.workspace.getConfiguration().get<DBConfigList>(`dota2-tools.csv_db_config`);
 	if (dbConfig == undefined || dbConfig[config_name] == undefined) {
-		showStatusBarMessage(`[${localize("dota2tools.csv_to_db")}]: no config`);
+		showStatusBarMessage(`[${localize("dota2tools.csv_to_db")}]: ${localize('msg_no_config')}`);
 		return;
 	}
 

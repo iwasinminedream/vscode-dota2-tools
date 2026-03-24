@@ -5,6 +5,7 @@ import { getContentDir, getGameDir } from '../module/addonInfo';
 import { findKvEntryForUri, KvEditorEntry, KvFolderType, readKvEditorSettings } from '../module/kvEditorConfig';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2, writeKeyValue } from '../utils/kvUtils';
+import { localize } from '../utils/localize';
 
 export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
@@ -2047,24 +2048,24 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		const rawScriptPath = typeof payload.scriptPath === 'string' ? payload.scriptPath.trim() : '';
 		if (!rawScriptPath) {
-			void vscode.window.showInformationMessage('当前单元格没有脚本路径。');
+			void vscode.window.showInformationMessage(localize('msg_no_script_path'));
 			return;
 		}
 		const folderType = payload.folderType ?? this.detectFolderType(document.uri);
 		if (folderType !== 'ability' && folderType !== 'item') {
-			void vscode.window.showWarningMessage('当前 KV 类型不支持脚本跳转。');
+			void vscode.window.showWarningMessage(localize('msg_kv_no_script_nav'));
 			return;
 		}
 		const useTypescript = Boolean(vscode.workspace.getConfiguration().get('dota2-tools.A6.Kv to lua generate typescript'));
 		const baseDir = useTypescript ? getContentDir() : getGameDir();
 		if (!baseDir) {
-			void vscode.window.showWarningMessage('未配置 Dota 2 目录，无法定位脚本文件。');
+			void vscode.window.showWarningMessage(localize('msg_dota2_dir_not_configured'));
 			return;
 		}
 		const extension = useTypescript ? '.ts' : '.lua';
 		let normalized = rawScriptPath.replace(/\\/g, '/').trim();
 		if (!normalized) {
-			void vscode.window.showWarningMessage('无法解析脚本路径。');
+			void vscode.window.showWarningMessage(localize('msg_cannot_resolve_script'));
 			return;
 		}
 		normalized = normalized.replace(/^scripts\/vscripts\//i, '');
@@ -2081,12 +2082,13 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
 		// 如果文件不存在，创建该文件
 		if (!fileExists) {
+			const createLabel = localize('msg_create');
 			const createFile = await vscode.window.showInformationMessage(
-				`脚本文件不存在，是否创建？\n${candidatePath}`,
-				'创建',
-				'取消'
+				localize('msg_create_script_prompt', [candidatePath]),
+				createLabel,
+				localize('msg_cancel')
 			);
-			if (createFile !== '创建') {
+			if (createFile !== createLabel) {
 				return;
 			}
 
@@ -2100,7 +2102,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				await fs.promises.writeFile(candidatePath, scriptContent, 'utf8');
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				void vscode.window.showErrorMessage(`创建脚本文件失败：${message}`);
+				void vscode.window.showErrorMessage(localize('msg_failed_create_script', [message]));
 				return;
 			}
 		}
@@ -2110,7 +2112,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			await vscode.window.showTextDocument(scriptDocument, { preview: false });
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			void vscode.window.showErrorMessage(`无法打开脚本文件：${message}`);
+			void vscode.window.showErrorMessage(localize('msg_cannot_open_script', [message]));
 		}
 	}
 
@@ -2172,7 +2174,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			await vscode.window.showTextDocument(document, { preview: false });
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			void vscode.window.showErrorMessage(`无法打开文本编辑器：${message}`);
+			void vscode.window.showErrorMessage(localize('msg_cannot_open_editor', [message]));
 		}
 	}
 
@@ -2183,7 +2185,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			await vscode.commands.executeCommand('markdown.showPreview', docUri);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			void vscode.window.showErrorMessage(`无法打开公式帮助文档：${message}`);
+			void vscode.window.showErrorMessage(localize('msg_cannot_open_formula_doc', [message]));
 		}
 	}
 
@@ -2359,7 +2361,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			console.log('Localization settings saved:', payload);
 		} catch (error) {
 			console.error('Error saving localization settings:', error);
-			vscode.window.showErrorMessage(`保存本地化设置失败: ${error}`);
+			vscode.window.showErrorMessage(localize('msg_failed_save_localization', [String(error)]));
 		}
 	}
 
@@ -2486,7 +2488,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			fs.writeFileSync(vdfPath, finalContent, 'utf8');
 
 			if (!silent) {
-				vscode.window.showInformationMessage(`本地化文件已导出: ${path.basename(vdfPath)}`);
+				vscode.window.showInformationMessage(localize('msg_localization_exported', [path.basename(vdfPath)]));
 			}
 		} catch (error) {
 			console.error('Error exporting localization file:', error);
@@ -2750,7 +2752,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			console.log('AbilityValues descriptions saved for row:', rowId);
 		} catch (error) {
 			console.error('Error saving AbilityValues descriptions:', error);
-			vscode.window.showErrorMessage(`保存描述失败: ${error}`);
+			vscode.window.showErrorMessage(localize('msg_failed_save_description', [String(error)]));
 		}
 	}
 

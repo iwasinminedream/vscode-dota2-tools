@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { showStatusBarMessage } from '../module/statusBar';
+import { localize } from '../utils/localize';
 
 // 类型
 enum APIType {
@@ -34,7 +35,7 @@ export class PanelTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			if (this.panelDocumentView === undefined) {
 				this.panelDocumentView = vscode.window.createWebviewPanel(
 					'PanelBrowser', // viewType
-					"Panel Browser", // 视图标题
+					localize('panel_browser'), // 视图标题
 					vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 					{
 						enableScripts: true, // 启用JS，默认禁用
@@ -62,7 +63,7 @@ export class PanelTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			this.panelDocumentView.webview.html = await getWebviewContent(this.panelDocumentView.webview, context.extensionUri, 'panelDocument');
 			// 复制
 			vscode.env.clipboard.writeText(funcName);
-			showStatusBarMessage('复制到剪切板：' + funcName);
+			showStatusBarMessage(localize('msg_copied_clipboard', [funcName]));
 		});
 	}
 	refresh(): void {

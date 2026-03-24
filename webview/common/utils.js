@@ -20,7 +20,7 @@ const LOCALIZE = {
 		"Type": "Type",
 		"Name": "Name",
 		"Example": "Example",
-		"Return": "返回值",
+		"Return": "Return",
 		"Concise Description": "Concise Description",
 	}
 };

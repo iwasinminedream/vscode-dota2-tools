@@ -4,6 +4,86 @@ console.log('BehaviorTree.js is loading...');
 const vscode = acquireVsCodeApi();
 console.log('VS Code API acquired:', vscode);
 
+// i18n
+const _lang = document.documentElement.lang;
+const _i18n = {
+	'en': {
+		nodeType: 'Node Type:',
+		identifierKey: 'Identifier (Key):',
+		displayNameLabel: 'Display Name (Name):',
+		descriptionLabel: 'Description:',
+		placeholderKey: 'e.g.: Heal, Attack',
+		placeholderName: 'e.g.: Heal, Attack',
+		placeholderParamName: 'Parameter name',
+		placeholderParamValue: 'Parameter value',
+		paramsHeading: 'Parameters (Params)',
+		addParam: 'Add Parameter',
+		deleteParam: 'Delete parameter',
+		noParams: 'No parameters',
+		customProperties: 'Custom Properties',
+		saveAsTemplate: 'Save as Template',
+		selectNode: 'Please select a node',
+		selectParentOr: 'Please select a parent node first, or double-click the root to add a child',
+		rootNode: 'Root',
+		rootCreated: 'Root node created',
+		cannotDeleteRoot: 'Cannot delete the root node',
+		selectNodeToCopy: 'Please select a node to copy first',
+		nodeCopied: 'Node copied: ',
+		clipboardEmpty: 'Clipboard is empty. Copy a node first.',
+		selectParent: 'Please select a parent node first',
+		nodePasted: 'Node pasted: ',
+		noTemplates: 'No templates yet. Select a node and click "Save as Template" to create one.',
+		noDescription: 'No description',
+		keyLabel: 'Key: ',
+		nodeCount: ' node(s)',
+		useTemplate: 'Use',
+		noMatchingTemplates: 'No matching templates',
+		enterTemplateName: 'Please enter a template name',
+		templateNotFound: 'Template not found',
+		confirmDeleteTemplate: 'Are you sure you want to delete template ',
+		enterIdentifier: 'Please enter an identifier (Key)',
+		enterDisplayName: 'Please enter a display name (Name)',
+	},
+	'zh-cn': {
+		nodeType: '节点类型:',
+		identifierKey: '英文标识符 (Key):',
+		displayNameLabel: '中文名称 (Name):',
+		descriptionLabel: '描述:',
+		placeholderKey: '例如: Heal, Attack',
+		placeholderName: '例如: 治疗, 攻击',
+		placeholderParamName: '参数名',
+		placeholderParamValue: '参数值',
+		paramsHeading: '参数 (Params)',
+		addParam: '添加参数',
+		deleteParam: '删除参数',
+		noParams: '暂无参数',
+		customProperties: '自定义属性',
+		saveAsTemplate: '保存为模板',
+		selectNode: '请选择一个节点',
+		selectParentOr: '请先选择一个父节点，或双击根节点添加子节点',
+		rootNode: '根节点',
+		rootCreated: '已创建根节点',
+		cannotDeleteRoot: '不能删除根节点',
+		selectNodeToCopy: '请先选择要复制的节点',
+		nodeCopied: '已复制节点: ',
+		clipboardEmpty: '剪贴板为空，请先复制节点',
+		selectParent: '请先选择一个父节点',
+		nodePasted: '已粘贴节点: ',
+		noTemplates: '暂无模板，可以在选中节点后点击"保存为模板"创建',
+		noDescription: '无描述',
+		keyLabel: '键名: ',
+		nodeCount: ' 个节点',
+		useTemplate: '使用',
+		noMatchingTemplates: '没有匹配的模板',
+		enterTemplateName: '请输入模板名称',
+		templateNotFound: '模板不存在',
+		confirmDeleteTemplate: '确定要删除模板 ',
+		enterIdentifier: '请输入英文标识符 (Key)',
+		enterDisplayName: '请输入中文名称 (Name)',
+	}
+};
+function _t(key) { return (_i18n[_lang] && _i18n[_lang][key]) || _i18n['zh-cn'][key] || key; }
+
 // 节点类型配置 (使用 Codicon Unicode 字符)
 const NODE_TYPES = {
 	Root: { color: '#9C27B0', icon: '\uEA68', label: 'Root' },        // codicon-root-folder
@@ -506,7 +586,7 @@ class BehaviorTreeEditor {
 
 		let html = `
             <div class="form-group">
-                <label>节点类型:</label>
+                <label>${_t('nodeType')}</label>
                 <select id="propType">
                     ${Object.keys(NODE_TYPES).map(type =>
 			`<option value="${type}" ${type === node.type ? 'selected' : ''}>${NODE_TYPES[type].label}</option>`
@@ -514,15 +594,15 @@ class BehaviorTreeEditor {
                 </select>
             </div>
             <div class="form-group">
-                <label>英文标识符 (Key):</label>
-                <input type="text" id="propKey" value="${node.key || ''}" placeholder="例如: Heal, Attack">
+                <label>${_t('identifierKey')}</label>
+                <input type="text" id="propKey" value="${node.key || ''}" placeholder="${_t('placeholderKey')}">
             </div>
             <div class="form-group">
-                <label>中文名称 (Name):</label>
-                <input type="text" id="propName" value="${node.name || ''}" placeholder="例如: 治疗, 攻击">
+                <label>${_t('displayNameLabel')}</label>
+                <input type="text" id="propName" value="${node.name || ''}" placeholder="${_t('placeholderName')}">
             </div>
             <div class="form-group">
-                <label>描述:</label>
+                <label>${_t('descriptionLabel')}</label>
                 <textarea id="propDesc" rows="3">${node.description || ''}</textarea>
             </div>
         `;
@@ -532,8 +612,8 @@ class BehaviorTreeEditor {
 			const params = node.Params || node.params;
 			html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
 			html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
-			html += '<h4 style="margin: 0;">参数 (Params)</h4>';
-			html += '<button id="addParamBtn" class="btn-small" style="padding: 4px 8px; font-size: 12px;"><i class="codicon codicon-add"></i> 添加参数</button>';
+			html += '<h4 style="margin: 0;">' + _t('paramsHeading') + '</h4>';
+			html += '<button id="addParamBtn" class="btn-small" style="padding: 4px 8px; font-size: 12px;"><i class="codicon codicon-add"></i> ' + _t('addParam') + '</button>';
 			html += '</div>';
 			html += '<div id="paramsContainer">';
 
@@ -541,9 +621,9 @@ class BehaviorTreeEditor {
 				for (const [key, value] of Object.entries(params)) {
 					html += `
 						<div class="param-item">
-							<input type="text" class="param-key" value="${key}" data-old-key="${key}" placeholder="参数名">
-							<input type="text" class="param-value" value="${value || ''}" data-param-key="${key}" placeholder="参数值">
-							<button class="delete-param-btn" data-param-key="${key}" title="删除参数">
+							<input type="text" class="param-key" value="${key}" data-old-key="${key}" placeholder="${_t('placeholderParamName')}">
+							<input type="text" class="param-value" value="${value || ''}" data-param-key="${key}" placeholder="${_t('placeholderParamValue')}">
+							<button class="delete-param-btn" data-param-key="${key}" title="${_t('deleteParam')}">
 								<i class="codicon codicon-trash"></i>
 							</button>
 						</div>
@@ -555,10 +635,10 @@ class BehaviorTreeEditor {
 			// 没有 Params，显示添加按钮
 			html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
 			html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">';
-			html += '<h4 style="margin: 0;">参数 (Params)</h4>';
-			html += '<button id="addParamBtn" class="btn-small" style="padding: 4px 8px; font-size: 12px;"><i class="codicon codicon-add"></i> 添加参数</button>';
+			html += '<h4 style="margin: 0;">' + _t('paramsHeading') + '</h4>';
+			html += '<button id="addParamBtn" class="btn-small" style="padding: 4px 8px; font-size: 12px;"><i class="codicon codicon-add"></i> ' + _t('addParam') + '</button>';
 			html += '</div>';
-			html += '<div id="paramsContainer"><p style="color: var(--vscode-descriptionForeground); font-size: 12px;">暂无参数</p></div>';
+			html += '<div id="paramsContainer"><p style="color: var(--vscode-descriptionForeground); font-size: 12px;">' + _t('noParams') + '</p></div>';
 		}
 
 		// 显示其他自定义属性
@@ -568,7 +648,7 @@ class BehaviorTreeEditor {
 
 		if (customProps.length > 0) {
 			html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
-			html += '<h4 style="margin-bottom: 12px;">自定义属性</h4>';
+			html += '<h4 style="margin-bottom: 12px;">' + _t('customProperties') + '</h4>';
 
 			for (const key of customProps) {
 				html += `
@@ -582,7 +662,7 @@ class BehaviorTreeEditor {
 
 		// 添加保存为模板按钮
 		html += '<hr style="margin: 16px 0; border-color: var(--border-color);">';
-		html += '<button id="saveAsTemplateBtn" class="btn" style="width: 100%;"><i class="codicon codicon-save"></i> 保存为模板</button>';
+		html += '<button id="saveAsTemplateBtn" class="btn" style="width: 100%;"><i class="codicon codicon-save"></i> ' + _t('saveAsTemplate') + '</button>';
 
 		panel.innerHTML = html;
 
@@ -741,7 +821,7 @@ class BehaviorTreeEditor {
 
 	closePropertiesPanel() {
 		this.selectedNode = null;
-		document.getElementById('propertiesContent').innerHTML = '<p class="empty-state">请选择一个节点</p>';
+		document.getElementById('propertiesContent').innerHTML = '<p class="empty-state">' + _t('selectNode') + '</p>';
 		this.render();
 	}
 
@@ -755,7 +835,7 @@ class BehaviorTreeEditor {
 		if (!this.selectedNode) {
 			vscode.postMessage({
 				type: 'error',
-				message: '请先选择一个父节点，或双击根节点添加子节点'
+				message: _t('selectParentOr')
 			});
 			return;
 		}
@@ -779,7 +859,7 @@ class BehaviorTreeEditor {
 			id: 'Root',
 			key: 'Root',
 			type: 'Root',
-			name: '根节点',
+			name: _t('rootNode'),
 			description: '',
 			children: [],
 			x: this.canvas.width / 2,
@@ -803,7 +883,7 @@ class BehaviorTreeEditor {
 
 		vscode.postMessage({
 			type: 'info',
-			message: '已创建根节点'
+			message: _t('rootCreated')
 		});
 	}
 
@@ -908,7 +988,7 @@ class BehaviorTreeEditor {
 		if (!this.selectedNode || this.selectedNode === this.treeData.root) {
 			vscode.postMessage({
 				type: 'error',
-				message: '不能删除根节点'
+				message: _t('cannotDeleteRoot')
 			});
 			return;
 		}
@@ -945,7 +1025,7 @@ class BehaviorTreeEditor {
 		if (!this.selectedNode) {
 			vscode.postMessage({
 				type: 'info',
-				message: '请先选择要复制的节点'
+				message: _t('selectNodeToCopy')
 			});
 			return;
 		}
@@ -955,7 +1035,7 @@ class BehaviorTreeEditor {
 
 		vscode.postMessage({
 			type: 'info',
-			message: `已复制节点: ${this.selectedNode.name}`
+			message: _t('nodeCopied') + this.selectedNode.name
 		});
 	}
 
@@ -966,7 +1046,7 @@ class BehaviorTreeEditor {
 		if (!this.clipboard) {
 			vscode.postMessage({
 				type: 'info',
-				message: '剪贴板为空，请先复制节点'
+				message: _t('clipboardEmpty')
 			});
 			return;
 		}
@@ -974,7 +1054,7 @@ class BehaviorTreeEditor {
 		if (!this.selectedNode) {
 			vscode.postMessage({
 				type: 'error',
-				message: '请先选择一个父节点'
+				message: _t('selectParent')
 			});
 			return;
 		}
@@ -1000,7 +1080,7 @@ class BehaviorTreeEditor {
 
 		vscode.postMessage({
 			type: 'info',
-			message: `已粘贴节点: ${newNode.name}`
+			message: _t('nodePasted') + newNode.name
 		});
 	}
 
@@ -1070,7 +1150,7 @@ class BehaviorTreeEditor {
 		if (!this.selectedNode) {
 			vscode.postMessage({
 				type: 'error',
-				message: '请先选择一个父节点'
+				message: _t('selectParent')
 			});
 			return;
 		}
@@ -1090,7 +1170,7 @@ class BehaviorTreeEditor {
 		const listContainer = document.getElementById('templateList');
 
 		if (this.templates.length === 0) {
-			listContainer.innerHTML = '<p class="empty-state">暂无模板，可以在选中节点后点击"保存为模板"创建</p>';
+			listContainer.innerHTML = '<p class="empty-state">' + _t('noTemplates') + '</p>';
 			return;
 		}
 
@@ -1110,18 +1190,18 @@ class BehaviorTreeEditor {
 					 data-key="${template.node.key}">
 					<div class="template-info">
 						<div class="template-name">${template.name}</div>
-						<div class="template-desc">${template.description || '无描述'}</div>
+						<div class="template-desc">${template.description || _t('noDescription')}</div>
 						<div class="template-meta">
 							<span class="type-badge-inline" style="background-color: ${typeColor};">${typeLabel}</span>
 							<span class="meta-divider">|</span>
-							<span>键名: ${template.node.key}</span>
+							<span>${_t('keyLabel')}${template.node.key}</span>
 							<span class="meta-divider">|</span>
-							<span>${childCount} 个节点</span>
+							<span>${childCount}${_t('nodeCount')}</span>
 						</div>
 					</div>
 					<div class="template-actions">
 						<button class="btn btn-primary btn-small" onclick="editor.addNodeFromTemplate('${template.name}')">
-							<i class="codicon codicon-add"></i> 使用
+							<i class="codicon codicon-add"></i> ${_t('useTemplate')}
 						</button>
 						<button class="btn btn-danger btn-small" onclick="editor.deleteTemplate('${template.name}')">
 							<i class="codicon codicon-trash"></i>
@@ -1256,7 +1336,7 @@ class BehaviorTreeEditor {
 			if (!existingEmpty) {
 				const emptyMsg = document.createElement('p');
 				emptyMsg.className = 'filter-empty-state empty-state';
-				emptyMsg.textContent = '没有匹配的模板';
+				emptyMsg.textContent = _t('noMatchingTemplates');
 				listContainer.appendChild(emptyMsg);
 			}
 		} else if (existingEmpty) {
@@ -1303,7 +1383,7 @@ class BehaviorTreeEditor {
 		const includeChildren = document.getElementById('templateIncludeChildren').checked;
 
 		if (!templateName) {
-			vscode.postMessage({ type: 'error', message: '请输入模板名称' });
+			vscode.postMessage({ type: 'error', message: _t('enterTemplateName') });
 			return;
 		}
 
@@ -1355,7 +1435,7 @@ class BehaviorTreeEditor {
 	addNodeFromTemplate(templateName) {
 		const template = this.templates.find(t => t.name === templateName);
 		if (!template) {
-			vscode.postMessage({ type: 'error', message: '模板不存在' });
+			vscode.postMessage({ type: 'error', message: _t('templateNotFound') });
 			return;
 		}
 
@@ -1401,7 +1481,7 @@ class BehaviorTreeEditor {
 		this.templateToDelete = templateName;
 
 		// 显示确认对话框
-		document.getElementById('confirmMessage').textContent = `确定要删除模板 "${templateName}" 吗？`;
+		document.getElementById('confirmMessage').textContent = _t('confirmDeleteTemplate') + `"${templateName}"?`;
 		document.getElementById('confirmDialog').style.display = 'flex';
 	}
 
@@ -1443,12 +1523,12 @@ function confirmAddNode() {
 	const description = document.getElementById('nodeDescInput').value.trim();
 
 	if (!key) {
-		vscode.postMessage({ type: 'error', message: '请输入英文标识符 (Key)' });
+		vscode.postMessage({ type: 'error', message: _t('enterIdentifier') });
 		return;
 	}
 
 	if (!name) {
-		vscode.postMessage({ type: 'error', message: '请输入中文名称 (Name)' });
+		vscode.postMessage({ type: 'error', message: _t('enterDisplayName') });
 		return;
 	}
 

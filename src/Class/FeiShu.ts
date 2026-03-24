@@ -1,6 +1,7 @@
 import * as lark from "@larksuiteoapi/node-sdk";
 import * as vscode from 'vscode';
 import { request } from '../utils/request';
+import { localize } from '../utils/localize';
 
 const URL_LIST = {
 	/** 获取Token */
@@ -85,7 +86,7 @@ export class FeiShu {
 		if (valid) {
 			return await request(method, url, requestParams);
 		} else {
-			vscode.window.showErrorMessage("获取租户访问凭证失败");
+			vscode.window.showErrorMessage(localize('msg_failed_tenant_token'));
 		}
 	}
 	/** 获取access_token */

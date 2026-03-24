@@ -40,7 +40,7 @@ function startWatch(context: vscode.ExtensionContext) {
 	if (fileWatcher === undefined) {
 		const rootPath = getRootPath();
 		if (rootPath) {
-			showStatusBarMessage("[监听目录]：单位excel");
+			showStatusBarMessage(localize('msg_watching_unit'));
 			let unitExcelConfig: Table | undefined = vscode.workspace.getConfiguration().get('dota2-tools.A4.UnitExcel');
 			fileWatcher = watch(rootPath, { recursive: true, filter: /\.csv$/ }, function (evt, name) {
 				if (unitExcelConfig) {
@@ -49,7 +49,7 @@ function startWatch(context: vscode.ExtensionContext) {
 							const kvName = path.join(kvDir, path.basename(name).replace(path.extname(name), getExtname(path.basename(name))));
 							let csv = fs.readFileSync(name, 'utf-8');
 							fs.writeFileSync(kvName, writeKeyValue({ KeyValue: unitCSV2KV(csv) }));
-							showStatusBarMessage("[excel导出kv]：" + path.basename(name).replace(path.extname(name), getExtname(path.basename(name))));
+							showStatusBarMessage(localize('msg_excel_to_kv', [path.basename(name).replace(path.extname(name), getExtname(path.basename(name)))]));
 							// excel2kv(kvDir, excelDir, unitCSV2KV);
 							return false;
 						}
@@ -64,7 +64,7 @@ function startWatch(context: vscode.ExtensionContext) {
 /** 停止监听 */
 export function stopWatch() {
 	if (fileWatcher) {
-		showStatusBarMessage("[停止监听目录]：单位excel");
+		showStatusBarMessage(localize('msg_stop_watching_unit'));
 		fileWatcher.close();
 		fileWatcher = undefined;
 	}

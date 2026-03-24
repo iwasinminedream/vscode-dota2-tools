@@ -17,6 +17,28 @@
 	</div>
 	<article id="markdown-body">
 	</article>
+	<script>
+	(function() {
+		const lang = document.documentElement.lang;
+		const i18n = {
+			'en': {
+				placeholder: 'Enter cosmetic ID, model path, or hero name',
+				clearTitle: 'Clear search results'
+			},
+			'zh-cn': {
+				placeholder: '输入饰品编号或者模型路径或英雄名，已支持中文英雄名',
+				clearTitle: '清除搜索结果'
+			}
+		};
+		const t = i18n[lang] || i18n['en'];
+		const filter = document.getElementById('filter');
+		if (filter) {
+			filter.setAttribute('placeholder', t.placeholder);
+			const clearBtn = filter.querySelector('[slot="end"]');
+			if (clearBtn) clearBtn.setAttribute('title', t.clearTitle);
+		}
+	})();
+	</script>
 </body>
 
 </html>

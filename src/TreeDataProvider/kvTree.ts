@@ -105,7 +105,7 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 			} else if (this.isKvFile(entry.name)) {
 				files.push(new KvTreeItem('file', entryPath, entry.name, vscode.TreeItemCollapsibleState.None, {
 					command: 'dota2tools.kvEditor.openFile',
-					title: 'Open KV',
+					title: localize('msg_open_kv'),
 					arguments: [vscode.Uri.file(entryPath)]
 				}));
 			}
@@ -133,7 +133,7 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 	private createPlaceholderItem(label: string): KvTreeItem {
 		return new KvTreeItem('placeholder', undefined, label, vscode.TreeItemCollapsibleState.None, {
 			command: 'workbench.action.openSettings',
-			title: 'open settings',
+			title: localize('msg_open_settings'),
 			arguments: ['dota2-tools.A10.kv_editor']
 		});
 	}
@@ -167,13 +167,13 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 			? undefined
 			: {
 				command: 'dota2tools.kvEditor.openFile',
-				title: 'Open KV',
+				title: localize('msg_open_kv'),
 				arguments: [vscode.Uri.file(entry.resolvedPath)],
 			};
 		const item = new KvTreeItem(entry.isDirectory ? 'folder' : 'file', entry.resolvedPath, label, collapsible, command);
 		const tooltipParts = [entry.resolvedPath];
 		if (entry.rawPath !== entry.resolvedPath) {
-			tooltipParts.push(`配置: ${entry.rawPath}`);
+			tooltipParts.push(localize('msg_config_tooltip', [entry.rawPath]));
 		}
 		item.tooltip = tooltipParts.join('\n');
 		item.description = entry.type;

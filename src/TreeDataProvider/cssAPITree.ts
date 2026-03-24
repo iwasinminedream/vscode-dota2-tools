@@ -4,6 +4,7 @@ import * as path from 'path';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { DotaApiNote } from '../Class/DotaApiNote';
 import { showStatusBarMessage } from '../module/statusBar';
+import { localize } from '../utils/localize';
 
 // 类型
 enum APIType {
@@ -26,7 +27,7 @@ export class CssApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		// 复制
 		vscode.commands.registerCommand("dota2tools.css_api_browser.copy", async (data) => {
 			vscode.env.clipboard.writeText(data.label);
-			showStatusBarMessage('复制到剪切板：' + data.label);
+			showStatusBarMessage(localize('msg_copied_clipboard', [data.label]));
 		});
 		// 注释属性
 		vscode.commands.registerCommand('dota2tools.css_property.edit', async (nodeItem: NodeItem) => {
@@ -36,7 +37,7 @@ export class CssApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 				data.class = nodeItem.label;
 				const panel = vscode.window.createWebviewPanel(
 					'dota2api', // viewType
-					"Dota2 Css Property", // 视图标题
+					localize('panel_css_property'), // 视图标题
 					vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 					{
 						enableScripts: true, // 启用JS，默认禁用
@@ -55,7 +56,7 @@ export class CssApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		});
 		// 搜索
 		vscode.commands.registerCommand("dota2tools.dota2cssapi.filter", async () => {
-			vscode.window.showInputBox({ prompt: "输入过滤词搜索API" }).then((msg) => {
+			vscode.window.showInputBox({ prompt: localize('msg_filter_api_prompt') }).then((msg) => {
 				if (msg !== undefined) {
 					this.filteredApiTreeData = {};
 					for (const className in this.apiTreeData) {
@@ -79,7 +80,7 @@ export class CssApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			if (this.cssAPIBrowserView === undefined) {
 				this.cssAPIBrowserView = vscode.window.createWebviewPanel(
 					'CSSBrowser', // viewType
-					"CSS Browser", // 视图标题
+					localize('panel_css_browser'), // 视图标题
 					vscode.ViewColumn.One, // 显示在编辑器的哪个部位
 					{
 						enableScripts: true, // 启用JS，默认禁用
@@ -133,7 +134,7 @@ export class CssApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 			this.cssAPIBrowserView.webview.html = await getWebviewContent(this.cssAPIBrowserView.webview, context.extensionUri, 'cssBrowser');
 			// 复制
 			vscode.env.clipboard.writeText(funcName);
-			showStatusBarMessage('复制到剪切板：' + funcName);
+			showStatusBarMessage(localize('msg_copied_clipboard', [funcName]));
 		});
 	}
 	refresh(): void {
