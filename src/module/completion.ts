@@ -20,7 +20,7 @@ export async function jsCompletionInit(context: vscode.ExtensionContext) {
 	if (jsCompletionItemProvider === undefined) {
 		let dotaApiNote = getDotaApiNoteClass();
 		jsCompletionItemProvider = new JsCompletionItemProvider(context, dotaApiNote);
-		context.subscriptions.push(vscode.languages.registerCompletionItemProvider(jsCompletionItemProvider.selector, jsCompletionItemProvider));
+		context.subscriptions.push(vscode.languages.registerCompletionItemProvider(jsCompletionItemProvider.selector, jsCompletionItemProvider, ...jsCompletionItemProvider.triggerCharacters));
 	}
 }
 export async function cssCompletionInit(context: vscode.ExtensionContext) {
