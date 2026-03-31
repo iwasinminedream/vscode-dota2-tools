@@ -6,6 +6,7 @@ import { findKvEntryForUri, KvEditorEntry, KvFolderType, readKvEditorSettings } 
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2, writeKeyValue } from '../utils/kvUtils';
 import { localize } from '../utils/localize';
+import { getResourcePath } from '../utils/releaseData';
 
 export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
@@ -863,7 +864,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		// build attribute map from resource/npc/npc_heroes.txt
 		const attributeMap: Record<string, string | undefined> = {};
 		try {
-			const heroesTxt = this.context.asAbsolutePath(path.join('resource', 'npc', 'npc_heroes.txt'));
+			const heroesTxt = getResourcePath(this.context, 'resource', 'npc', 'npc_heroes.txt');
 			if (this.pathExists(heroesTxt)) {
 				const raw = await fs.promises.readFile(heroesTxt, 'utf8');
 				const attrRegex = /"(npc_dota_hero_[a-z0-9_]+)"[\s\S]*?"AttributePrimary"\s+"(DOTA_ATTRIBUTE_[A-Z]+)"/gi;

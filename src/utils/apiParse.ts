@@ -6,6 +6,7 @@ import * as os from 'os';
 import { readFunction } from './readFunction';
 import { readEnum } from './readEnum';
 import { getGameDir } from '../module/addonInfo';
+import { getResourcePath } from './releaseData';
 
 export function apiParse(context: vscode.ExtensionContext, apiNote: Table) {
 	let praseFile = function (sDotaScriptHelp: string): any[] {
@@ -163,8 +164,8 @@ export function apiParse(context: vscode.ExtensionContext, apiNote: Table) {
 			class_list[class_name] = sort_func_list;
 		}
 	};
-	let sHelp: string = path.join(context.extensionPath, "resource/dota_script_help2.lua");
-	let sHelpClient: string = path.join(context.extensionPath, "resource/dota_cl_script_help2.lua");
+	let sHelp: string = getResourcePath(context, 'resource', 'dota_script_help2.lua');
+	let sHelpClient: string = getResourcePath(context, 'resource', 'dota_cl_script_help2.lua');
 	let [class_list, enum_list] = praseFile(fs.readFileSync(sHelp, 'utf-8'));
 	let [class_list_cl, enum_list_cl] = praseFile(fs.readFileSync(sHelpClient, 'utf-8'));
 	Combine(class_list, class_list_cl);

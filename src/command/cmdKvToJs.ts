@@ -8,6 +8,7 @@ import { getRootPath } from "../utils/getRootPath";
 import { isNumber } from '../utils/isNumber';
 import { getKeyValueObjectByIndex, overrideKeyValue, readKeyValue2, readKeyValueWithBase, replaceKeyValue } from '../utils/kvUtils';
 import { localize } from '../utils/localize';
+import { getResourcePath } from '../utils/releaseData';
 import { getPathInfo } from '../utils/pathUtils';
 
 /** kv转js */
@@ -75,9 +76,9 @@ export async function generateJS(context: vscode.ExtensionContext, kvJsConfig: T
 	try {
 		// 特殊处理
 		if (stringToAny(configs.OverrideAbilities) === true && sPath.search("npc_abilities_custom") !== -1) { // 技能合并
-			let npcAbilitiesKv = getKeyValueObjectByIndex(await readKeyValueWithBase(path.join(context.extensionPath + '/resource/npc/npc_abilities.txt')));
+			let npcAbilitiesKv = getKeyValueObjectByIndex(await readKeyValueWithBase(getResourcePath(context, 'resource', 'npc', 'npc_abilities.txt')));
 			// 读取v蛇拆分的英雄技能
-			const heroAbilitiesFolder = context.extensionPath + '/resource/npc/heroes';
+			const heroAbilitiesFolder = getResourcePath(context, 'resource', 'npc', 'heroes');
 			const files = fs.readdirSync(heroAbilitiesFolder);
 			// 遍历每个文件和文件夹
 			files.forEach(async file => {
@@ -94,13 +95,13 @@ export async function generateJS(context: vscode.ExtensionContext, kvJsConfig: T
 			let npcAbilitiesOverrideKv = getKeyValueObjectByIndex(await readKeyValueWithBase((gameDir + '/scripts/npc/npc_abilities_override.txt').replace(/\\/g, "/")));
 			kv = overrideKeyValue(replaceKeyValue(npcAbilitiesKv, npcAbilitiesOverrideKv), kv);
 		} else if (stringToAny(configs.OverrideUnits) === true && sPath.search("npc_units_custom") !== -1) { // 单位合并
-			let npcUnitsKv = getKeyValueObjectByIndex(await readKeyValueWithBase((context.extensionPath + '/resource/npc/npc_units.txt').replace(/\\/g, "/")));
+			let npcUnitsKv = getKeyValueObjectByIndex(await readKeyValueWithBase(getResourcePath(context, 'resource', 'npc', 'npc_units.txt').replace(/\\/g, "/")));
 			kv = overrideKeyValue(npcUnitsKv, kv);
 		} else if (stringToAny(configs.OverrideHeroes) === true && sPath.search("npc_heroes_custom") !== -1) { // 英雄合并
-			let npcHeroesKv = getKeyValueObjectByIndex(await readKeyValueWithBase((context.extensionPath + '/resource/npc/npc_heroes.txt').replace(/\\/g, "/")));
+			let npcHeroesKv = getKeyValueObjectByIndex(await readKeyValueWithBase(getResourcePath(context, 'resource', 'npc', 'npc_heroes.txt').replace(/\\/g, "/")));
 			kv = overrideKeyValue(npcHeroesKv, kv);
 		} else if (stringToAny(configs.OverrideItems) === true && sPath.search("npc_items_custom") !== -1) { // 物品合并
-			let itemsKv = getKeyValueObjectByIndex(await readKeyValueWithBase((context.extensionPath + '/resource/npc/items.txt').replace(/\\/g, "/")));
+			let itemsKv = getKeyValueObjectByIndex(await readKeyValueWithBase(getResourcePath(context, 'resource', 'npc', 'items.txt').replace(/\\/g, "/")));
 			let npcAbilitiesOverrideKv = getKeyValueObjectByIndex(await readKeyValueWithBase((gameDir + '/scripts/npc/npc_abilities_override.txt').replace(/\\/g, "/")));
 			kv = overrideKeyValue(replaceKeyValue(itemsKv, npcAbilitiesOverrideKv), kv);
 		}

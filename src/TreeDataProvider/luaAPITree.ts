@@ -5,6 +5,7 @@ import { apiParse } from '../utils/apiParse';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { showStatusBarMessage } from '../module/statusBar';
 import { localize } from '../utils/localize';
+import { getResourcePath } from '../utils/releaseData';
 // import { GetApiNote, GetClassList, GetEnumList } from '../init';
 
 // 类型
@@ -117,7 +118,7 @@ export class ApiTreeProvider implements vscode.TreeDataProvider<NodeItem> {
 		});
 		// 更新日志
 		vscode.commands.registerCommand("dota2tools.dota2api.changelog", async () => {
-			vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.file(path.join(context.extensionPath, 'resource', 'lua_api_changelog.md')));
+			vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.file(getResourcePath(context, 'resource', 'lua_api_changelog.md')));
 		});
 		// 清除筛选
 		vscode.commands.registerCommand("dota2tools.dota2api.clearfilter", async () => {
