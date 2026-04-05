@@ -17,7 +17,9 @@ export function readKeyValue2(kvdata: string, bRemoveComment: boolean = true, bO
 		if (substr === '"') {
 			let key: any;
 			let value: any;
-			[key, value, i] = readKeyValue(i);
+			const result = readKeyValue(i);
+			if (!result) { continue; }
+			[key, value, i] = result;
 			// 如果有重复值
 			if (kvObj[key] === undefined || bOverride === true) {
 				kvObj[key] = value;
@@ -78,7 +80,9 @@ export function readKeyValue2(kvdata: string, bRemoveComment: boolean = true, bO
 			if (substr === '"' && state === 'READ') {
 				let key: any;
 				let value: any;
-				[key, value, i] = readKeyValue(i);// 如果有重复值
+				const result = readKeyValue(i);
+				if (!result) { continue; }
+				[key, value, i] = result;
 				if (kv[key] === undefined || bOverride === true) {
 					kv[key] = value;
 				} else {
@@ -405,7 +409,7 @@ export async function readKeyValueWithBaseIncludePath(fullPath: string) {
 }
 export function removeComment(data: string): string {
 	let newData = '';
-	const rows: string[] = data.split(os.EOL);
+	const rows: string[] = data.split(/\r?\n/);
 	for (let i = 0; i < rows.length; i++) {
 		const lineText: string = rows[i];
 		let state = 0;// 用于处理引号内的//注释

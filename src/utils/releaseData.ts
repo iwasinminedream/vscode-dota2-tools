@@ -2,7 +2,7 @@
  * releaseData.ts
  *
  * Resolves paths to read-only resource/data files.
- * When a newer (or equal) installed release of bigciba.dota2-tools exists in
+ * When a newer (or equal) installed release of iwasinminedream.dota2tools exists in
  * ~/.vscode/extensions/, its resource files are preferred over the dev copy.
  * This way installing the official extension from the marketplace keeps the
  * dev build's API data up to date automatically — no manual sync needed.
@@ -19,14 +19,14 @@ import * as vscode from 'vscode';
 
 let _cachedReleasePath: string | null | undefined = undefined;
 
-/** Returns the folder of the latest installed bigciba.dota2-tools release, or null. */
+/** Returns the folder of the latest installed iwasinminedream.dota2tools release, or null. */
 function findLatestReleasePath(devPath: string): string | null {
     const vsExtDir = path.join(os.homedir(), '.vscode', 'extensions');
     if (!fs.existsSync(vsExtDir)) { return null; }
 
     try {
         const best = fs.readdirSync(vsExtDir)
-            .filter(d => /^bigciba\.dota2-tools-\d+\.\d+\.\d+$/.test(d))
+            .filter(d => /^iwasinminedream\.dota2tools-\d+\.\d+\.\d+$/.test(d))
             .map(d => {
                 const m = d.match(/(\d+)\.(\d+)\.(\d+)$/);
                 return { dir: d, ver: m ? +m[1] * 1_000_000 + +m[2] * 1_000 + +m[3] : 0 };

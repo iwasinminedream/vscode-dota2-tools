@@ -5,18 +5,12 @@ import { dota2IconPanelInit } from './command/cmdDota2IconPanel';
 import { dota2ItemsGameInit } from './command/cmdDota2ItemsGame';
 import { vsndPickerInit } from './command/cmdVsndPicker';
 import { kv2luaInit } from './definitionProvider/kv2lua';
-import { listenerAbilityExcelInit } from './listener/listenerAbilityExcel';
-import { listenerKV2JSInit } from './listener/listenerKV2JS';
 import { listenerLocalizationInit } from './listener/listenerLocalization';
-import { listenerUnitExcelInit } from './listener/listenerUnitExcel';
 import { addonInfoInit } from './module/addonInfo';
 import { apiNoteInit } from './module/apiNote';
 import { cssCompletionInit, jsCompletionInit, luaCompletionInit } from './module/completion';
-import { errorLogsInit } from './module/errorLogs';
 import { kvEditorInit } from './module/kvEditor';
-import { sheetCloudInit } from './module/sheet_cloud';
 import { getStatusBarItem, refreshStatusBarMessage, showStatusBarMessage } from './module/statusBar';
-import { translateInit } from './module/translate';
 import { cssApiInit, jsApiInit, luaApiInit, panelDocumentInit } from './module/treeApi';
 import { localize } from './utils/localize';
 
@@ -38,12 +32,6 @@ const moduleList = {
 	"cssCompletionInit": cssCompletionInit,
 	"kv2luaInit": kv2luaInit,
 	"listenerLocalizationInit": listenerLocalizationInit,
-	"listenerKV2JSInit": listenerKV2JSInit,
-	"listenerAbilityExcelInit": listenerAbilityExcelInit,
-	"listenerUnitExcelInit": listenerUnitExcelInit,
-	"translateInit": translateInit,
-	"sheetCloudInit": sheetCloudInit,
-	"errorLogsInit": errorLogsInit,
 	"kvEditorInit": kvEditorInit,
 	// "localizationViewrInit": localizationViewrInit,
 };
@@ -67,9 +55,6 @@ const skipModuleList: { [key: string]: keyof ModuleListConfig; } = {
 	"jsCompletionInit": "js_completion",
 	"cssCompletionInit": "css_completion",
 	"kv2luaInit": "kv_lua_associated",
-	"translateInit": "translate",
-	"sheetCloudInit": "sheet_cloud",
-	"errorLogsInit": "error_logs",
 	"kvEditorInit": "dota2kv",
 };
 

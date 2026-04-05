@@ -1,5 +1,12 @@
 const vscode = acquireVsCodeApi();
 
+window.addEventListener('error', function(event) {
+	console.error('[KvEditor] UNCAUGHT ERROR:', event.message, 'at', event.filename, 'line', event.lineno, 'col', event.colno, event.error?.stack);
+});
+window.addEventListener('unhandledrejection', function(event) {
+	console.error('[KvEditor] UNHANDLED REJECTION:', event.reason);
+});
+
 // i18n
 const _lang = document.documentElement.lang;
 const _i18n = {
@@ -142,145 +149,145 @@ const _i18n = {
 		debugInputCtrlZ: '[KV-Editor Debug] Input received Ctrl+Z/Y:',
 	},
 	'zh-cn': {
-		compactModeOn: '精简模式已开启，点击关闭',
-		compactModeOff: '精简模式已关闭，点击开启',
-		localizedModeOn: '本地化模式已开启，显示描述',
-		localizedModeOff: '本地化模式已关闭，显示原文',
-		folderAbility: '技能', folderItem: '物品', folderUnit: '单位', folderCustom: '自定义',
-		formulaHelp: '公式示例:\n1. baseNumber + offset → 生成 1,2,3,4 序列\n2. `Row_${rowNumber}` → 输出 Row_1, Row_2 等标签\n3. offset % 2 === 0 ? "A" : "B" → 交替填充 A/B\n4. direction === 1 ? baseNumber + offset : baseNumber - offset → 向下递增、向上递减',
-		selectCellToEdit: '选择单元格以编辑',
-		pleaseSelectDropdown: '请通过下拉选择',
-		search: '搜索', searchName: '搜索{0}', noMatchingResults: '无匹配结果',
-		enterColumnName: '请输入列名', formulaPlaceholder: '例如：=row.id.toLowerCase()',
-		localizedDisplayName: '本地化显示名称（可选）',
-		tooltipDescription: '鼠标悬停时显示的描述（可选）',
-		enterKeywords: '输入关键字（空格分隔）',
-		pathFormat: '路径格式: {localization_path}/{language}/{kv_path}.vdf',
-		formulaExprPlaceholder: '例如: base + offset * 2',
-		enterScriptPath: '请输入脚本路径',
-		dragToFill: '拖动以快速填充',
-		fillOptions: '填充选项', dirDown: '向下', dirUp: '向上',
-		fillNRows: '填充 {0} {1} 行',
-		fillSequence: '序列', fillCopy: '复制', fillLinear: '等差填充',
-		fillGeometric: '等比填充', fillFormula: '公式填充',
-		stepLabel: '步长', ratioLabel: '比率',
-		formulaExprLabel: '表达式 (可用: base, baseNumber, offset, rowIndex, rowNumber, direction)',
-		cancel: '取消', fill: '填充',
-		unknownFillMode: '未知填充模式',
-		noFillableCells: '当前没有可填充的单元格',
-		cannotDetermineColumn: '无法确定填充列',
-		selectFillRange: '请选择需要填充的范围',
-		nonEditableCells: '目标区域包含不可编辑的单元格',
-		fillModeNoDropdown: '该填充模式不支持下拉字段',
-		missingRowId: '目标行缺少唯一标识，无法写入。',
-		noFillableCellsDot: '没有可填充的单元格。',
-		noWritableFormula: '未生成可写入的公式。',
-		copyValueNotInDropdown: '目标下拉列表中不存在要复制的值',
-		notFormulaSequence: '当前单元格不是公式，无法使用序列填充。',
-		cannotDetermineBaseRow: '无法确定公式的基准行。',
-		noLinearFill: '当前单元格不支持等差填充',
-		notValidNumber: '当前单元格的值不是有效的数字',
-		enterValidStep: '请输入有效的步长',
-		noGeometricFill: '当前单元格不支持等比填充',
-		enterValidRatio: '请输入有效的比率',
-		noFormulaFill: '当前单元格不支持公式填充',
-		enterFormulaExpr: '请输入公式表达式',
-		formulaParseFailed: '公式解析失败: ',
-		formulaExecFailed: '公式执行失败: ',
-		idColumnEmpty: '[kv-editor] id 列的值不能为空',
-		ignoreFormulaWrite: '[kv-editor] 忽略无法定位行的公式写入',
-		notSelected: '未选择',
-		empty: '(空)', noEntries: '无条目',
-		doubleClickAbilityValues: '双击编辑 AbilityValues',
-		dragColumn: '拖动列 {0}',
-		columnFormula: '列公式: {0}',
-		editDropdownOptions: '编辑 {0} 下拉选项',
-		dragReorder: '拖动调整顺序',
-		projectResources: '项目资源', extensionResources: '插件资源',
-		selectIcon: '选择图标',
-		scriptDirNotConfigured: '未配置脚本目录',
-		openScriptFile: '打开脚本文件 ({0})',
-		loadTimeout: '加载超时', loadFailed: '加载失败',
-		loadingIcons: '加载图标中…',
-		abilityIcons: '技能图标', itemIcons: '物品图标',
-		heroFilter: '英雄筛选', heroes: '英雄',
-		toggleDisplayMode: '切换显示模式',
-		all: '全部',
-		strength: '力量', agility: '敏捷', intelligence: '智力',
-		universal: '全才', other: '其他',
-		currentFilter: '当前筛选: {0}',
-		switchToImageText: '切换为图文模式',
-		switchToImageOnly: '切换为纯图模式',
-		noMatchingIcons: '未找到匹配的图标。',
-		extensionIcons: '插件图标', projectIcons: '项目图标',
-		close: '关闭', customPrefix: '自定义: ',
-		insertColumnLeft: '向左插入列', insertColumnRight: '向右插入列',
-		columnName: '列名', insert: '插入',
-		columnNameEmpty: '列名不能为空',
-		columnNameExists: '列名已存在',
-		columnNameInvalid: '列名只能包含字母、数字和下划线，且不能以数字开头',
-		confirmDeleteColumn: '确认删除列',
-		confirmDeleteColumnMsg: '确定要删除列 "{0}" 吗？此操作不可恢复。',
-		delete: '删除',
-		setFormulaForColumn: '为列 "{0}" 设置公式',
-		formula: '公式',
-		formulaColumnNote: '提示：列公式会应用到所有没有单独设置公式的单元格',
-		save: '保存',
-		addDescForColumn: '为列 "{0}" 添加描述',
-		displayLabel: '显示标签', tooltipDescLabel: 'Tooltip 描述',
-		applyCurrentFileOnly: '仅在当前文件生效',
-		savedToFile: '已保存到当前文件',
-		savedToWorkspace: '已保存到工作区默认配置',
-		unfreezeColumn: '取消冻结列', freezeColumn: '冻结列',
-		removeColumnFormula: '取消列公式', addColumnFormula: '添加列公式',
-		addDescription: '添加描述', deleteColumn: '删除列',
-		confirmDeleteRow: '确认删除行',
-		confirmDeleteRowMsg: '确定要删除行 "{0}" 吗？此操作不可恢复。',
-		insertRowAbove: '向上插入一行', insertRowBelow: '向下插入一行',
-		copyRow: '复制行', pasteRow: '粘贴行', deleteRow: '删除行',
-		autoFill: '自动填充',
-		copiedNRows: '已复制 {0} 行', pastedNRows: '已粘贴 {0} 行',
-		baseValue: '基础值', levelIncrement: '升级间隔', levelCount: '等级数',
-		preview: '预览: ', apply: '应用',
-		abilityValuesClose: '关闭', abilityValuesAddEntry: '新增条目',
-		abilityValuesSave: '保存',
-		noAbilityValues: '暂无 AbilityValues 条目，请添加。',
-		entryKey: '条目键', descriptionLocalized: '描述(本地化)',
-		baseValueLabel: '基础值',
-		autoFillAbility: '自动填充 (基础值 + 升级间隔 × 等级)',
-		addModifier: '新增修饰', deleteEntry: '删除条目',
-		modifierKey: '修饰键', modifierValue: '修饰值',
-		deleteModifier: '删除',
-		entryKeyEmpty: '第 {0} 个条目的键不能为空。',
-		entryKeyDuplicate: '条目键 "{0}" 重复。',
-		modifierKeyEmpty: '条目 "{1}" 的第 {0} 个修饰键不能为空。',
-		validationErrors: '存在未通过校验的内容。',
-		dropdownOptions: '下拉选项', addOption: '新增选项',
-		allowMultiSelect: '允许多选',
-		separatorLabel: '分隔符:',
-		noDropdownOptions: '暂无下拉选项，点击"新增选项"开始添加。',
-		clickSelectColor: '点击选择颜色',
-		optionValue: '选项值', displayText: '显示文本（可选）',
-		tooltipDescOption: 'Tooltip 描述（可选）',
-		moveUp: '上移', moveDown: '下移',
-		optionValueEmpty: '第 {0} 行的选项值不能为空。',
-		optionValueDuplicate: '选项值 "{0}" 重复。',
-		pathType: '路径类型: {0}', rootKey: '根键: {0}', unknown: '未知',
-		localizationSettings: '本地化设置',
-		bindLocFile: '绑定本地化文件',
-		autoUpdateLoc: '打开文件时自动更新本地化',
-		language: '语言', locFilePath: '本地化文件路径',
-		locExportMappings: '本地化导出映射',
-		locColumn: '本地化列名', locRule: '本地化规则', actions: '操作',
-		noMappingRules: '暂无映射规则，点击下方按钮添加',
-		addMapping: ' 添加映射',
-		debugUndoRedo: '[KV-Editor Debug] setupUndoRedo收到撤销/恢复:',
-		debugDialogOpen: '[KV-Editor Debug] setupUndoRedo: 对话框已打开, 当前输入框是否在对话框内:',
-		debugMainDisabled: '[KV-Editor Debug] setupUndoRedo: 主界面输入框在对话框打开时禁用撤销恢复',
-		debugInputCtrlZ: '[KV-Editor Debug] 输入框收到Ctrl+Z/Y:',
+		compactModeOn: 'Compact mode is ON, click to disable',
+		compactModeOff: 'Compact mode is OFF, click to enable',
+		localizedModeOn: 'Localization mode is ON, showing descriptions',
+		localizedModeOff: 'Localization mode is OFF, showing raw text',
+		folderAbility: 'Ability', folderItem: 'Item', folderUnit: 'Unit', folderCustom: 'Custom',
+		formulaHelp: 'Formula examples:\n1. baseNumber + offset → generates 1,2,3,4 sequence\n2. `Row_${rowNumber}` → outputs Row_1, Row_2 labels\n3. offset % 2 === 0 ? "A" : "B" → alternately fills A/B\n4. direction === 1 ? baseNumber + offset : baseNumber - offset → increment down, decrement up',
+		selectCellToEdit: 'Select a cell to edit',
+		pleaseSelectDropdown: 'Please select from dropdown',
+		search: 'Search', searchName: 'Search {0}', noMatchingResults: 'No matching results',
+		enterColumnName: 'Enter column name', formulaPlaceholder: 'e.g.: =row.id.toLowerCase()',
+		localizedDisplayName: 'Localized display name (optional)',
+		tooltipDescription: 'Description shown on hover (optional)',
+		enterKeywords: 'Enter keywords (space-separated)',
+		pathFormat: 'Path format: {localization_path}/{language}/{kv_path}.vdf',
+		formulaExprPlaceholder: 'e.g.: base + offset * 2',
+		enterScriptPath: 'Enter script path',
+		dragToFill: 'Drag to quick fill',
+		fillOptions: 'Fill Options', dirDown: 'Down', dirUp: 'Up',
+		fillNRows: 'Fill {0} {1} rows',
+		fillSequence: 'Sequence', fillCopy: 'Copy', fillLinear: 'Linear Fill',
+		fillGeometric: 'Geometric Fill', fillFormula: 'Formula Fill',
+		stepLabel: 'Step', ratioLabel: 'Ratio',
+		formulaExprLabel: 'Expression (available: base, baseNumber, offset, rowIndex, rowNumber, direction)',
+		cancel: 'Cancel', fill: 'Fill',
+		unknownFillMode: 'Unknown fill mode',
+		noFillableCells: 'No fillable cells currently',
+		cannotDetermineColumn: 'Cannot determine fill column',
+		selectFillRange: 'Please select the range to fill',
+		nonEditableCells: 'Target area contains non-editable cells',
+		fillModeNoDropdown: 'This fill mode does not support dropdown fields',
+		missingRowId: 'Target row is missing a unique identifier; cannot write.',
+		noFillableCellsDot: 'No fillable cells.',
+		noWritableFormula: 'No writable formula was generated.',
+		copyValueNotInDropdown: 'The value to copy does not exist in the target dropdown list',
+		notFormulaSequence: 'Current cell is not a formula; cannot use sequence fill.',
+		cannotDetermineBaseRow: 'Cannot determine the base row for the formula.',
+		noLinearFill: 'Current cell does not support linear fill',
+		notValidNumber: 'Current cell value is not a valid number',
+		enterValidStep: 'Please enter a valid step value',
+		noGeometricFill: 'Current cell does not support geometric fill',
+		enterValidRatio: 'Please enter a valid ratio',
+		noFormulaFill: 'Current cell does not support formula fill',
+		enterFormulaExpr: 'Please enter a formula expression',
+		formulaParseFailed: 'Formula parsing failed: ',
+		formulaExecFailed: 'Formula execution failed: ',
+		idColumnEmpty: '[kv-editor] The id column value cannot be empty',
+		ignoreFormulaWrite: '[kv-editor] Ignoring formula write for unlocatable row',
+		notSelected: 'Not selected',
+		empty: '(empty)', noEntries: 'No entries',
+		doubleClickAbilityValues: 'Double-click to edit AbilityValues',
+		dragColumn: 'Drag column {0}',
+		columnFormula: 'Column formula: {0}',
+		editDropdownOptions: 'Edit {0} dropdown options',
+		dragReorder: 'Drag to reorder',
+		projectResources: 'Project Resources', extensionResources: 'Extension Resources',
+		selectIcon: 'Select Icon',
+		scriptDirNotConfigured: 'Script directory not configured',
+		openScriptFile: 'Open script file ({0})',
+		loadTimeout: 'Loading timed out', loadFailed: 'Failed to load',
+		loadingIcons: 'Loading icons…',
+		abilityIcons: 'Ability Icons', itemIcons: 'Item Icons',
+		heroFilter: 'Hero Filter', heroes: 'Heroes',
+		toggleDisplayMode: 'Toggle display mode',
+		all: 'All',
+		strength: 'Strength', agility: 'Agility', intelligence: 'Intelligence',
+		universal: 'Universal', other: 'Other',
+		currentFilter: 'Current filter: {0}',
+		switchToImageText: 'Switch to image+text mode',
+		switchToImageOnly: 'Switch to image-only mode',
+		noMatchingIcons: 'No matching icons found.',
+		extensionIcons: 'Extension Icons', projectIcons: 'Project Icons',
+		close: 'Close', customPrefix: 'Custom: ',
+		insertColumnLeft: 'Insert Column Left', insertColumnRight: 'Insert Column Right',
+		columnName: 'Column Name', insert: 'Insert',
+		columnNameEmpty: 'Column name cannot be empty',
+		columnNameExists: 'Column name already exists',
+		columnNameInvalid: 'Column name can only contain letters, numbers, and underscores, and cannot start with a digit',
+		confirmDeleteColumn: 'Confirm Delete Column',
+		confirmDeleteColumnMsg: 'Are you sure you want to delete column "{0}"? This cannot be undone.',
+		delete: 'Delete',
+		setFormulaForColumn: 'Set formula for column "{0}"',
+		formula: 'Formula',
+		formulaColumnNote: 'Note: Column formula applies to all cells without an individual formula',
+		save: 'Save',
+		addDescForColumn: 'Add description for column "{0}"',
+		displayLabel: 'Display Label', tooltipDescLabel: 'Tooltip Description',
+		applyCurrentFileOnly: 'Apply to current file only',
+		savedToFile: 'Saved to current file',
+		savedToWorkspace: 'Saved to workspace default config',
+		unfreezeColumn: 'Unfreeze Column', freezeColumn: 'Freeze Column',
+		removeColumnFormula: 'Remove Column Formula', addColumnFormula: 'Add Column Formula',
+		addDescription: 'Add Description', deleteColumn: 'Delete Column',
+		confirmDeleteRow: 'Confirm Delete Row',
+		confirmDeleteRowMsg: 'Are you sure you want to delete row "{0}"? This cannot be undone.',
+		insertRowAbove: 'Insert Row Above', insertRowBelow: 'Insert Row Below',
+		copyRow: 'Copy Row', pasteRow: 'Paste Row', deleteRow: 'Delete Row',
+		autoFill: 'Auto Fill',
+		copiedNRows: 'Copied {0} row(s)', pastedNRows: 'Pasted {0} row(s)',
+		baseValue: 'Base Value', levelIncrement: 'Level Increment', levelCount: 'Level Count',
+		preview: 'Preview: ', apply: 'Apply',
+		abilityValuesClose: 'Close', abilityValuesAddEntry: 'Add Entry',
+		abilityValuesSave: 'Save',
+		noAbilityValues: 'No AbilityValues entries yet. Please add one.',
+		entryKey: 'Entry Key', descriptionLocalized: 'Description (localized)',
+		baseValueLabel: 'Base Value',
+		autoFillAbility: 'Auto Fill (Base + Increment × Level)',
+		addModifier: 'Add Modifier', deleteEntry: 'Delete Entry',
+		modifierKey: 'Modifier Key', modifierValue: 'Modifier Value',
+		deleteModifier: 'Delete',
+		entryKeyEmpty: 'Entry #{0} key cannot be empty.',
+		entryKeyDuplicate: 'Duplicate entry key "{0}".',
+		modifierKeyEmpty: 'Modifier #{0} key in entry "{1}" cannot be empty.',
+		validationErrors: 'There are validation errors.',
+		dropdownOptions: 'Dropdown Options', addOption: 'Add Option',
+		allowMultiSelect: 'Allow multiple selection',
+		separatorLabel: 'Separator:',
+		noDropdownOptions: 'No dropdown options yet. Click "Add Option" to start.',
+		clickSelectColor: 'Click to select color',
+		optionValue: 'Option Value', displayText: 'Display text (optional)',
+		tooltipDescOption: 'Tooltip description (optional)',
+		moveUp: 'Move Up', moveDown: 'Move Down',
+		optionValueEmpty: 'Option value at row #{0} cannot be empty.',
+		optionValueDuplicate: 'Duplicate option value "{0}".',
+		pathType: 'Path type: {0}', rootKey: 'Root key: {0}', unknown: 'Unknown',
+		localizationSettings: 'Localization Settings',
+		bindLocFile: 'Bind localization file',
+		autoUpdateLoc: 'Auto-update localization on file open',
+		language: 'Language', locFilePath: 'Localization file path',
+		locExportMappings: 'Localization export mappings',
+		locColumn: 'Localization Column', locRule: 'Localization Rule', actions: 'Actions',
+		noMappingRules: 'No mapping rules yet. Click the button below to add one.',
+		addMapping: ' Add Mapping',
+		debugUndoRedo: '[KV-Editor Debug] setupUndoRedo received undo/redo:',
+		debugDialogOpen: '[KV-Editor Debug] setupUndoRedo: dialog is open, is current input inside dialog:',
+		debugMainDisabled: '[KV-Editor Debug] setupUndoRedo: main input undo/redo disabled while dialog is open',
+		debugInputCtrlZ: '[KV-Editor Debug] Input received Ctrl+Z/Y:',
 	}
 };
-function _t(key) { return (_i18n[_lang] && _i18n[_lang][key]) || _i18n['zh-cn'][key] || key; }
+function _t(key) { return (_i18n[_lang] && _i18n[_lang][key]) || _i18n['en'][key] || key; }
 function _tf(key, ...args) { let s = _t(key); args.forEach((a, i) => { s = s.replace(`{${i}}`, a); }); return s; }
 
 const fileNameEl = document.getElementById('kv-file-name');
@@ -4346,7 +4353,8 @@ function createTableRowElement(row, rowIndex, context) {
  * 创建表格渲染上下文，包含所有共享状态
  */
 function createRenderContext(columns, rows, columnOptions) {
-	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...columns];
+	const safeColumns = Array.isArray(columns) ? columns : [];
+	const displayColumns = [ROW_NUMBER_COLUMN_KEY, ...safeColumns];
 	const columnLabels = new Map();
 	const columnLetters = new Map();
 
@@ -8750,6 +8758,18 @@ function render(payload) {
 	if (!payload) {
 		return;
 	}
+	try {
+		return renderInner(payload);
+	} catch (e) {
+		console.error('[KvEditor] RENDER CRASH:', e.message, e.stack);
+		const errEl = document.getElementById('error');
+		if (errEl) {
+			errEl.textContent = 'Render error: ' + e.message + '\n' + e.stack;
+			errEl.style.display = '';
+		}
+	}
+}
+function renderInner(payload) {
 	// 递增版本号，用于检测过期编辑
 	payloadVersion++;
 	// 如果正在编辑中，跳过本次更新以防止数据覆盖
@@ -8853,6 +8873,7 @@ function render(payload) {
 		fileMetaEl.textContent = metaParts.join(' · ');
 	}
 	if (payload.error) {
+		console.error('[KvEditor] payload.error:', payload.error);
 		if (errorSection) {
 			errorSection.textContent = payload.error;
 		}
@@ -8876,7 +8897,16 @@ function render(payload) {
 		return;
 	}
 	applyColumnLayout(payload.columns, payload.columnLayout);
-	renderTable(payload.columns, payload.rows, columnOptionConfig);
+	try {
+		renderTable(payload.columns, payload.rows, columnOptionConfig);
+	} catch (renderErr) {
+		console.error('[KvEditor] renderTable error:', renderErr, renderErr.stack);
+		if (errorSection) {
+			errorSection.textContent = 'Render error: ' + renderErr.message;
+		}
+		setSectionVisibility({ showTable: false, showEmpty: false, showError: true });
+		return;
+	}
 	if (emptySection) {
 		emptySection.textContent = '';
 	}

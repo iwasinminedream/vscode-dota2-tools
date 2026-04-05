@@ -53,7 +53,13 @@ class KvEditorController implements vscode.Disposable {
 		this.treeProvider.dispose();
 	}
 
-	private async openFile(uri: vscode.Uri) {
+	private async openFile(uri?: vscode.Uri) {
+		if (!uri) {
+			uri = vscode.window.activeTextEditor?.document.uri;
+		}
+		if (!uri) {
+			return;
+		}
 		await vscode.commands.executeCommand('vscode.openWith', uri, 'dota2tools.kv');
 	}
 

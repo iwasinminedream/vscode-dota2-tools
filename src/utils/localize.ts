@@ -10,9 +10,10 @@ enum LangEnum {
 	english = "en"
 };
 export async function localizeInit(context: vscode.ExtensionContext) {
+	const englishData = JSON.parse(await readFile(vscode.Uri.joinPath(context.extensionUri, "package.nls.json")));
 	langData = {
-		[LangEnum.schinese]: JSON.parse(await readFile(vscode.Uri.joinPath(context.extensionUri, "package.nls.zh-cn.json"))),
-		[LangEnum.english]: JSON.parse(await readFile(vscode.Uri.joinPath(context.extensionUri, "package.nls.json")))
+		[LangEnum.schinese]: englishData,
+		[LangEnum.english]: englishData
 	};
 	reverseLangData = {
 		[LangEnum.schinese]: { ...langData[LangEnum.schinese] },

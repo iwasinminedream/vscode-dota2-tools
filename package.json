@@ -1,10 +1,9 @@
 {
-	"name": "dota2-tools",
+	"name": "dota2tools",
 	"displayName": "%ext.displayName%",
-	"description": "%ext.description%",
-	"version": "3.1.114",
-	"icon": "images/logo.png",
-	"publisher": "bigciba",
+	"description": "",
+	"version": "1.0.0",
+	"publisher": "iwasinminedream",
 	"engines": {
 		"vscode": "^1.66.0"
 	},
@@ -125,14 +124,7 @@
 					"icon": "$(notebook)"
 				}
 			],
-			"dota2logs": [
-				{
-					"id": "errorLogExplorer",
-					"when": "config.dota2-tools.A1.module_list.error_logs",
-					"name": "%errorLogExplorer%",
-					"icon": "$(warning)"
-				}
-			]
+			"dota2logs": []
 		},
 		"commands": [
 			{
@@ -170,24 +162,12 @@
 				}
 			},
 			{
-				"command": "dota2tools.translate_selection",
-				"title": "%dota2tools.translate_selection%"
-			},
-			{
-				"command": "dota2tools.A7.translate_advanced",
-				"title": "%dota2tools.A7.translate_advanced%"
-			},
-			{
 				"command": "dota2tools.kv_to_js_config",
 				"title": "%dota2tools.kv_to_js_config%"
 			},
 			{
 				"command": "dota2tools.default_item_remove_list",
 				"title": "%dota2tools.default_item_remove_list%"
-			},
-			{
-				"command": "dota2tools.inherit_table",
-				"title": "%dota2tools.inherit_table%"
 			},
 			{
 				"command": "dota2tools.samsara_hero_drop",
@@ -224,22 +204,6 @@
 			{
 				"command": "dota2tools.parse entities",
 				"title": "%dota2tools.parse entities%"
-			},
-			{
-				"command": "dota2tools.excel2kv",
-				"title": "%dota2tools.excel2kv%"
-			},
-			{
-				"command": "dota2tools.inheritCSV",
-				"title": "%dota2tools.inheritCSV%"
-			},
-			{
-				"command": "dota2tools.ability_export",
-				"title": "%dota2tools.ability_export%"
-			},
-			{
-				"command": "dota2tools.unit_export",
-				"title": "%dota2tools.unit_export%"
 			},
 			{
 				"command": "dota2tools.lua_api_changelog",
@@ -361,51 +325,6 @@
 				"title": "%dota2tools.CopyDotaResourcePath%"
 			},
 			{
-				"command": "dota2tools.csv_to_db",
-				"title": "%dota2tools.csv_to_db%"
-			},
-			{
-				"command": "dota2tools.fetch_all_sheet",
-				"title": "%dota2tools.fetch_all_sheet%"
-			},
-			{
-				"command": "dota2tools.show_fetch_sheet_list",
-				"title": "%dota2tools.show_fetch_sheet_list%"
-			},
-			{
-				"command": "dota2tools.fetch_files",
-				"title": "%dota2tools.fetch_files%"
-			},
-			{
-				"command": "dota2tools.sheet_cloud_show_branch",
-				"title": "%dota2tools.sheet_cloud_show_branch%"
-			},
-			{
-				"command": "dota2tools.backup_localization",
-				"title": "%dota2tools.backup_localization%"
-			},
-			{
-				"command": "dota2tools.compare_localization",
-				"title": "%dota2tools.compare_localization%"
-			},
-			{
-				"command": "dota2tools.import_localization",
-				"title": "%dota2tools.import_localization%"
-			},
-			{
-				"command": "dota2tools.export_record",
-				"title": "%dota2tools.export_record%"
-			},
-			{
-				"command": "dota2tools.logs.open",
-				"title": "%dota2tools.logs.open%"
-			},
-			{
-				"command": "dota2tools.logs.refreshCategory",
-				"title": "%dota2tools.logs.refreshCategory%",
-				"icon": "$(refresh)"
-			},
-			{
 				"command": "dota2tools.kvEditor.openFile",
 				"title": "%dota2tools.kvEditor.openFile%",
 				"category": "Dota2 Tools"
@@ -435,11 +354,6 @@
 					"when": "resource =~ /abilities/ && resourceExtname =~ /(\\.lua)|(\\.ts)/ && config.dota2-tools.A1.module_list.kv_lua_associated",
 					"command": "dota2tools.OpenKV",
 					"group": "navigation"
-				},
-				{
-					"when": "editorHasSelection",
-					"command": "dota2tools.translate_selection",
-					"group": "navigation"
 				}
 			],
 			"explorer/context": [
@@ -447,11 +361,6 @@
 					"when": "resource =~ /panorama/ && resourceExtname =~ /(\\.png)|(\\.jpg)/",
 					"command": "dota2tools.CopyDotaResourcePath",
 					"group": "6_copypath"
-				},
-				{
-					"when": "resourceExtname == '.csv'",
-					"command": "dota2tools.csv_to_db",
-					"group": "navigation"
 				}
 			],
 			"editor/title": [
@@ -478,23 +387,8 @@
 					"group": "navigation"
 				},
 				{
-					"when": "(resourceExtname == '.txt' || resourceExtname == '.kv') && config.dota2-tools.A2.display.ability_export",
-					"command": "dota2tools.ability_export",
-					"group": "navigation"
-				},
-				{
-					"when": "(resourceExtname == '.txt' || resourceExtname == '.kv') && config.dota2-tools.A2.display.unit_export",
-					"command": "dota2tools.unit_export",
-					"group": "navigation"
-				},
-				{
 					"when": "resource =~ /panorama/ && resourceExtname =~ /(\\.png)|(\\.jpg)/",
 					"command": "dota2tools.CopyDotaResourcePath",
-					"group": "navigation"
-				},
-				{
-					"when": "resourceExtname == '.csv'",
-					"command": "dota2tools.csv_to_db",
 					"group": "navigation"
 				}
 			],
@@ -590,11 +484,6 @@
 					"command": "dota2tools.css_property.edit",
 					"when": "view == dota2CssApiExplorer && viewItem == Class",
 					"group": "inline"
-				},
-				{
-					"command": "dota2tools.logs.refreshCategory",
-					"when": "view == errorLogExplorer && viewItem == errorLog.category",
-					"group": "inline"
 				}
 			]
 		},
@@ -617,10 +506,7 @@
 							"js_completion": true,
 							"css_completion": true,
 							"kv_lua_associated": true,
-							"translate": true,
-							"sheet_cloud": true,
-							"dota2kv": false,
-							"error_logs": false
+							"dota2kv": false
 						},
 						"properties": {
 							"ability_icon": {
@@ -683,25 +569,10 @@
 								"default": true,
 								"description": "%module.kv_lua_associated%"
 							},
-							"translate": {
-								"type": "boolean",
-								"default": true,
-								"description": "%module.translate%"
-							},
-							"sheet_cloud": {
-								"type": "boolean",
-								"default": true,
-								"description": "%module.sheet_cloud%"
-							},
 							"dota2kv": {
 								"type": "boolean",
 								"default": false,
 								"description": "%module.dota2kv%"
-							},
-							"error_logs": {
-								"type": "boolean",
-								"default": true,
-								"description": "%errorLogModule%"
 							}
 						},
 						"additionalProperties": false,
@@ -714,9 +585,7 @@
 							"ability_icon": true,
 							"items_game": true,
 							"vsnd_picker": true,
-							"kv_editor": true,
-							"ability_export": true,
-							"unit_export": true
+							"kv_editor": true
 						},
 						"properties": {
 							"ability_icon": {
@@ -738,16 +607,6 @@
 								"type": "boolean",
 								"default": true,
 								"description": "%display.kv_editor%"
-							},
-							"ability_export": {
-								"type": "boolean",
-								"default": true,
-								"description": "%display.ability_export%"
-							},
-							"unit_export": {
-								"type": "boolean",
-								"default": true,
-								"description": "%display.unit_export%"
 							}
 						},
 						"additionalProperties": false,
@@ -757,37 +616,13 @@
 						"scope": "resource",
 						"type": "object",
 						"default": {
-							"localization": false,
-							"kv2js": false,
-							"ability_excel": false,
-							"unit_excel": false,
-							"cloud_sheet": false
+							"localization": false
 						},
 						"properties": {
 							"localization": {
 								"type": "boolean",
 								"default": false,
 								"description": "%listener.localization%"
-							},
-							"kv2js": {
-								"type": "boolean",
-								"default": false,
-								"description": "%listener.kv2js%"
-							},
-							"ability_excel": {
-								"type": "boolean",
-								"default": false,
-								"description": "%listener.ability_excel%"
-							},
-							"unit_excel": {
-								"type": "boolean",
-								"default": false,
-								"description": "%listener.unit_excel%"
-							},
-							"cloud_sheet": {
-								"type": "boolean",
-								"default": false,
-								"description": "%listener.cloud_sheet%"
 							}
 						},
 						"additionalProperties": false,
@@ -820,157 +655,6 @@
 								"%dota2-tools.kv_editor.type.custom%"
 							]
 						}
-					}
-				}
-			},
-			{
-				"title": "%dota2-tools.excel_setting%",
-				"properties": {
-					"dota2-tools.A4.AbilityExcel": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A4.AbilityExcel%"
-					},
-					"dota2-tools.A4.UnitExcel": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A4.UnitExcel%"
-					},
-					"dota2-tools.A4.extnameList": {
-						"type": "string",
-						"markdownDescription": "%dota2-tools.A4.extnameList%"
-					}
-				}
-			},
-			{
-				"title": "%dota2-tools.cloud_sheet_setting%",
-				"properties": {
-					"dota2-tools.A8.FeiShu": {
-						"type": "object",
-						"default": {
-							"App ID": "",
-							"App Secret": "",
-							"Branch Folder": ""
-						},
-						"properties": {
-							"App ID": {
-								"type": "string",
-								"description": "dota2-tools.A4.appid"
-							},
-							"App Secret": {
-								"type": "string",
-								"description": "dota2-tools.A4.secret"
-							},
-							"Branch Folder": {
-								"type": "string",
-								"description": "dota2-tools.A4.branch"
-							},
-							"App Token": {
-								"type": "string",
-								"description": "dota2-tools.A4.app_token"
-							},
-							"Schinese ID": {
-								"type": "string",
-								"description": "dota2-tools.A4.schinese_id"
-							},
-							"English ID": {
-								"type": "string",
-								"description": "dota2-tools.A4.english_id"
-							},
-							"Russian ID": {
-								"type": "string",
-								"description": "dota2-tools.A4.russian_id"
-							}
-						},
-						"additionalProperties": false,
-						"markdownDescription": "%dota2-tools.A4.FeiShu%"
-					},
-					"dota2-tools.A8.CloudSheetComposite": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A8.CloudSheetComposite%"
-					},
-					"dota2-tools.A8.CloudSheetSingle": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A8.CloudSheetSingle%"
-					},
-					"dota2-tools.A8.current_branch": {
-						"type": "string",
-						"default": "main",
-						"description": "%dota2-tools.A8.branch%"
-					},
-					"dota2-tools.A8.Branch Composite": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A8.BranchConfig%"
-					},
-					"dota2-tools.A8.Branch Single": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A8.BranchConfig%"
-					},
-					"dota2-tools.A8.CloudSheetToCsv": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"markdownDescription": "%dota2-tools.A8.CloudSheetToCsv%"
-					},
-					"dota2-tools.A8.CloudSheetMerge": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "boolean"
-						},
-						"markdownDescription": "%dota2-tools.A8.CloudSheetMerge%"
-					}
-				}
-			},
-			{
-				"title": "%dota2-tools.logs_setting%",
-				"properties": {
-					"dota2-tools.A9.LogServer": {
-						"type": "object",
-						"default": {
-							"server": "",
-							"client": "",
-							"ui": ""
-						},
-						"properties": {
-							"server": {
-								"type": "string",
-								"description": "%dota2-tools.A9.server%"
-							},
-							"client": {
-								"type": "string",
-								"description": "%dota2-tools.A9.client%"
-							},
-							"ui": {
-								"type": "string",
-								"description": "%dota2-tools.A9.ui%"
-							}
-						},
-						"additionalProperties": false,
-						"markdownDescription": "%dota2-tools.A9.LogServer.description%"
-					},
-					"dota2-tools.A9.recentDays": {
-						"type": "number",
-						"default": 15,
-						"minimum": 1,
-						"maximum": 90,
-						"description": "%dota2-tools.A9.recentDays%"
 					}
 				}
 			},
@@ -1048,42 +732,6 @@
 						"default": true,
 						"description": "%dota2-tools.A10.less_image_paste.enabled%"
 					},
-					"dota2-tools.A7.translate service": {
-						"type": "string",
-						"default": "%dota2-tools.A7.translate service.transmart%",
-						"description": "%dota2-tools.A7.translate service%",
-						"enum": [
-							"%dota2-tools.A7.translate service.transmart%",
-							"%dota2-tools.A7.translate service.caiyun%",
-							"%dota2-tools.A7.translate service.huoshan%",
-							"%dota2-tools.A7.translate service.tencentTranslate%"
-						]
-					},
-					"dota2-tools.A7.translate preference language": {
-						"type": "string",
-						"default": "en",
-						"description": "%dota2-tools.A7.translate preference language%",
-						"enum": [
-							"en",
-							"ru",
-							"de",
-							"es",
-							"fr",
-							"it",
-							"ja",
-							"ko"
-						],
-						"enumItemLabels": [
-							"%en%",
-							"%ru%",
-							"%de%",
-							"%es%",
-							"%fr%",
-							"%it%",
-							"%ja%",
-							"%ko%"
-						]
-					},
 					"dota2-tools.addon_path": {
 						"scope": "resource",
 						"type": "object",
@@ -1123,9 +771,6 @@
 						"default": "${game}/scripts/vscripts/libraries",
 						"description": "%dota2-tools.lua_api_document_path%"
 					},
-					"dota2-tools.csv_db_config": {
-						"type": "object"
-					},
 					"dota2-tools.dota2_install_path": {
 						"type": "string",
 						"default": "C:/Program Files (x86)/Steam/steamapps/common/dota 2 beta",
@@ -1155,7 +800,8 @@
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
 		"lint": "eslint src --ext ts",
 		"test": "node ./out/test/runTest.js",
-		"publish_patch": "node publish_patch.js"
+		"publish_patch": "node publish_patch.js",
+		"sync-data": "node scripts/sync-dota-data.js"
 	},
 	"devDependencies": {
 		"@types/crypto-js": "^4.1.1",
@@ -1179,22 +825,17 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/BigCiba/vscode-dota2-tools.git"
+		"url": "https://github.com/iwasinminedream/vscode-dota2-tools.git"
 	},
 	"dependencies": {
-		"@larksuiteoapi/node-sdk": "^1.22.0",
 		"@vscode/codicons": "^0.0.29",
 		"@vscode/webview-ui-toolkit": "^1.2.2",
 		"axios": "^1.4.0",
 		"cardinal": "^2.1.1",
 		"cnpm": "^9.2.0",
-		"crypto-js": "^4.1.1",
-		"exceljs": "^4.3.0",
 		"fs-extra": "^10.0.1",
 		"i": "^0.3.7",
 		"json2lua": "^0.3.3",
-		"md5": "^2.3.0",
-		"mysql2": "^2.3.3",
 		"node-watch": "^0.7.3"
 	}
 }

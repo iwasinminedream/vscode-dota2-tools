@@ -306,21 +306,31 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	}
 
 	private buildPayload(document: vscode.TextDocument, webview: vscode.Webview): KvEditorPayload {
+	  try {
+		console.log('[buildPayload] step 1: getWorkspaceFolder');
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		console.log('[buildPayload] step 2: getDocumentSettingsKey');
 		const documentKey = workspaceFolder ? this.getDocumentSettingsKey(document.uri, workspaceFolder) : undefined;
+		console.log('[buildPayload] step 3: readKvEditorSettings');
 		const settings = readKvEditorSettings();
 		const entry = settings ? findKvEntryForUri(document.uri, settings) : undefined;
 		const folderType: KvFolderType = entry?.type ?? 'custom';
+		console.log('[buildPayload] step 4: parseKv');
 		const parsed = this.parseKv(document.getText());
+		console.log('[buildPayload] step 5: enrichRows');
 		this.enrichRowsWithLocalization(parsed.rows, folderType, document.uri.fsPath, entry);
+		console.log('[buildPayload] step 6: loadColumnLayout');
 		const columnLayout = this.loadColumnLayout(document);
+		console.log('[buildPayload] step 7: getResolvedColumnOptions');
 		const columnOptions = this.getResolvedColumnOptions(folderType, workspaceFolder, document.uri);
+		console.log('[buildPayload] step 8: formulas');
 		const formulas = workspaceFolder && documentKey
 			? this.buildFormulaPayload(workspaceFolder, documentKey, parsed.rows, document.uri)
 			: [];
 		const columnFormulas = workspaceFolder && documentKey
 			? this.buildColumnFormulaPayload(workspaceFolder, documentKey)
 			: undefined;
+		console.log('[buildPayload] step 9: user settings, workspaceFolder=', !!workspaceFolder, 'documentKey=', documentKey);
 
 		// 加载精简模式设置
 		let compactMode: boolean | undefined;
@@ -330,8 +340,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		let localizationSettings: { enabled: boolean; language: string; filePath: string; autoUpdateOnOpen: boolean; mappings: Array<{ columnName: string; rule: string; }>; } | undefined;
 		let abilityValuesDescriptions: Record<string, Record<string, string>> | undefined; // rowId -> key -> description
 		if (workspaceFolder && documentKey) {
+			console.log('[buildPayload] step 9a: getUserSettings');
 			const userSettings = this.getUserSettings(workspaceFolder);
+			console.log('[buildPayload] step 9b: files=', typeof userSettings.files, Object.keys(userSettings.files ?? {}).length);
 			const fileSettings = userSettings.files[documentKey];
+			console.log('[buildPayload] step 9c: fileSettings=', typeof fileSettings);
 			if (fileSettings && typeof fileSettings.compactMode === 'boolean') {
 				compactMode = fileSettings.compactMode;
 			}
@@ -342,7 +355,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				frozenColumns = fileSettings.frozenColumns;
 			}
 
-			// 加载本地化设置
+			console.log('[buildPayload] step 9d: getColumnOptionOverrides');
 			const columnOptionOverrides = this.getColumnOptionOverrides(workspaceFolder);
 			if (columnOptionOverrides.localizationSettings && columnOptionOverrides.localizationSettings[documentKey]) {
 				localizationSettings = columnOptionOverrides.localizationSettings[documentKey];
@@ -358,6 +371,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 					abilityValuesDescriptions![rowId] = Object.fromEntries(keyMap);
 				});
 			}
+			console.log('[buildPayload] step 9e: readColumnLocalizationConfig');
 			const baseDefaults = this.readColumnLocalizationConfig();
 			const workspaceDefaults = columnOptionOverrides.columnDescriptions ?? {};
 			const fileColumnOptions = columnOptionOverrides.files && columnOptionOverrides.files[documentKey];
@@ -371,6 +385,11 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 		}
 
+		console.log('[buildPayload] step 10: buildTexturePreviews');
+		const texturePreviews = this.buildTexturePreviews(document, parsed.rows, webview, entry);
+		console.log('[buildPayload] step 11: buildScriptSupport');
+		const scriptSupport = this.buildScriptSupport(folderType);
+		console.log('[buildPayload] step 12: return');
 		return {
 			fileName: path.basename(document.uri.fsPath),
 			documentKey,
@@ -381,8 +400,8 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			error: parsed.error,
 			columnOptions,
 			columnLayout,
-			texturePreviews: this.buildTexturePreviews(document, parsed.rows, webview, entry),
-			scriptSupport: this.buildScriptSupport(folderType),
+			texturePreviews,
+			scriptSupport,
 			formulas,
 			columnFormulas,
 			compactMode,
@@ -392,6 +411,24 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			localizationSettings,
 			abilityValuesDescriptions,
 		};
+	  } catch (err) {
+		const errMsg = err instanceof Error ? err.stack ?? err.message : String(err);
+		console.error('[kvEditorProvider] buildPayload error:', errMsg);
+		vscode.window.showErrorMessage('[KV Editor] buildPayload: ' + (err instanceof Error ? err.message : String(err)));
+		return {
+			fileName: path.basename(document.uri.fsPath),
+			documentKey: undefined,
+			folderType: 'custom',
+			header: '',
+			columns: [],
+			rows: [],
+			error: err instanceof Error ? err.stack ?? err.message : String(err),
+			columnOptions: {},
+			texturePreviews: {},
+			scriptSupport: undefined as any,
+			formulas: [],
+		};
+	  }
 	}
 
 	private readColumnOptionConfig(): KvEditorColumnOptionMap {

@@ -41,9 +41,6 @@ declare interface CssProperty {
 declare interface ListenerConfig {
 	localization: boolean;
 	kv2js: boolean;
-	ability_excel: boolean;
-	unit_excel: boolean;
-	cloud_sheet: boolean;
 }
 
 declare interface ModuleListConfig {
@@ -59,10 +56,7 @@ declare interface ModuleListConfig {
 	js_completion: boolean;
 	css_completion: boolean;
 	kv_lua_associated: boolean;
-	translate: boolean;
-	sheet_cloud: boolean;
 	dota2kv: boolean;
-	error_logs: boolean;
 }
 
 
