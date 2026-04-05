@@ -5,6 +5,10 @@ out/
 .vpk_extract_tmp/
 lib/vrf/
 
+# Compiled TS output (webpack bundles to dist/ instead)
+src/**/*.js
+src/**/*.js.map
+
 # Images extracted from VPK (users run extract-images.js locally)
 images/spellicons/
 images/items/
