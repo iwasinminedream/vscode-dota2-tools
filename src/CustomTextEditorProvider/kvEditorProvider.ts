@@ -491,7 +491,15 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		}
 		const obj = raw as Record<string, unknown>;
 		const options = this.parseOptionEntries(obj.options);
-		if (!options.length) {
+		const inputTypeRaw = obj.inputType;
+		const inputType = typeof inputTypeRaw === 'string' && ['checkbox', 'number', 'spinner'].includes(inputTypeRaw)
+			? inputTypeRaw as 'checkbox' | 'number' | 'spinner'
+			: undefined;
+		const folderTypeOnlyRaw = obj.folderTypeOnly;
+		const folderTypeOnly = Array.isArray(folderTypeOnlyRaw)
+			? folderTypeOnlyRaw.filter((v): v is KvFolderType => typeof v === 'string' && ['ability', 'item', 'unit', 'custom'].includes(v))
+			: undefined;
+		if (!options.length && !inputType) {
 			return undefined;
 		}
 		const multiple = Boolean(obj.multiple);
@@ -516,7 +524,14 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				overrides = undefined;
 			}
 		}
-		return { options, multiple, separator, overrides };
+		const result: KvEditorColumnOptionSource = { options, multiple, separator, overrides };
+		if (inputType) {
+			result.inputType = inputType;
+		}
+		if (folderTypeOnly?.length) {
+			result.folderTypeOnly = folderTypeOnly;
+		}
+		return result;
 	}
 
 	private parseOptionEntries(raw: unknown): KvEditorColumnOption[] {
@@ -593,6 +608,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	): KvEditorColumnOptionResolvedMap {
 		const resolved: KvEditorColumnOptionResolvedMap = {};
 		for (const [column, config] of Object.entries(this.columnOptionConfig)) {
+			if (config.folderTypeOnly?.length && !config.folderTypeOnly.includes(folderType)) {
+				continue;
+			}
 			const override = config.overrides?.[folderType];
 			const optionsSource = override?.options ?? config.options;
 			const multiple = override?.multiple ?? config.multiple;
@@ -601,6 +619,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				options: optionsSource.map((option) => ({ ...option })),
 				multiple,
 				separator,
+				...(config.inputType ? { inputType: config.inputType } : {}),
 			};
 		}
 		if (workspaceFolder) {
@@ -698,10 +717,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	private buildScriptSupport(folderType: KvFolderType): KvEditorScriptSupport {
 		const useTypescript = Boolean(vscode.workspace.getConfiguration().get('dota2-tools.A6.Kv to lua generate typescript'));
 		const baseDir = useTypescript ? getContentDir() : getGameDir();
-		const applicable = folderType === 'ability' || folderType === 'item';
 		return {
-			applicable,
-			baseReady: applicable ? Boolean(baseDir) : false,
+			applicable: true,
+			baseReady: true,
 			useTypescript,
 		};
 	}
@@ -738,7 +756,20 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 	private detectFolderType(uri: vscode.Uri): KvFolderType {
 		const settings = readKvEditorSettings();
 		const entry = settings ? findKvEntryForUri(uri, settings) : undefined;
-		return entry?.type ?? 'custom';
+		if (entry?.type) {
+			return entry.type;
+		}
+		const fileName = path.basename(uri.fsPath).toLowerCase();
+		if (fileName.includes('item')) {
+			return 'item';
+		}
+		if (fileName.includes('abili')) {
+			return 'ability';
+		}
+		if (fileName.includes('unit') || fileName.includes('hero')) {
+			return 'unit';
+		}
+		return 'custom';
 	}
 
 	private async buildTextureMenuResponse(
@@ -966,8 +997,30 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			.join(' ');
 	}
 
+	private extractEntryComments(text: string): Map<string, string> {
+		const comments = new Map<string, string>();
+		const lines = text.split(/\r?\n/);
+		let pendingComment = '';
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (trimmed.startsWith('//')) {
+				pendingComment = trimmed.slice(2).trim();
+			} else if (trimmed.startsWith('"') && pendingComment) {
+				const match = trimmed.match(/^"([^"]+)"/);
+				if (match) {
+					comments.set(match[1], pendingComment);
+				}
+				pendingComment = '';
+			} else if (trimmed && !trimmed.startsWith('{') && !trimmed.startsWith('}')) {
+				pendingComment = '';
+			}
+		}
+		return comments;
+	}
+
 	private parseKv(text: string): ParsedKvTable {
 		try {
+			const entryComments = this.extractEntryComments(text);
 			const kvObject = readKeyValue2(text ?? '');
 			const header = Object.keys(kvObject)[0] ?? '';
 			const block = header ? kvObject[header] : undefined;
@@ -976,11 +1029,19 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			}
 
 			const columnOrder: string[] = [];
+			if (!columnOrder.includes('_comment')) {
+				columnOrder.unshift('_comment');
+			}
 			const rows = Object.entries(block)
 				.filter(([_, value]) => value && typeof value === 'object')
 				.map(([id, value]) => {
 					const entry = value as Record<string, unknown>;
 					const rowValues: Record<string, string> = {};
+					// Populate _comment from parsed comments
+					const comment = entryComments.get(id);
+					if (comment) {
+						rowValues['_comment'] = comment;
+					}
 					let abilityValues: AbilityValuesEntry[] | undefined;
 					for (const [key, field] of Object.entries(entry)) {
 						if (key === 'AbilityValues' && this.isPlainObject(field)) {
@@ -1556,11 +1617,9 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 		if (baseNameSegment && baseNameSegment !== baseNameCore) {
 			variants.add(baseNameSegment.replace(/\.[a-z0-9]+$/i, ''));
 		}
-		if (entryType === 'item') {
-			const trimmed = baseNameCore.replace(/^item_/, '');
-			if (trimmed && trimmed !== baseNameCore) {
-				variants.add(trimmed);
-			}
+		const trimmed = baseNameCore.replace(/^item_/, '');
+		if (trimmed && trimmed !== baseNameCore) {
+			variants.add(trimmed);
 		}
 		return variants;
 	}
@@ -2090,12 +2149,16 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 			return;
 		}
 		const folderType = payload.folderType ?? this.detectFolderType(document.uri);
-		if (folderType !== 'ability' && folderType !== 'item') {
-			void vscode.window.showWarningMessage(localize('msg_kv_no_script_nav'));
-			return;
-		}
 		const useTypescript = Boolean(vscode.workspace.getConfiguration().get('dota2-tools.A6.Kv to lua generate typescript'));
-		const baseDir = useTypescript ? getContentDir() : getGameDir();
+		let baseDir = useTypescript ? getContentDir() : getGameDir();
+		// Fallback: derive game dir from document path (look for /game/scripts/npc/)
+		if (!baseDir) {
+			const docPath = document.uri.fsPath.replace(/\\/g, '/');
+			const gameMatch = docPath.match(/^(.+?\/game)\//i);
+			if (gameMatch) {
+				baseDir = gameMatch[1];
+			}
+		}
 		if (!baseDir) {
 			void vscode.window.showWarningMessage(localize('msg_dota2_dir_not_configured'));
 			return;
@@ -5560,6 +5623,7 @@ interface KvEditorColumnOptionConfig {
 	options: KvEditorColumnOption[];
 	multiple: boolean;
 	separator: string;
+	inputType?: 'checkbox' | 'number' | 'spinner';
 }
 
 interface KvEditorColumnOptionOverride {
@@ -5570,6 +5634,7 @@ interface KvEditorColumnOptionOverride {
 
 interface KvEditorColumnOptionSource extends KvEditorColumnOptionConfig {
 	overrides?: Partial<Record<KvFolderType, KvEditorColumnOptionOverride>>;
+	folderTypeOnly?: KvFolderType[];
 }
 
 type KvEditorColumnOptionResolvedMap = Record<string, KvEditorColumnOptionConfig>;

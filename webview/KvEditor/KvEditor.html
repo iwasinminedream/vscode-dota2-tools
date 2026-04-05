@@ -17,6 +17,9 @@
 					<p id="kv-file-meta" class="kv-subtitle"></p>
 				</div>
 				<div class="kv-header-actions">
+					<button id="kv-toggle-vertical-mode" class="kv-header-button" type="button" title="Toggle Vertical Mode">
+						<span class="codicon codicon-split-horizontal"></span>
+					</button>
 					<button id="kv-toggle-localized-mode" class="kv-header-button" type="button" title="Toggle Localized Mode">
 						<span class="codicon codicon-globe"></span>
 					</button>
@@ -38,6 +41,13 @@
 				<span class="codicon codicon-question"></span>
 			</button>
 			<input id="kv-editor-value" class="kv-formula-value" type="text" disabled>
+		</section>
+		<section class="kv-search-bar">
+			<span class="codicon codicon-search kv-search-icon"></span>
+			<input id="kv-search-input" class="kv-search-input" type="text" placeholder="Search...">
+			<button id="kv-search-clear" class="kv-search-clear" type="button" hidden>
+				<span class="codicon codicon-close"></span>
+			</button>
 		</section>
 		<section id="kv-empty" class="kv-empty" hidden></section>
 		<section id="kv-error" class="kv-empty" hidden></section>

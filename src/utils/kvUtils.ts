@@ -526,9 +526,20 @@ export function writeKeyValue(obj: any, depth: number = 0, tab: number = 12) {
 			}
 			str += addDepthTab(depth, '}' + os.EOL);
 		} else {
+			// Write _comment as // comment line before the block
+			if (typeof value === 'object' && value !== null && '_comment' in value && typeof value['_comment'] === 'string' && value['_comment'].trim()) {
+				str += addDepthTab(depth, '// ' + value['_comment'].trim() + os.EOL);
+			}
 			str += addDepthTab(depth, '"' + key + '"' + os.EOL);
 			str += addDepthTab(depth, '{' + os.EOL);
-			str += writeKeyValue(value, depth + 1);
+			// Filter out _comment from inner content
+			const innerObj: any = {};
+			for (const innerKey in value) {
+				if (innerKey !== '_comment') {
+					innerObj[innerKey] = value[innerKey];
+				}
+			}
+			str += writeKeyValue(innerObj, depth + 1);
 			str += addDepthTab(depth, '}' + os.EOL);
 		}
 	}
