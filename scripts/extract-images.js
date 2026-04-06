@@ -161,7 +161,7 @@ async function extractEconParallel(vpk, tmpDir) {
 
     const econTargetBase = path.join(IMAGES_DIR, 'econ_items', 'econ');
     const existing = collectExistingPngsRelative(econTargetBase);
-    console.log(`\n  Extracting econ_items (${subFilters.length} categories in parallel) ...`);
+    console.log(`\n  Extracting econ_items (${subFilters.length} categories + root in parallel) ...`);
     console.log(`    ${existing.size} existing images`);
 
     const promises = subFilters.map((filter) => {
@@ -182,6 +182,30 @@ async function extractEconParallel(vpk, tmpDir) {
             return count;
         });
     });
+
+    // Also extract root-level econ files (e.g. testitem_slot_empty)
+    const rootTmp = path.join(tmpDir, 'econ_root');
+    if (fs.existsSync(rootTmp)) fs.rmSync(rootTmp, { recursive: true });
+    fs.mkdirSync(rootTmp, { recursive: true });
+    console.log(`    Starting: econ root`);
+    promises.push(
+        runVrf(vpk, ['-o', rootTmp, '-d', '-f', 'panorama/images/econ/', '--threads', '4']).then(() => {
+            const extractedRoot = path.join(rootTmp, 'panorama', 'images', 'econ');
+            if (!fs.existsSync(extractedRoot)) { console.warn(`    ? No files for econ root`); return 0; }
+            fs.mkdirSync(econTargetBase, { recursive: true });
+            // Only copy root-level PNG files (not subdirectories already handled above)
+            let count = 0;
+            const rootExisting = collectExistingPngs(econTargetBase);
+            for (const entry of fs.readdirSync(extractedRoot, { withFileTypes: true })) {
+                if (entry.isFile() && entry.name.endsWith('.png') && !rootExisting.has(entry.name)) {
+                    fs.copyFileSync(path.join(extractedRoot, entry.name), path.join(econTargetBase, entry.name));
+                    count++;
+                }
+            }
+            console.log(`    ok econ root: ${count} new images`);
+            return count;
+        })
+    );
 
     const counts = await Promise.all(promises);
     const total = counts.reduce((a, b) => a + b, 0);

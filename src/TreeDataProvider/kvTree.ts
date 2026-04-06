@@ -72,15 +72,21 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 	}
 
 	async getChildren(element?: KvTreeItem): Promise<KvTreeItem[]> {
-		if (!this._settings) {
-			return [this.createPlaceholderItem(localize('kvEditor.configureFolder'))];
-		}
-		if (!hasExistingEntry(this._settings)) {
-			return [this.createPlaceholderItem(localize('kvEditor.folderMissing'))];
-		}
-
 		if (!element) {
-			return this.buildRootItems(this._settings);
+			if (this._settings && hasExistingEntry(this._settings)) {
+				return this.buildRootItems(this._settings);
+			}
+			// Fallback: show workspace root(s) when no paths configured
+			const workspaceFolders = vscode.workspace.workspaceFolders;
+			if (!workspaceFolders || !workspaceFolders.length) {
+				return [this.createPlaceholderItem(localize('kvEditor.configureFolder'))];
+			}
+			if (workspaceFolders.length === 1) {
+				return this.readDirectory(workspaceFolders[0].uri.fsPath);
+			}
+			return workspaceFolders.map((folder) =>
+				new KvTreeItem('folder', folder.uri.fsPath, folder.name, vscode.TreeItemCollapsibleState.Collapsed)
+			);
 		}
 
 		if (element.itemType !== 'folder' || !element.fsPath) {
@@ -101,7 +107,9 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 		for (const entry of entries) {
 			const entryPath = path.join(dir, entry.name);
 			if (entry.isDirectory()) {
-				folders.push(new KvTreeItem('folder', entryPath, entry.name, vscode.TreeItemCollapsibleState.Collapsed));
+				if (await this.hasKvFiles(entryPath)) {
+					folders.push(new KvTreeItem('folder', entryPath, entry.name, vscode.TreeItemCollapsibleState.Collapsed));
+				}
 			} else if (this.isKvFile(entry.name)) {
 				files.push(new KvTreeItem('file', entryPath, entry.name, vscode.TreeItemCollapsibleState.None, {
 					command: 'dota2tools.kvEditor.openFile',
@@ -113,6 +121,31 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 		folders.sort((a, b) => this.getLabelText(a).localeCompare(this.getLabelText(b)));
 		files.sort((a, b) => this.getLabelText(a).localeCompare(this.getLabelText(b)));
 		return [...folders, ...files];
+	}
+
+	private async hasKvFiles(dir: string, depth: number = 3): Promise<boolean> {
+		if (depth <= 0) {
+			return false;
+		}
+		let entries: fs.Dirent[];
+		try {
+			entries = await fs.promises.readdir(dir, { withFileTypes: true });
+		} catch {
+			return false;
+		}
+		for (const entry of entries) {
+			if (entry.isFile() && this.isKvFile(entry.name)) {
+				return true;
+			}
+		}
+		for (const entry of entries) {
+			if (entry.isDirectory()) {
+				if (await this.hasKvFiles(path.join(dir, entry.name), depth - 1)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private getLabelText(item: KvTreeItem): string {
@@ -182,24 +215,40 @@ export class KvEditorTreeProvider implements vscode.TreeDataProvider<KvTreeItem>
 
 	private registerWatcher() {
 		this.disposeWatcher();
-		if (!this._settings) {
-			return;
-		}
 		const watchers: ReturnType<typeof watch>[] = [];
 		const seen = new Set<string>();
-		for (const entry of this._settings.entries) {
-			if (!entry.exists || !entry.isDirectory) {
-				continue;
+		if (this._settings) {
+			for (const entry of this._settings.entries) {
+				if (!entry.exists || !entry.isDirectory) {
+					continue;
+				}
+				const key = entry.resolvedPath.toLowerCase();
+				if (seen.has(key)) {
+					continue;
+				}
+				seen.add(key);
+				try {
+					watchers.push(watch(entry.resolvedPath, { recursive: true }, () => this.refresh()));
+				} catch (error) {
+					// ignore watcher failures
+				}
 			}
-			const key = entry.resolvedPath.toLowerCase();
-			if (seen.has(key)) {
-				continue;
-			}
-			seen.add(key);
-			try {
-				watchers.push(watch(entry.resolvedPath, { recursive: true }, () => this.refresh()));
-			} catch (error) {
-				// ignore watcher failures
+		} else {
+			// Watch workspace folders when no settings configured
+			const workspaceFolders = vscode.workspace.workspaceFolders;
+			if (workspaceFolders) {
+				for (const folder of workspaceFolders) {
+					const key = folder.uri.fsPath.toLowerCase();
+					if (seen.has(key)) {
+						continue;
+					}
+					seen.add(key);
+					try {
+						watchers.push(watch(folder.uri.fsPath, { recursive: true }, () => this.refresh()));
+					} catch (error) {
+						// ignore watcher failures
+					}
+				}
 			}
 		}
 		this.watchers = watchers;

@@ -33,22 +33,26 @@ export async function localizeInit(context: vscode.ExtensionContext) {
 /**
  * 获取本地化文本
  */
-export function localize(text: string, dialogVariables?: Table, language?: "zh-cn" | "en") {
+export function localize(text: string, dialogVariables?: Table | string[], language?: "zh-cn" | "en") {
 	if (langData === undefined || text === undefined) {
 		return text;
 	}
 	let langType = language ?? (vscode.env.language === "zh-cn" ? "zh-cn" : "en");
 	let langInfo = langData[langType];
-	if (langInfo[text] !== undefined) {
-		return langInfo[text];
-	}
+	let result = langInfo[text] !== undefined ? langInfo[text] : text;
 	if (dialogVariables) {
-		for (const key in dialogVariables) {
-			const value = dialogVariables[key];
-			text.replace(/\${' + key + '}/g, value);
+		if (Array.isArray(dialogVariables)) {
+			for (let i = 0; i < dialogVariables.length; i++) {
+				result = result.replace(new RegExp('\\$\\{' + i + '\\}', 'g'), dialogVariables[i]);
+			}
+		} else {
+			for (const key in dialogVariables) {
+				const value = dialogVariables[key];
+				result = result.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), value);
+			}
 		}
 	}
-	return text;
+	return result;
 }
 /**
  * 逆向获取本地化文本

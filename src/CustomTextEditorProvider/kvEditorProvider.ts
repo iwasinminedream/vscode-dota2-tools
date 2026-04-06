@@ -921,9 +921,7 @@ export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 				attribute: hero.attribute,
 			}));
 		}
-		// prefer icons subfolder for small avatars
-		const iconsSub = path.join(this.extensionImagesRoot, 'heroes_icon', 'icons');
-		const heroesDir = this.pathExists(iconsSub) ? iconsSub : path.join(this.extensionImagesRoot, 'heroes_icon');
+		const heroesDir = path.join(this.extensionImagesRoot, 'heroes_icon');
 		if (!this.pathExists(heroesDir)) {
 			this.heroFilterCache = [];
 			return [];
