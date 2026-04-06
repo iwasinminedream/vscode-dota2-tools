@@ -214,7 +214,12 @@ async function getFolderIcons(extensionUri: Uri, iconPath: string | string[]) {
 }
 async function readFolder(extensionUri: Uri, relativeIconPath: string, currentPath: string = "") {
 	let iconsInfo: Table = {};
-	let folders: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(Uri.joinPath(extensionUri, relativeIconPath));
+	let folders: [string, vscode.FileType][];
+	try {
+		folders = await vscode.workspace.fs.readDirectory(Uri.joinPath(extensionUri, relativeIconPath));
+	} catch {
+		return iconsInfo;
+	}
 	for (let i: number = 0; i < folders.length; i++) {
 		const [name, isDirectory] = folders[i];
 		if (name === undefined) {
