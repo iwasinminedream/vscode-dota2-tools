@@ -38,6 +38,26 @@ export async function dota2IconPanelInit(context: vscode.ExtensionContext) {
 	// 自定义图标
 	await locdCustomSpellicons();
 	await locdCustomItems();
+
+	// Check if bundled icons are missing
+	if (Object.keys(spellicons).length === 0 && Object.keys(items).length === 0) {
+		const scriptPath = path.join(context.extensionPath, 'scripts', 'extract-images.js');
+		const runExtract = localize('msg_run_extract_icons');
+		const openDocs = localize('msg_open_extract_docs');
+		vscode.window.showWarningMessage(
+			localize('msg_icons_missing'),
+			runExtract,
+			openDocs,
+		).then((choice) => {
+			if (choice === runExtract) {
+				const terminal = vscode.window.createTerminal('Extract Icons');
+				terminal.show();
+				terminal.sendText(`node "${scriptPath}"`);
+			} else if (choice === openDocs) {
+				vscode.env.openExternal(vscode.Uri.parse('https://github.com/iwasinminedream/vscode-dota2-tools#icon-extraction'));
+			}
+		});
+	}
 }
 
 async function locdCustomSpellicons() {

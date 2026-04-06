@@ -599,5 +599,8 @@
 	"msg_failed_load_templates": "Failed to load templates: ${0}",
 	"msg_template_deleted": "Template deleted: ${0}",
 	"msg_failed_delete_template": "Failed to delete template: ${0}",
-	"msg_kv_no_script_nav": "Script navigation not available for this folder type"
+	"msg_kv_no_script_nav": "Script navigation not available for this folder type",
+	"msg_icons_missing": "Dota 2 icons not found. Run the extraction script to download ability, item, and econ icons from VPK files.",
+	"msg_run_extract_icons": "Run Extract Script",
+	"msg_open_extract_docs": "Open Docs"
 }
