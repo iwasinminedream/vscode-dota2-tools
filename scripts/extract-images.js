@@ -212,6 +212,50 @@ async function extractEconParallel(vpk, tmpDir) {
     console.log(`  ok econ_items: ${total} new images total`);
 }
 
+function extractHeroIcons(vpk, tmpDir) {
+    console.log('\n  Extracting hero icons (portraits + minimap) ...');
+    const heroesTarget = path.join(IMAGES_DIR, 'heroes_icon');
+    const iconsTarget = path.join(heroesTarget, 'icons');
+    const existing = collectExistingPngs(heroesTarget);
+    const existingIcons = collectExistingPngs(iconsTarget);
+    const taskTmp = path.join(tmpDir, 'heroes_all');
+    if (fs.existsSync(taskTmp)) fs.rmSync(taskTmp, { recursive: true });
+    fs.mkdirSync(taskTmp, { recursive: true });
+
+    try {
+        execFileSync(VRF_CLI, ['-i', vpk, '-o', taskTmp, '-d', '-f', 'panorama/images/heroes/', '--threads', '8'],
+            { stdio: 'ignore', timeout: 600000 });
+    } catch (err) {
+        console.error(`  x VRF extraction failed for heroes:`, err.message);
+        return;
+    }
+
+    // Portraits: panorama/images/heroes/*.png -> heroes_icon/
+    const portraitsRoot = path.join(taskTmp, 'panorama', 'images', 'heroes');
+    if (!fs.existsSync(portraitsRoot)) { console.warn('  ? No hero files extracted'); return; }
+    fs.mkdirSync(heroesTarget, { recursive: true });
+    fs.mkdirSync(iconsTarget, { recursive: true });
+    let portraitCount = 0;
+    let iconCount = 0;
+    for (const entry of fs.readdirSync(portraitsRoot, { withFileTypes: true })) {
+        if (entry.isFile() && entry.name.endsWith('.png') && !existing.has(entry.name)) {
+            fs.copyFileSync(path.join(portraitsRoot, entry.name), path.join(heroesTarget, entry.name));
+            portraitCount++;
+        }
+    }
+    // Minimap icons: panorama/images/heroes/icons/*.png -> heroes_icon/icons/
+    const iconsRoot = path.join(portraitsRoot, 'icons');
+    if (fs.existsSync(iconsRoot)) {
+        for (const entry of fs.readdirSync(iconsRoot, { withFileTypes: true })) {
+            if (entry.isFile() && entry.name.endsWith('.png') && !existingIcons.has(entry.name)) {
+                fs.copyFileSync(path.join(iconsRoot, entry.name), path.join(iconsTarget, entry.name));
+                iconCount++;
+            }
+        }
+    }
+    console.log(`  ok heroes: ${portraitCount} portraits, ${iconCount} minimap icons extracted`);
+}
+
 async function main() {
     console.log('=== extract-images ===');
 
@@ -233,7 +277,7 @@ async function main() {
 
     extractSmallTask(vpk, 'spellicons', 'panorama/images/spellicons/', path.join(IMAGES_DIR, 'spellicons'), tmpDir);
     extractSmallTask(vpk, 'items', 'panorama/images/items/', path.join(IMAGES_DIR, 'items'), tmpDir);
-    extractSmallTask(vpk, 'heroes_icon', 'panorama/images/heroes/icons/', path.join(IMAGES_DIR, 'heroes_icon'), tmpDir);
+    extractHeroIcons(vpk, tmpDir);
     await extractEconParallel(vpk, tmpDir);
 
     if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true });

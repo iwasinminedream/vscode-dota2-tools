@@ -10,13 +10,24 @@ import { getResourcePath } from '../utils/releaseData';
 
 export class kvEditorProvider implements vscode.CustomTextEditorProvider {
 
+	private static _instance: kvEditorProvider | undefined;
+
 	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		return vscode.window.registerCustomEditorProvider(kvEditorProvider.viewType, new kvEditorProvider(context), {
+		const instance = new kvEditorProvider(context);
+		kvEditorProvider._instance = instance;
+		return vscode.window.registerCustomEditorProvider(kvEditorProvider.viewType, instance, {
 			webviewOptions: {
 				retainContextWhenHidden: true,
 				enableFindWidget: true,
 			}
 		});
+	}
+
+	public static clearImageCaches(): void {
+		if (kvEditorProvider._instance) {
+			kvEditorProvider._instance.heroFilterCache = undefined;
+			kvEditorProvider._instance.textureMenuCache.clear();
+		}
 	}
 
 	private static readonly viewType = 'dota2tools.kv';

@@ -11,6 +11,7 @@ import { showStatusBarMessage } from '../module/statusBar';
 import { getContentDir, getGameDir } from '../module/addonInfo';
 import { getPathInfo } from '../utils/pathUtils';
 import { localize } from '../utils/localize';
+import { kvEditorProvider } from '../CustomTextEditorProvider/kvEditorProvider';
 
 let spellicons: Table;
 let items: Table;
@@ -30,14 +31,26 @@ let customItems: CustomIcon = {
 };
 
 export async function dota2IconPanelInit(context: vscode.ExtensionContext) {
-	spellicons = await getFolderIcons(context.extensionUri, "/images/spellicons");
-	items = await getFolderIcons(context.extensionUri, "/images/items");
-	npcHeroes = await readHeroesIcon(context.extensionUri, "/images/heroes_icon");
-	abilityCN = readKeyValue2(fs.readFileSync(path.join(context.extensionPath, "resource/abilities_schinese.txt"), 'utf-8'), false).lang.Tokens;
+	await loadIconData(context);
 
 	// 自定义图标
 	await locdCustomSpellicons();
 	await locdCustomItems();
+
+	// Watch images directory for changes (e.g. after extract-images.js runs)
+	const imagesDir = path.join(context.extensionPath, 'images');
+	try {
+		if (!fs.existsSync(imagesDir)) {
+			fs.mkdirSync(imagesDir, { recursive: true });
+		}
+		const watcher = fs.watch(imagesDir, { recursive: true }, debounce(async () => {
+			await loadIconData(context);
+			kvEditorProvider.clearImageCaches();
+		}, 3000));
+		context.subscriptions.push({ dispose: () => watcher.close() });
+	} catch {
+		// ignore watcher failures
+	}
 
 	// Check if bundled icons are missing
 	if (Object.keys(spellicons).length === 0 && Object.keys(items).length === 0) {
@@ -58,6 +71,21 @@ export async function dota2IconPanelInit(context: vscode.ExtensionContext) {
 			}
 		});
 	}
+}
+
+async function loadIconData(context: vscode.ExtensionContext) {
+	spellicons = await getFolderIcons(context.extensionUri, "/images/spellicons");
+	items = await getFolderIcons(context.extensionUri, "/images/items");
+	npcHeroes = await readHeroesIcon(context.extensionUri, "/images/heroes_icon");
+	abilityCN = readKeyValue2(fs.readFileSync(path.join(context.extensionPath, "resource/abilities_schinese.txt"), 'utf-8'), false).lang.Tokens;
+}
+
+function debounce(fn: (...args: any[]) => void, ms: number) {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	return (...args: any[]) => {
+		if (timer) { clearTimeout(timer); }
+		timer = setTimeout(() => { timer = undefined; fn(...args); }, ms);
+	};
 }
 
 async function locdCustomSpellicons() {
