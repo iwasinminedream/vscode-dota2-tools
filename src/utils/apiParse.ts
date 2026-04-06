@@ -2,7 +2,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import { readFunction } from './readFunction';
 import { readEnum } from './readEnum';
 import { getGameDir } from '../module/addonInfo';
@@ -10,7 +9,7 @@ import { getResourcePath } from './releaseData';
 
 export function apiParse(context: vscode.ExtensionContext, apiNote: Table) {
 	let praseFile = function (sDotaScriptHelp: string): any[] {
-		const rows = sDotaScriptHelp.split(os.EOL);
+		const rows = sDotaScriptHelp.split('\n');
 		let classList: { [key: string]: LuaFunction[]; } = {};
 		let enumList: { [key: string]: LuaEnum[]; } = {};
 		for (let i = 0; i < rows.length; i++) {
