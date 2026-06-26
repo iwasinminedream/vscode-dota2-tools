@@ -17,7 +17,7 @@ enum LangEnum {
 	english = "en"
 };
 
-/** 获取用户配置的饰品查询语言 */
+/** Get the wearable query language configured by the user */
 function getItemsGameLang(): "zh-cn" | "en" {
 	return getExtensionLang();
 }
@@ -30,12 +30,12 @@ export async function dota2ItemsGameInit(context: vscode.ExtensionContext) {
 	};
 }
 
-/** 尝试获取物品图标的 base64 编码 */
+/** Try to get the base64 encoding of the item icon */
 function getItemIconBase64(imageInventory: string | undefined, context: vscode.ExtensionContext): string | undefined {
 	if (!imageInventory) {
 		return undefined;
 	}
-	// 优先从用户配置的 econ_path 读取
+	// Prefer reading from the user-configured econ_path
 	let econPath: string | undefined = vscode.workspace.getConfiguration().get("dota2-tools.A5.econ_path");
 	if (econPath != undefined && econPath !== "") {
 		try {
@@ -43,7 +43,7 @@ function getItemIconBase64(imageInventory: string | undefined, context: vscode.E
 			return Buffer.from(image).toString('base64');
 		} catch (error) { }
 	}
-	// 其次从扩展内置图标读取
+	// Then read from the extension's bundled icons
 	try {
 		const bundledPath = path.join(context.extensionPath, "images", "econ_items", imageInventory + "_png.png");
 		const image = fs.readFileSync(bundledPath);
@@ -53,27 +53,27 @@ function getItemIconBase64(imageInventory: string | undefined, context: vscode.E
 }
 
 /**
- * item_game.txt里的饰品查询
+ * Wearable query in item_game.txt
  * @export
  * @param {vscode.ExtensionContext} context
  */
 export async function dota2ItemsGame(context: vscode.ExtensionContext) {
 	const panel = vscode.window.createWebviewPanel(
 		'dota2ItemsGame', // viewType
-		localize("dota2tools.items_game"), // 视图标题
-		vscode.ViewColumn.One, // 显示在编辑器的哪个部位
+		localize("dota2tools.items_game"), // View title
+		vscode.ViewColumn.One, // Which part of the editor to show in
 		{
-			enableScripts: true, // 启用JS，默认禁用
-			retainContextWhenHidden: true, // webview被隐藏时保持状态，避免被重置
+			enableScripts: true, // Enable JS, disabled by default
+			retainContextWhenHidden: true, // Keep state when the webview is hidden, to avoid being reset
 		}
 	);
 	panel.webview.html = await getWebviewContent(panel.webview, context.extensionUri, 'dota2ItemsGame');
 
-	// 发送当前配置的语言到webview
+	// Send the currently configured language to the webview
 	const uiLang = getItemsGameLang();
 	panel.webview.postMessage({ type: "set_language", data: uiLang });
 
-	// 监听语言配置变化，实时更新webview语言
+	// Listen for language config changes and update the webview language in real time
 	const configListener = vscode.workspace.onDidChangeConfiguration((e) => {
 		if (e.affectsConfiguration('dota2-tools.language')) {
 			panel.webview.postMessage({ type: "set_language", data: getItemsGameLang() });
@@ -81,17 +81,17 @@ export async function dota2ItemsGame(context: vscode.ExtensionContext) {
 	});
 	panel.onDidDispose(() => configListener.dispose());
 
-	// 监听消息
+	// Listen for messages
 	panel.webview.onDidReceiveMessage(async (message: { type: string, text: string, language: string; }) => {
 		const type = message.type;
 		const text = message.text;
-		// 加载资源
+		// Load resources
 		if (itemsGame === undefined) {
 			await dota2ItemsGameInit(context);
 		}
 
 		switch (type) {
-			case "query_item_data":	// 获取物品数据（搜索）
+			case "query_item_data":	// Get item data (search)
 			{
 				let inputResult = validInput(text, context);
 				if (typeof (inputResult) === "string") {
@@ -107,7 +107,7 @@ export async function dota2ItemsGame(context: vscode.ExtensionContext) {
 				}
 				return;
 			}
-			case "query_item_by_id": // 通过ID直接查询物品（从列表点击或导航跳转）
+			case "query_item_by_id": // Query item directly by ID (clicked from list or navigation jump)
 			{
 				if (text && itemsGame[text]) {
 					panel.webview.postMessage({
@@ -121,18 +121,66 @@ export async function dota2ItemsGame(context: vscode.ExtensionContext) {
 	}, null, context.subscriptions);
 }
 
-/** 验证输入的内容是否有效 */
+/**
+ * Bind the items_game query logic to the unified sidebar webview (same behavior as the panel version above).
+ * Returns the list of Disposables to release when switching tabs.
+ */
+export async function attachItemsGame(webview: vscode.Webview, context: vscode.ExtensionContext): Promise<vscode.Disposable[]> {
+	if (itemsGame === undefined) {
+		await dota2ItemsGameInit(context);
+	}
+	const disposables: vscode.Disposable[] = [];
+
+	// Send the currently configured language to the webview
+	webview.postMessage({ type: "set_language", data: getItemsGameLang() });
+
+	// Listen for language config changes and update the webview language in real time
+	disposables.push(vscode.workspace.onDidChangeConfiguration((e) => {
+		if (e.affectsConfiguration('dota2-tools.language')) {
+			webview.postMessage({ type: "set_language", data: getItemsGameLang() });
+		}
+	}));
+
+	disposables.push(webview.onDidReceiveMessage(async (message: { type: string, text: string, language: string; }) => {
+		const type = message.type;
+		const text = message.text;
+		if (itemsGame === undefined) {
+			await dota2ItemsGameInit(context);
+		}
+		switch (type) {
+			case "query_item_data": {
+				let inputResult = validInput(text, context);
+				if (typeof (inputResult) === "string") {
+					webview.postMessage({ type: "query_item_data", data: getItemInfo(inputResult, context) });
+				} else if (typeof (inputResult) === "object") {
+					webview.postMessage({ type: "query_item_list_data", data: inputResult });
+				}
+				return;
+			}
+			case "query_item_by_id": {
+				if (text && itemsGame[text]) {
+					webview.postMessage({ type: "query_item_data", data: getItemInfo(text, context) });
+				}
+				return;
+			}
+		}
+	}));
+
+	return disposables;
+}
+
+/** Validate whether the input content is valid */
 function validInput(text: string, context: vscode.ExtensionContext) {
 	const lang = getItemsGameLang();
 
-	// 精确 ID 搜索
+	// Exact ID search
 	if (isNumber(text)) {
 		if (itemsGame[text]) {
 			return text;
 		}
 	}
 
-	// 模型路径搜索
+	// Model path search
 	if (/models.*.vmdl/.test(text)) {
 		let index = getIndexByModelName(text) || getIndexByAssetModifierName(text);
 		if (index) {
@@ -140,7 +188,7 @@ function validInput(text: string, context: vscode.ExtensionContext) {
 		}
 	}
 
-	// 粒子特效路径搜索
+	// Particle effect path search
 	if (/particles.*.vpcf/.test(text)) {
 		let index = getIndexByAssetModifierName(text);
 		if (index) {
@@ -148,7 +196,7 @@ function validInput(text: string, context: vscode.ExtensionContext) {
 		}
 	}
 
-	// 图标路径搜索 (econ/)
+	// Icon path search (econ/)
 	if (/econ\//.test(text)) {
 		let index = getIndexByImageInventory(text);
 		if (index) {
@@ -156,35 +204,35 @@ function validInput(text: string, context: vscode.ExtensionContext) {
 		}
 	}
 
-	// 英雄名搜索 (npc_dota_hero_xxx)
+	// Hero name search (npc_dota_hero_xxx)
 	if ((/npc_dota_hero_/.test(text) && (hasLocalize(text)) || hasLocalize("npc_dota_hero_" + text))) {
 		return buildHeroItemList(findItemsByHeroName(text), lang, context);
 	}
 
-	// 反向本地化搜索 (中文/英文英雄名 -> npc_dota_hero_xxx)
+	// Reverse localization search (Chinese/English hero name -> npc_dota_hero_xxx)
 	if (hasReverseLocalize(text)) {
 		return buildHeroItemList(findItemsByHeroName(reverseLocalize(text)), lang, context);
 	}
 
-	// 按物品名称搜索 (name 字段，模糊匹配)
+	// Search by item name (name field, fuzzy match)
 	let nameResults = findItemsByItemName(text);
 	if (Object.keys(nameResults).length > 0) {
 		return buildHeroItemList(nameResults, lang, context);
 	}
 
-	// 按翻译后的物品名搜索 (item_name 翻译值)
+	// Search by translated item name (item_name translated value)
 	let translatedResults = findItemsByTranslatedName(text, lang);
 	if (Object.keys(translatedResults).length > 0) {
 		return buildHeroItemList(translatedResults, lang, context);
 	}
 
-	// 按粒子/模型/资源搜索 (模糊)
+	// Search by particle/model/asset (fuzzy)
 	let assetResults = findItemsByAssetModifier(text);
 	if (Object.keys(assetResults).length > 0) {
 		return buildHeroItemList(assetResults, lang, context);
 	}
 
-	// 组合搜索：英雄名 + 物品关键词 (如 "crystal maiden weapon")
+	// Combined search: hero name + item keyword (e.g. "crystal maiden weapon")
 	let combinedResult = tryCombinedHeroItemSearch(text, lang, context);
 	if (combinedResult) {
 		return combinedResult;
@@ -194,8 +242,8 @@ function validInput(text: string, context: vscode.ExtensionContext) {
 }
 
 /**
- * 尝试将输入文本拆分为 (heroQuery, itemQuery) 的所有可能组合。
- * 对于每种拆分，检查 heroQuery 是否对应某个英雄，然后按 itemQuery 过滤物品。
+ * Try to split the input text into all possible combinations of (heroQuery, itemQuery).
+ * For each split, check whether heroQuery corresponds to a hero, then filter items by itemQuery.
  */
 function tryCombinedHeroItemSearch(text: string, lang: "zh-cn" | "en", context: vscode.ExtensionContext): string[][] | false {
 	const words = text.trim().split(/\s+/);
@@ -205,14 +253,14 @@ function tryCombinedHeroItemSearch(text: string, lang: "zh-cn" | "en", context: 
 
 	const languageInfo = language[lang];
 
-	// 尝试每个拆分点：words[0..i] = 英雄部分, words[i+1..] = 物品部分
+	// Try each split point: words[0..i] = hero part, words[i+1..] = item part
 	for (let i = 0; i < words.length - 1; i++) {
 		const heroPart = words.slice(0, i + 1).join(" ");
 		const itemPart = words.slice(i + 1).join(" ").toLowerCase();
 
 		let heroKey: string | undefined;
 
-		// 检查 heroPart 是否是已知英雄名 (npc_dota_hero_xxx)
+		// Check whether heroPart is a known hero name (npc_dota_hero_xxx)
 		if (hasLocalize(heroPart)) {
 			heroKey = heroPart;
 		} else if (hasLocalize("npc_dota_hero_" + heroPart.replace(/\s+/g, "_"))) {
@@ -225,13 +273,13 @@ function tryCombinedHeroItemSearch(text: string, lang: "zh-cn" | "en", context: 
 			continue;
 		}
 
-		// 找到英雄 - 获取该英雄所有物品，按 itemPart 过滤
+		// Found the hero - get all items for that hero, filter by itemPart
 		const heroItems = findItemsByHeroName(heroKey);
 		if (Object.keys(heroItems).length === 0) {
 			continue;
 		}
 
-		// 按物品关键词过滤英雄物品
+		// Filter hero items by item keyword
 		const filtered: Table = {};
 		for (const index in heroItems) {
 			const itemData = heroItems[index];
@@ -253,7 +301,7 @@ function tryCombinedHeroItemSearch(text: string, lang: "zh-cn" | "en", context: 
 	return false;
 }
 
-/** 构建英雄物品列表（搜索结果列表） */
+/** Build the hero item list (search result list) */
 function buildHeroItemList(items: Table, lang: "zh-cn" | "en", context: vscode.ExtensionContext): string[][] {
 	let languageInfo = language[lang];
 	let result: string[][] = [[localize("icon", undefined, lang), localize("index", undefined, lang), localize("item_name", undefined, lang), localize("item_slot", undefined, lang), localize("prefab", undefined, lang), localize("model_player", undefined, lang)]];
@@ -272,7 +320,7 @@ function buildHeroItemList(items: Table, lang: "zh-cn" | "en", context: vscode.E
 			itemData.model_player || ""
 		]);
 	}
-	// 按装备栏位排序，然后按 prefab 排序，最后按 index 排序
+	// Sort by equipment slot, then by prefab, then by index
 	rows.sort((a, b) => {
 		const slotCmp = (a[3] || "").localeCompare(b[3] || "");
 		if (slotCmp !== 0) { return slotCmp; }
@@ -289,7 +337,7 @@ function getItemInfo(index: string, context: vscode.ExtensionContext) {
 	let itemInfo: Table = itemsGame[index];
 	const lang = getItemsGameLang();
 
-	// 物品图标
+	// Item icon
 	const iconBase64 = getItemIconBase64(itemInfo.image_inventory, context);
 	if (iconBase64) {
 		result.econImg = iconBase64;
@@ -383,7 +431,7 @@ function getItemInfo(index: string, context: vscode.ExtensionContext) {
 	return result;
 }
 
-// 根据 image_inventory 索引物品
+// Index items by image_inventory
 function getIndexByImageInventory(sImageInventory: string) {
 	for (const index in itemsGame) {
 		const itemData = itemsGame[index];
@@ -394,7 +442,7 @@ function getIndexByImageInventory(sImageInventory: string) {
 	return undefined;
 }
 
-// 根据物品名称模糊搜索 (name 字段)
+// Fuzzy search by item name (name field)
 function findItemsByItemName(text: string): Table {
 	let itemList: Table = {};
 	const lowerText = text.toLowerCase();
@@ -410,7 +458,7 @@ function findItemsByItemName(text: string): Table {
 	return itemList;
 }
 
-// 根据翻译后的物品名搜索
+// Search by translated item name
 function findItemsByTranslatedName(text: string, lang: "zh-cn" | "en"): Table {
 	let itemList: Table = {};
 	const lowerText = text.toLowerCase();
@@ -430,7 +478,7 @@ function findItemsByTranslatedName(text: string, lang: "zh-cn" | "en"): Table {
 	return itemList;
 }
 
-// 根据 asset modifier 模糊搜索 (粒子/模型/资源路径)
+// Fuzzy search by asset modifier (particle/model/asset path)
 function findItemsByAssetModifier(text: string): Table {
 	let itemList: Table = {};
 	const lowerText = text.toLowerCase();
@@ -455,7 +503,7 @@ function findItemsByAssetModifier(text: string): Table {
 	return itemList;
 }
 
-// 根据资源modifier索引物品
+// Index items by asset modifier
 function getIndexByAssetModifierName(sModifierName: string) {
 	for (const index in itemsGame) {
 		const itemData = itemsGame[index];
@@ -470,7 +518,7 @@ function getIndexByAssetModifierName(sModifierName: string) {
 	return undefined;
 }
 
-// 根据模型名字索引编号
+// Index by model name
 function getIndexByModelName(sModelName: string) {
 	for (const index in itemsGame) {
 		const itemData = itemsGame[index];
@@ -480,7 +528,7 @@ function getIndexByModelName(sModelName: string) {
 	}
 	return undefined;
 }
-// 根据名字索引编号
+// Index by name
 function getIndexByName(sName: string) {
 	for (const index in itemsGame) {
 		const itemData = itemsGame[index];
@@ -490,7 +538,7 @@ function getIndexByName(sName: string) {
 	}
 	return undefined;
 }
-// 根据名字索引物品
+// Index items by name
 function getItemByName(sName: string) {
 	for (const index in itemsGame) {
 		const itemData = itemsGame[index];
@@ -500,7 +548,7 @@ function getItemByName(sName: string) {
 	}
 	return undefined;
 }
-// 根据名字索引捆绑包信息
+// Index bundle info by name
 function getBundlesByName(sName: string) {
 	let bundles: Table = {};
 	for (const index in itemsGame) {

@@ -31,7 +31,7 @@ export async function localizeInit(context: vscode.ExtensionContext) {
 	}
 }
 /**
- * 获取本地化文本
+ * Get localized text
  */
 export function localize(text: string, dialogVariables?: Table | string[], language?: "zh-cn" | "en") {
 	if (langData === undefined || text === undefined) {
@@ -55,7 +55,7 @@ export function localize(text: string, dialogVariables?: Table | string[], langu
 	return result;
 }
 /**
- * 逆向获取本地化文本
+ * Reverse-lookup localized text
  */
 export function reverseLocalize(text: string, dialogVariables?: Table, language?: "zh-cn" | "en") {
 	if (reverseLangData === undefined || text === undefined) {
@@ -74,7 +74,7 @@ export function reverseLocalize(text: string, dialogVariables?: Table, language?
 	}
 	return text;
 }
-/** 是否拥有本地化 */
+/** Whether localization exists */
 export function hasLocalize(text: string, language?: "zh-cn" | "en") {
 	if (langData === undefined) {
 		return false;
@@ -86,7 +86,7 @@ export function hasLocalize(text: string, language?: "zh-cn" | "en") {
 	}
 	return false;
 }
-/** 逆向查找是否拥有本地化 */
+/** Reverse-lookup whether localization exists */
 export function hasReverseLocalize(text: string, language?: "zh-cn" | "en") {
 	if (reverseLangData === undefined) {
 		return false;

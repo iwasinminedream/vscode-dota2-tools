@@ -13,7 +13,7 @@ interface JsFunction {
 
 const DOTA_LABEL = 'Dota2 Panorama';
 
-/** 优先类排序 —— 越靠前越高优先级 */
+/** Priority class ordering - the earlier the entry, the higher the priority */
 const PRIORITY_CLASSES = ['$', 'Game', 'Players', 'GameUI', 'Entities', 'Abilities', 'Items', 'Buffs', 'GameEvents', 'CustomNetTables', 'Particles'];
 
 function classSortPrefix(shortName: string): string {
@@ -30,11 +30,11 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 	document: {
 		[key: string]: { [key: string]: JsFunction };
 	};
-	/** 全局补全列表 (类名 + 函数 + 枚举) —— 非 dot 上下文 */
+	/** Global completion list (class names + functions + enums) - non-dot context */
 	globalSnippets: vscode.CompletionItem[];
-	/** 按短类名分组的方法补全 (如 "Game" -> [Time, GetGameTime, ...]) —— dot 上下文 */
+	/** Method completions grouped by short class name (e.g. "Game" -> [Time, GetGameTime, ...]) - dot context */
 	classMethodMap: Map<string, vscode.CompletionItem[]>;
-	/** 短类名小写 -> 正确大小写映射 (game -> Game, gameevents -> GameEvents) */
+	/** Lowercase short class name -> correct-case mapping (game -> Game, gameevents -> GameEvents) */
 	classNameNormalize: Map<string, string>;
 
 	constructor(context: vscode.ExtensionContext, public dotaApiNote: DotaApiNote) {
@@ -50,12 +50,12 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 		this.classNameNormalize = new Map();
 
 		const classShortNames = new Set<string>();
-		/** 去重: 全局上下文函数名 -> 已添加 */
+		/** Dedup: global-context function name -> already added */
 		const globalFunctionAdded = new Set<string>();
 
 		for (const className in this.document) {
 			const classData = this.document[className];
-			// 从第一个函数签名中提取简短类名 (如 "GameEvents.Subscribe(...)" -> "GameEvents")
+			// Extract the short class name from the first function signature (e.g. "GameEvents.Subscribe(...)" -> "GameEvents")
 			let shortName = className;
 			for (const funName in classData) {
 				const funInfo = classData[funName];
@@ -71,7 +71,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 			const isDollarClass = shortName === '$';
 			const classPriority = classSortPrefix(shortName);
 
-			// 类名补全 (如 $, Game, GameEvents, Particles)
+			// Class name completion (e.g. $, Game, GameEvents, Particles)
 			if (!classShortNames.has(shortName)) {
 				classShortNames.add(shortName);
 				this.classNameNormalize.set(shortName.toLowerCase(), shortName);
@@ -81,7 +81,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 				this.globalSnippets.push(classItem);
 			}
 
-			/** 去重: dot 上下文方法名 -> 已添加 (在同一shortName内) */
+			/** Dedup: dot-context method name -> already added (within the same shortName) */
 			const existingMethods = this.classMethodMap.get(shortName);
 			const dotMethodAdded = new Set<string>();
 			if (existingMethods) {
@@ -93,7 +93,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 			for (const funName in classData) {
 				let funInfo = classData[funName];
 				if (funInfo.Function) {
-					// ===== dot 上下文 (Game. -> Time) : 去重同一 shortName 内 =====
+					// ===== dot context (Game. -> Time): dedup within the same shortName =====
 					if (!dotMethodAdded.has(funName)) {
 						dotMethodAdded.add(funName);
 						let dotItem = new vscode.CompletionItem(funName, vscode.CompletionItemKind.Method);
@@ -104,7 +104,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 						methodItems.push(dotItem);
 					}
 
-					// ===== 全局上下文 (time -> Game.Time()) : 只保留一个 =====
+					// ===== global context (time -> Game.Time()): keep only one =====
 					if (!globalFunctionAdded.has(funName)) {
 						globalFunctionAdded.add(funName);
 						const displayPrefix = shortName + '.';
@@ -138,7 +138,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	getDocumentation(funInfo: JsFunction, shortName?: string) {
 		let sigDisplay = funInfo.Signature || funInfo.Enumerator || '';
-		// $ 类的签名没有 $. 前缀，补上方便显示
+		// The $ class signature has no $. prefix; add it for readability
 		if (shortName === '$' && funInfo.Function && !sigDisplay.startsWith('$.')) {
 			sigDisplay = '$.' + sigDisplay;
 		}
@@ -149,7 +149,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 		return new vscode.MarkdownString(detail);
 	}
 
-	/** 解析 Signature 的参数部分，返回参数名列表 */
+	/** Parse the parameter portion of the Signature and return the list of parameter names */
 	private parseParams(signature: string): string[] {
 		const parenStart = signature.indexOf('(');
 		if (parenStart < 0) { return []; }
@@ -162,12 +162,12 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 		}).filter(p => p.length > 0);
 	}
 
-	/** dot 上下文: 只插入方法名 + 参数 tab stops (如 Time() 或 Msg(${1:...})) */
+	/** dot context: insert only the method name + parameter tab stops (e.g. Time() or Msg(${1:...})) */
 	private buildMethodSnippet(funInfo: JsFunction, isDollarClass: boolean = false): vscode.SnippetString {
 		if (!funInfo.Signature) { return new vscode.SnippetString(''); }
 		const sig = funInfo.Signature;
-		// $ 类签名格式: "Msg( js_raw_args ... )" (无 $. 前缀) -> 直接用作methodPart
-		// 普通类格式: "Game.Time()" (有 Class. 前缀) -> 取 dot 后部分
+		// $ class signature format: "Msg( js_raw_args ... )" (no $. prefix) -> used directly as methodPart
+		// Normal class format: "Game.Time()" (has a Class. prefix) -> take the part after the dot
 		let methodPart: string;
 		if (isDollarClass) {
 			methodPart = sig;
@@ -191,7 +191,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 		return new vscode.SnippetString(text);
 	}
 
-	/** 全局上下文: 插入 Class.Method(params) (如 Game.Time(), $.Localize()) */
+	/** global context: insert Class.Method(params) (e.g. Game.Time(), $.Localize()) */
 	private buildFullSnippet(funInfo: JsFunction, shortName: string, isDollarClass: boolean = false): vscode.SnippetString {
 		if (!funInfo.Signature) { return new vscode.SnippetString(''); }
 		const sig = funInfo.Signature;
@@ -199,8 +199,8 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 		if (parenStart < 0) {
 			return new vscode.SnippetString(isDollarClass ? '$.' + sig : sig);
 		}
-		// 对于 $ 类: 签名是 "Msg(...)" → 构建 "$.Msg(...)"
-		// 对于普通类: 签名已有 "Game.Time(...)"
+		// For the $ class: the signature is "Msg(...)" -> build "$.Msg(...)"
+		// For normal classes: the signature already is "Game.Time(...)"
 		const callName = isDollarClass
 			? '$.' + sig.substring(0, parenStart).trim()
 			: sig.substring(0, parenStart).trim();
@@ -219,7 +219,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
 		const lineText = document.lineAt(position.line).text.substring(0, position.character);
-		// 匹配 "ClassName." 或 "$." ($ 不是 \w，需要特殊处理)
+		// Match "ClassName." or "$." ($ is not \w, so it needs special handling)
 		const dotMatch = lineText.match(/([\w$]+)\.\s*$/);
 
 		if (dotMatch) {

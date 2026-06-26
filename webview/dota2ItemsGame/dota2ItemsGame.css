@@ -179,3 +179,42 @@ h2 {
 	max-height: 300px;
 	overflow-y: auto;
 }
+
+/* ---- Copy buttons (models / particles / paths) ---- */
+.copy-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: 4px;
+	padding: 1px 3px;
+	border: none;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-descriptionForeground, #888);
+	cursor: pointer;
+	vertical-align: middle;
+	flex-shrink: 0;
+}
+.copy-btn:hover {
+	background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+	color: var(--vscode-foreground);
+}
+.copy-btn.copied {
+	color: var(--vscode-testing-iconPassed, #4caf50);
+}
+.copy-btn .codicon {
+	font-size: 13px;
+}
+
+/* ---- Asset-modifiers table: fit columns to value width; long headers ellipsis + tooltip ---- */
+.visuals-grid vscode-data-grid-cell[cell-type="columnheader"] {
+	display: block;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 11px;
+	cursor: help;
+}
+.visuals-grid vscode-data-grid-cell {
+	overflow-wrap: anywhere;
+}

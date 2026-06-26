@@ -7,7 +7,7 @@ import { dirExists } from '../utils/pathUtils';
 import { localize } from '../utils/localize';
 
 /**
- * 导出所有饰品的信息到指定文件夹，按英雄拆分
+ * Export the info of all wearables to the specified folder, split by hero
  * @export
  */
 export function exportWearableWithHero(context: vscode.ExtensionContext) {

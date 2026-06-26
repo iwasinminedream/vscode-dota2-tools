@@ -10,136 +10,136 @@
 </head>
 
 <body>
-	<h1>Dota2作图工具使用手册</h1>
+	<h1>Dota 2 Modding Tools Manual</h1>
 	<vscode-divider></vscode-divider>
-	<!-- 分类 -->
+	<!-- Categories -->
 	<vscode-panels activeid="tab-1" aria-label="With Active Tab">
-		<vscode-panel-tab id="tab-1">图标查询</vscode-panel-tab>
-		<vscode-panel-tab id="tab-2">饰品查询</vscode-panel-tab>
-		<vscode-panel-tab id="tab-3">音效查询</vscode-panel-tab>
-		<vscode-panel-tab id="tab-4">API文档</vscode-panel-tab>
-		<vscode-panel-tab id="tab-5">项目配置</vscode-panel-tab>
+		<vscode-panel-tab id="tab-1">Icon Browser</vscode-panel-tab>
+		<vscode-panel-tab id="tab-2">Cosmetics Browser</vscode-panel-tab>
+		<vscode-panel-tab id="tab-3">Sound Browser</vscode-panel-tab>
+		<vscode-panel-tab id="tab-4">API Docs</vscode-panel-tab>
+		<vscode-panel-tab id="tab-5">Project Setup</vscode-panel-tab>
 		<vscode-panel-view id="view-1">
 			<section style="display: flex; flex-direction: column; width: 100%;">
-				<h1>如何打开</h1>
+				<h1>How to Open</h1>
 				<vscode-divider></vscode-divider>
-				<p>点击如图所示的按钮或使用组合键 <vscode-tag>Ctrl</vscode-tag>+<vscode-tag>Shift</vscode-tag>+<vscode-tag>P
+				<p>Click the button shown below or use <vscode-tag>Ctrl</vscode-tag>+<vscode-tag>Shift</vscode-tag>+<vscode-tag>P
 					</vscode-tag>
-					搜索指令 <vscode-tag>Dota2图标</vscode-tag> 打开技能选择窗口</p>
+					and search for <vscode-tag>Dota2 Icons</vscode-tag> to open the icon picker</p>
 				<img width="282" height="161" src="../../images/welcome/ability_icon.png" />
 				<!-- <ul>
-					<li>点击图标即可复制图标名直接复制到kv中即可使用</li>
-					<li>右键点击图标可浏览图标原文件，但是注意不要修改该文件夹中的文件，会影响插件功能</li>
+					<li>Click an icon to copy its name for direct use in KV files</li>
+					<li>Right-click an icon to browse the source file, but do not modify files in that folder as it affects the extension's features</li>
 				</ul> -->
-				<h1>使用</h1>
+				<h1>Usage</h1>
 				<vscode-divider></vscode-divider>
-				<p>点击图标即可复制图标名直接复制到kv中即可使用，右键点击图标可浏览图标原文件，但是注意不要修改该文件夹中的文件，会影响插件功能。搜索功能支持空格分割和正则，搜索框左侧可以选择英雄头像辅助搜索。</p>
+				<p>Click an icon to copy its name for use in KV files. Right-click to browse the source file (do not modify files in that folder). Search supports space-separated terms and regex. Use the hero portrait on the left to filter by hero.</p>
 				<img width="557" height="408" src="../../images/welcome/ability_icon_3.gif" />
-				<h1>注意事项</h1>
+				<h1>Notes</h1>
 				<vscode-divider></vscode-divider>
-				<p>如果插件正确获取到game目录与content目录，则项目中的自定义图标会显示在官方图标之后，关于目录获取请参考项目配置。</p>
+				<p>If the extension correctly detects the game and content directories, custom icons from your project will appear after the official icons. See Project Setup for directory configuration.</p>
 			</section>
 		</vscode-panel-view>
 		<vscode-panel-view id="view-2">
 			<section style="display: flex; flex-direction: column; width: 100%;">
-				<h1>如何打开</h1>
+				<h1>How to Open</h1>
 				<vscode-divider></vscode-divider>
-				<p>点击如图所示的按钮或使用组合键 <vscode-tag>Ctrl</vscode-tag>+<vscode-tag>Shift</vscode-tag>+<vscode-tag>P
+				<p>Click the button shown below or use <vscode-tag>Ctrl</vscode-tag>+<vscode-tag>Shift</vscode-tag>+<vscode-tag>P
 					</vscode-tag>
-					搜索指令 <vscode-tag>Dota2饰品查询工具</vscode-tag> 打开窗口</p>
+					and search for <vscode-tag>Dota2 Cosmetics Browser</vscode-tag> to open the window</p>
 				<img width="282" height="161" src="../../images/welcome/items_game.png" />
-				<h1>使用</h1>
+				<h1>Usage</h1>
 				<vscode-divider></vscode-divider>
-				<p>当你为一个单位配置饰品时通常需要解包dota2的items_game.txt文件去搜寻该模型的饰品id，或者你使用官方的UI标签DOTAUIEconSetPreview时需要用到信使的饰品id用来展示3D信使模型。将模型路径粘贴至搜索框即可获得相关信息。
+				<p>When configuring cosmetics for a unit, you typically need to unpack items_game.txt to find the cosmetic ID, or use the DOTAUIEconSetPreview UI tag which requires courier cosmetic IDs. Paste the model path into the search box to get the relevant info.
 				</p>
 				<section style="display: flex; flex-direction: row; width: 100%;">
 					<div style="margin-right: 10px;">
-						<p>1.复制饰品模型路径</p>
+						<p>1. Copy the cosmetic model path</p>
 						<img width="233" height="347" src="../../images/welcome/items_game_2.png" />
 					</div>
 					<div>
-						<p>2.粘贴至搜索框</p>
+						<p>2. Paste into the search box</p>
 						<img width="539" height="347" src="../../images/welcome/items_game_4.png" />
 					</div>
 				</section>
-				<p>搜索套装的技巧，先搜索单个饰品，然后复制套装id进行搜索。</p>
+				<p>Tip for searching sets: first search for a single cosmetic item, then copy the set ID to search.</p>
 				<img width="915" height="589" src="../../images/welcome/items_game_5.gif" />
-				<p>直接搜索英雄名字会展示该英雄的所有饰品（暂时只支持英雄内部名称）</p>
+				<p>Searching a hero name directly will show all cosmetics for that hero (currently only supports internal hero names).</p>
 				<img width="955" height="495" src="../../images/welcome/items_game_6.png" />
 			</section>
 		</vscode-panel-view>
 		<vscode-panel-view id="view-3">
 			<section style="display: flex; flex-direction: column; width: 100%;">
-				<h1>如何打开</h1>
+				<h1>How to Open</h1>
 				<vscode-divider></vscode-divider>
-				<p>点击如图所示的按钮或使用组合键 <vscode-tag>Ctrl</vscode-tag>+<vscode-tag>Shift</vscode-tag>+<vscode-tag>P
+				<p>Click the button shown below or use <vscode-tag>Ctrl</vscode-tag>+<vscode-tag>Shift</vscode-tag>+<vscode-tag>P
 					</vscode-tag>
-					搜索指令 <vscode-tag>vsnd转换</vscode-tag> 打开选择界面</p>
+					and search for <vscode-tag>vsnd picker</vscode-tag> to open the selector</p>
 				<img width="282" height="161" src="../../images/welcome/vsnd_picker.png" />
-				<h1>使用</h1>
+				<h1>Usage</h1>
 				<vscode-divider></vscode-divider>
-				<p>在dota2的资源管理器中找到心仪的音效文件，复制其路径粘贴至搜索框中。选择后会自动写入当前文本编辑器的光标位置。</p>
+				<p>Find the desired sound file in the Dota 2 resource browser, copy its path and paste it into the search box. The selected sound will be automatically inserted at the cursor position in the current text editor.</p>
 				<img width="808" height="586" src="../../images/welcome/vsnd_picker_2.png" />
 				<img width="613" height="425" src="../../images/welcome/vsnd_picker_3.gif" style="margin-top: 10px;" />
 			</section>
 		</vscode-panel-view>
 		<vscode-panel-view id="view-4">
 			<section style="display: flex; flex-direction: column; width: 100%;">
-				<h1>如何打开</h1>
+				<h1>How to Open</h1>
 				<vscode-divider></vscode-divider>
-				<p>找到左侧书一样的按钮</p>
+				<p>Find the book-like icon on the left sidebar.</p>
 				<img width="370" height="722" src="../../images/welcome/api_1.png" />
-				<h1>如何使用</h1>
+				<h1>How to Use</h1>
 				<vscode-divider></vscode-divider>
-				<p>点击树状图中的函数可查看详细信息。</p>
+				<p>Click a function in the tree view to see its details.</p>
 				<img width="812" height="505" src="../../images/welcome/api_3.png" />
-				<p>可以点击列表查看该类下的所有函数</p>
+				<p>Click a class in the list to view all its functions.</p>
 				<img width="812" height="505" src="../../images/welcome/api_4.png" />
-				<p>点击编辑可以修改其信息，包括描述，参数的类型名字描述，返回值，范例等。</p>
+				<p>Click edit to modify its info, including description, parameter types/names/descriptions, return values, examples, etc.</p>
 				<img width="812" height="505" src="../../images/welcome/api_5.png" />
-				<p>lua api的更新日志，可以查看不同时期api的变化。</p>
+				<p>Lua API changelog — view API changes across different periods.</p>
 				<img width="812" height="505" src="../../images/welcome/api_2.png" />
-				<p>其余功能如<vscode-tag>搜索</vscode-tag>
-					<vscode-tag>常用</vscode-tag>请自行体验
+				<p>Other features like <vscode-tag>Search</vscode-tag>
+					and <vscode-tag>Favorites</vscode-tag> can be explored on your own.
 				</p>
-				<h1>注意事项</h1>
+				<h1>Notes</h1>
 				<vscode-divider></vscode-divider>
 				<ul>
-					<li>目前编辑笔记功能只支持lua和css，此处修改的内容存在数据库中，请慎重修改别人的成果。当然对于错误的部分可以进行修正。</li>
-					<li>编辑笔记功能的描述部分请不要使用换行，会跟其他内容产生冲突，所以换行符会自动清除无法上传。</li>
-					<li>如果使用插件的lua代码补全功能，笔记也会更新到补全代码的提示中。</li>
-					<li>如果使用了lua解析插件，比如emmylua，可以使用指令<vscode-tag>生成Emmylua插件用lua api文档</vscode-tag>
-						生成一份定义文档到项目中，每次生成都会根据当前最新的笔记生成。</li>
-					<li>对于不想看到的文档可以在设置中关闭</li>
+					<li>Currently the note editing feature only supports Lua and CSS. Changes are stored in the database — please be careful when editing others' contributions. You can correct errors though.</li>
+					<li>Do not use line breaks in the description field of note editing — they conflict with other content and will be automatically removed before upload.</li>
+					<li>If you use the extension's Lua code completion, notes will also update in the completion hints.</li>
+					<li>If you use a Lua parser plugin like EmmyLua, you can use the command <vscode-tag>Generate EmmyLua API docs</vscode-tag>
+						to generate a definition file in your project. Each generation uses the latest notes.</li>
+					<li>Documents you don't want to see can be disabled in settings.</li>
 				</ul>
 			</section>
 		</vscode-panel-view>
 		<vscode-panel-view id="view-5">
 			<section style="display: flex; flex-direction: column; width: 100%;">
-				<h1>为什么要进行项目配置</h1>
+				<h1>Why Configure the Project</h1>
 				<vscode-divider></vscode-divider>
-				<p>众所周知，dota2的项目路径分为game和content目录。而这两个目录分别处于不同的文件夹下。为了更好的进行项目管理，比如使用git进行版本管理，就需要使两个文件夹处于一个目录下会比较方便。同时本插件对于一个正确配置的项目有更好的支持。
+				<p>As you may know, a Dota 2 project has separate game and content directories in different folders. For better project management (e.g., using Git for version control), it is convenient to have both folders under one directory. This extension also provides better support for a correctly configured project.
 				</p>
-				<h1>如何进行项目配置</h1>
+				<h1>How to Configure the Project</h1>
 				<vscode-divider></vscode-divider>
-				<h3>方法一</h3>
-				<p>使用符号链接(symlinks)<vscode-link
+				<h3>Method 1</h3>
+				<p>Use symbolic links (symlinks). <vscode-link
 						href="https://moddota.com/tools/setting-up-for-collaboration/#how-to-make-your-dota-2-symlinks">
-						参考该说明</vscode-link>或者自行搜索mklink关键字</p>
-				<h3>方法二</h3>
-				<p>使用软件<vscode-link href="https://schinagl.priv.at/nt/hardlinkshellext/linkshellextension.html">Link
-						Shell Extension</vscode-link>（下载链接在网页最下面。如果不能运行请安装依赖包，依赖包在下载链接旁边）</p>
+						See this guide</vscode-link> or search for the mklink command.</p>
+				<h3>Method 2</h3>
+				<p>Use the software <vscode-link href="https://schinagl.priv.at/nt/hardlinkshellext/linkshellextension.html">Link
+						Shell Extension</vscode-link> (download link at the bottom of the page; install the prerequisite package if it doesn't run — the link is next to the download).</p>
 				<img width="764" height="162" src="../../images/welcome/link.png" />
-				<p>首先在你满意的位置创建一个文件夹用于放置项目</p>
+				<p>First, create a folder at your preferred location for the project.</p>
 				<img width="652" height="350" src="../../images/welcome/link_4.png" />
-				<p>然后去dota2的game目录下右键项目目录选择【选择源链接点】</p>
+				<p>Then go to the Dota 2 game directory, right-click your project folder, and select "Pick Link Source".</p>
 				<img width="457" height="182" src="../../images/welcome/link_2.png" />
-				<p>回到刚刚创建的game目录下右键选择创建为目录连接点</p>
+				<p>Go back to the game directory you just created, right-click, and select "Drop As Junction".</p>
 				<img width="629" height="651" src="../../images/welcome/link_3.png" />
-				<p>对content进行同样操作后就能得到一个game与content共存的文件夹</p>
-				<h1>注意事项</h1>
+				<p>Repeat the same steps for the content directory to get a folder with both game and content.</p>
+				<h1>Notes</h1>
 				<vscode-divider></vscode-divider>
-				<p>如果不想进行项目配置，比如你没有版本管理，只是单纯使用例如vscode工作区将两个文件夹拉进来。那么也可以在设置找到Addon_path，手动配置项目的game和content路径。该设置最好设置在工作区设置中。
+				<p>If you don't want to set up the project structure (e.g., you don't use version control and simply added both folders to a VS Code workspace), you can manually configure the game and content paths in Settings under Addon_path. It's best to set this in workspace settings.
 				</p>
 			</section>
 		</vscode-panel-view>

@@ -7,11 +7,11 @@ export async function quickStart(context: vscode.ExtensionContext, tag?: string)
 
 	const panel = vscode.window.createWebviewPanel(
 		'Welcome', // viewType
-		localize('msg_welcome'), // 视图标题
-		vscode.ViewColumn.One, // 显示在编辑器的哪个部位
+		localize('msg_welcome'), // view title
+		vscode.ViewColumn.One, // which editor column to show in
 		{
-			enableScripts: true, // 启用JS，默认禁用
-			retainContextWhenHidden: true, // webview被隐藏时保持状态，避免被重置
+			enableScripts: true, // enable JS, disabled by default
+			retainContextWhenHidden: true, // keep state when the webview is hidden, to avoid being reset
 		}
 	);
 	panel.webview.html = await getWebviewContent(panel.webview, context.extensionUri, 'welcome', (html) => {

@@ -11,7 +11,7 @@ export async function combineLocalization(languageType: string = "") {
 	if (isValidFolder() === false) {
 		return;
 	}
-	// 消息
+	// Message
 	changeStatusBarState(StatusBarState.LOADING);
 	let messageIndex = showStatusBarMessage(localize('msg_merge_text', [languageType == "" ? "ALL" : languageType]));
 	const gameDir = getGameDir();
@@ -25,7 +25,7 @@ export async function combineLocalization(languageType: string = "") {
 			}
 		} else {
 			let langFolders: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(vscode.Uri.file(localizationPath));
-			// langFolders按folderName排序
+			// Sort langFolders by folderName
 			langFolders.sort((a, b) => a[0].localeCompare(b[0]));
 			for (let i: number = 0; i < langFolders.length; i++) {
 				const [folderName, isDirectory] = langFolders[i];
@@ -77,12 +77,12 @@ async function readLanguage(path: string): Promise<string> {
 				let document: vscode.TextDocument = await vscode.workspace.openTextDocument(path + '/' + fileName);
 				const langContent = document.getText();
 
-				// 使用 KV 解析器提取 Tokens 内容，更健壮地处理各种格式
+				// Use the KV parser to extract Tokens content, handling various formats more robustly
 				const parsed = readKeyValue2(langContent);
 
-				// 尝试多种结构：
-				// 1. 标准结构：lang.Tokens
-				// 2. 旧版本：直接就是 tokens（没有外层包裹）
+				// Try multiple structures:
+				// 1. Standard structure: lang.Tokens
+				// 2. Old version: directly the tokens (without an outer wrapper)
 				let tokens: Record<string, unknown> | undefined;
 
 				const langBlock = parsed?.lang;
@@ -90,9 +90,9 @@ async function readLanguage(path: string): Promise<string> {
 					tokens = (langBlock as Record<string, unknown>).Tokens as Record<string, unknown> | undefined;
 				}
 
-				// 如果没有找到 lang.Tokens，检查是否直接就是 tokens（旧版本格式）
+				// If lang.Tokens is not found, check whether it is directly the tokens (old version format)
 				if (!tokens && parsed && typeof parsed === 'object') {
-					// 如果 parsed 包含的都是字符串值，说明这是旧版本的直接 token 格式
+					// If parsed contains only string values, this is the old version's direct token format
 					const entries = Object.entries(parsed as Record<string, unknown>);
 					const hasStringValues = entries.length > 0 && entries.some(([_, value]) => typeof value === 'string');
 					if (hasStringValues) {
@@ -101,21 +101,21 @@ async function readLanguage(path: string): Promise<string> {
 				}
 
 				if (tokens && typeof tokens === 'object') {
-					// 添加文件路径注释
+					// Add file path comment
 					lang += "\t\t//" + path.split("localization/")[1] + '/' + fileName + os.EOL;
 
-					// 手动生成 Tokens 内容，确保格式正确
+					// Manually generate Tokens content to ensure correct formatting
 					for (const [key, value] of Object.entries(tokens)) {
 						if (typeof value === 'string') {
-							// 转义引号并格式化
+							// Escape quotes and format
 							const escapedValue = value.replace(/"/g, '\\"');
 							lang += `\t\t"${key}"\t\t"${escapedValue}"${os.EOL}`;
 						}
 					}
 					lang += os.EOL;
 				} else {
-					// 如果解析失败，使用改进的正则表达式作为后备方案
-					// 支持首尾的注释、空行和空白字符
+					// If parsing fails, use an improved regular expression as a fallback
+					// Supports leading/trailing comments, blank lines, and whitespace
 					const modifiedContent = extractTokensContent(langContent);
 					if (modifiedContent) {
 						lang += "\t\t//" + path.split("localization/")[1] + '/' + fileName + os.EOL;
@@ -135,22 +135,22 @@ async function readLanguage(path: string): Promise<string> {
 }
 
 /**
- * 提取 VDF 文件中的 Tokens 内容（后备方案）
- * 使用改进的正则表达式，支持注释、空行等
+ * Extract the Tokens content from a VDF file (fallback solution)
+ * Uses an improved regular expression, supporting comments, blank lines, etc.
  */
 function extractTokensContent(content: string): string {
-	// 移除首尾的空白字符和注释
+	// Remove leading/trailing whitespace and comments
 	const trimmed = content.trim();
 
-	// 尝试匹配 "lang" { ... "Tokens" { ... } }
-	// 使用 [\s\S] 匹配包括换行符在内的所有字符
+	// Try to match "lang" { ... "Tokens" { ... } }
+	// Use [\s\S] to match all characters including newlines
 	const tokensMatch = trimmed.match(/"lang"[\s\S]*?"Tokens"[\s\S]*?\{([\s\S]*)\}[\s\S]*?\}[\s\S]*$/);
 
 	if (tokensMatch && tokensMatch[1]) {
-		// 提取 Tokens 块内容
+		// Extract the Tokens block content
 		let tokensContent = tokensMatch[1];
 
-		// 清理内容：移除首尾空白，但保留中间的格式
+		// Clean up content: remove leading/trailing whitespace but keep the formatting in between
 		const lines = tokensContent.split(/\r?\n/);
 		const filteredLines = lines
 			.map(line => line.trim())

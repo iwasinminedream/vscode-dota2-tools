@@ -4,7 +4,7 @@ import { readKeyValueWithBase, writeKeyValue } from '../utils/kvUtils';
 import { localize } from '../utils/localize';
 
 /**
- * 格式化kv
+ * Format kv
  * @export
  */
 export function formatKv(context: vscode.ExtensionContext) {

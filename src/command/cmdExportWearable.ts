@@ -8,7 +8,7 @@ import { dirExists } from '../utils/pathUtils';
 import { localize } from '../utils/localize';
 
 /**
- * 导出所有饰品的信息到指定文件夹
+ * Export the info of all wearables to the specified folder
  * @export
  */
 export function exportWearable(context: vscode.ExtensionContext) {

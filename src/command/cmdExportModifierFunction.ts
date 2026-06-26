@@ -6,7 +6,7 @@ import { getDotaApiNoteClass } from '../module/apiNote';
 import { localize } from '../utils/localize';
 
 /**
- * 音效选择
+ * Sound effect selection
  * @param context 
  */
 export async function exportModifierFunction(context: vscode.ExtensionContext) {

@@ -2,7 +2,7 @@
 	"name": "dota2tools",
 	"displayName": "%ext.displayName%",
 	"description": "",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"publisher": "iwasinminedream",
 	"engines": {
 		"vscode": "^1.66.0"
@@ -73,58 +73,20 @@
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "dota2api",
-					"title": "Dota2 Document",
+					"id": "dota2tools",
+					"title": "Dota2 Tools",
 					"icon": "$(book)"
-				},
-				{
-					"id": "dota2kv",
-					"title": "Dota2 Kv Editor",
-					"icon": "./images/kv.svg"
-				},
-				{
-					"id": "dota2logs",
-					"title": "%dota2Logs.title%",
-					"icon": "$(warning)"
 				}
 			]
 		},
 		"views": {
-			"dota2api": [
+			"dota2tools": [
 				{
-					"id": "dota2apiExplorer",
-					"when": "config.dota2-tools.A1.module_list.lua_api_tree",
-					"name": "Dota2 API",
-					"icon": "$(notebook)"
-				},
-				{
-					"id": "dota2JSApiExplorer",
-					"when": "config.dota2-tools.A1.module_list.js_api_tree",
-					"name": "Dota2 JS API",
-					"icon": "$(notebook)"
-				},
-				{
-					"id": "dota2CssApiExplorer",
-					"when": "config.dota2-tools.A1.module_list.css_api_tree",
-					"name": "Dota2 CSS Document",
-					"icon": "$(notebook)"
-				},
-				{
-					"id": "dota2PanelExplorer",
-					"when": "config.dota2-tools.A1.module_list.panel_tree",
-					"name": "Dota2 Panel Document",
-					"icon": "$(notebook)"
+					"id": "dota2tools.sidebar",
+					"name": "Dota2 Tools",
+					"type": "webview"
 				}
-			],
-			"dota2kv": [
-				{
-					"id": "kv_explorer",
-					"when": "config.dota2-tools.A1.module_list.dota2kv",
-					"name": "Kv Explorer",
-					"icon": "$(notebook)"
-				}
-			],
-			"dota2logs": []
+			]
 		},
 		"commands": [
 			{
@@ -142,24 +104,6 @@
 			{
 				"command": "dota2tools.Localization",
 				"title": "%dota2tools.Localization%"
-			},
-			{
-				"command": "dota2tools.ability_icon",
-				"title": "%dota2tools.ability_icon%",
-				"icon": "$(file-media)"
-			},
-			{
-				"command": "dota2tools.items_game",
-				"title": "%dota2tools.items_game%",
-				"icon": "$(jersey)"
-			},
-			{
-				"command": "dota2tools.vsnd_picker",
-				"title": "%dota2tools.vsnd_picker%",
-				"icon": {
-					"light": "./images/vsnd_light.svg",
-					"dark": "./images/vsnd_dark.svg"
-				}
 			},
 			{
 				"command": "dota2tools.kv_to_js_config",
@@ -206,101 +150,6 @@
 				"title": "%dota2tools.parse entities%"
 			},
 			{
-				"command": "dota2tools.lua_api_changelog",
-				"title": "%dota2tools.lua_api_changelog%",
-				"icon": "$(notebook)"
-			},
-			{
-				"command": "dota2tools.dota2api.filter",
-				"title": "%dota2tools.dota2api.filter%",
-				"icon": "$(search)"
-			},
-			{
-				"command": "dota2tools.dota2api.clearfilter",
-				"title": "%dota2tools.dota2api.clearfilter%",
-				"icon": "$(clear-all)"
-			},
-			{
-				"command": "dota2tools.dota2api.expand",
-				"title": "%dota2tools.dota2api.expand%",
-				"icon": "$(expand-all)"
-			},
-			{
-				"command": "dota2tools.dota2api.collapse",
-				"title": "%dota2tools.dota2api.collapse%",
-				"icon": "$(collapse-all)"
-			},
-			{
-				"command": "dota2tools.dota2api.overview",
-				"title": "%dota2tools.dota2api.overview%",
-				"icon": "$(heart)"
-			},
-			{
-				"command": "dota2tools.dota2api.edit",
-				"title": "%dota2tools.dota2api.edit%",
-				"icon": "$(edit)"
-			},
-			{
-				"command": "dota2tools.dota2api.copy",
-				"title": "%dota2tools.dota2api.copy%",
-				"icon": "$(copy)"
-			},
-			{
-				"command": "dota2tools.dota2api.list",
-				"title": "%dota2tools.dota2api.list%",
-				"icon": "$(list-selection)"
-			},
-			{
-				"command": "dota2tools.dota2jsapi.copy",
-				"title": "%dota2tools.dota2jsapi.copy%",
-				"icon": "$(copy)"
-			},
-			{
-				"command": "dota2tools.dota2jsapi.list",
-				"title": "%dota2tools.dota2jsapi.list%",
-				"icon": "$(list-selection)"
-			},
-			{
-				"command": "dota2tools.dota2jsapi.filter",
-				"title": "%dota2tools.dota2jsapi.filter%",
-				"icon": "$(search)"
-			},
-			{
-				"command": "dota2tools.dota2jsapi.clearfilter",
-				"title": "%dota2tools.dota2jsapi.clearfilter%",
-				"icon": "$(clear-all)"
-			},
-			{
-				"command": "dota2tools.dota2jsapi.collapse",
-				"title": "%dota2tools.dota2jsapi.collapse%",
-				"icon": "$(collapse-all)"
-			},
-			{
-				"command": "dota2tools.css_api_browser.copy",
-				"title": "%dota2tools.css_api_browser.copy%",
-				"icon": "$(copy)"
-			},
-			{
-				"command": "dota2tools.css_property.edit",
-				"title": "%dota2tools.css_property.edit%",
-				"icon": "$(edit)"
-			},
-			{
-				"command": "dota2tools.dota2cssapi.filter",
-				"title": "%dota2tools.dota2cssapi.filter%",
-				"icon": "$(search)"
-			},
-			{
-				"command": "dota2tools.dota2cssapi.clearfilter",
-				"title": "%dota2tools.dota2cssapi.clearfilter%",
-				"icon": "$(clear-all)"
-			},
-			{
-				"command": "dota2tools.dota2panel.event",
-				"title": "%dota2tools.dota2panel.event%",
-				"icon": "$(book)"
-			},
-			{
 				"command": "dota2tools.OpenKV",
 				"title": "%dota2tools.OpenKV%"
 			},
@@ -323,11 +172,6 @@
 			{
 				"command": "dota2tools.CopyDotaResourcePath",
 				"title": "%dota2tools.CopyDotaResourcePath%"
-			},
-			{
-				"command": "dota2tools.kvEditor.openFile",
-				"title": "%dota2tools.kvEditor.openFile%",
-				"category": "Dota2 Tools"
 			},
 			{
 				"command": "dota2tools.kvEditor.openFile",
@@ -363,23 +207,6 @@
 					"group": "6_copypath"
 				}
 			],
-			"editor/title": [
-				{
-					"command": "dota2tools.ability_icon",
-					"when": "config.dota2-tools.A2.display.ability_icon",
-					"group": "navigation"
-				},
-				{
-					"command": "dota2tools.vsnd_picker",
-					"when": "config.dota2-tools.A2.display.vsnd_picker",
-					"group": "navigation"
-				},
-				{
-					"command": "dota2tools.items_game",
-					"when": "config.dota2-tools.A2.display.items_game",
-					"group": "navigation"
-				}
-			],
 			"editor/title/context": [
 				{
 					"when": "(resourceExtname == '.txt' || resourceExtname == '.kv') && config.dota2-tools.A2.display.kv_editor",
@@ -390,100 +217,6 @@
 					"when": "resource =~ /panorama/ && resourceExtname =~ /(\\.png)|(\\.jpg)/",
 					"command": "dota2tools.CopyDotaResourcePath",
 					"group": "navigation"
-				}
-			],
-			"view/title": [
-				{
-					"command": "dota2tools.lua_api_changelog",
-					"when": "view == dota2apiExplorer",
-					"group": "navigation@4"
-				},
-				{
-					"command": "dota2tools.dota2api.overview",
-					"when": "view == dota2apiExplorer",
-					"group": "navigation@5"
-				},
-				{
-					"command": "dota2tools.dota2api.filter",
-					"when": "view == dota2apiExplorer",
-					"group": "navigation@6"
-				},
-				{
-					"command": "dota2tools.dota2api.clearfilter",
-					"when": "view == dota2apiExplorer",
-					"group": "navigation@6"
-				},
-				{
-					"command": "dota2tools.dota2api.collapse",
-					"when": "view == dota2apiExplorer",
-					"group": "navigation@7"
-				},
-				{
-					"command": "dota2tools.dota2jsapi.filter",
-					"when": "view == dota2JSApiExplorer",
-					"group": "navigation@6"
-				},
-				{
-					"command": "dota2tools.dota2jsapi.clearfilter",
-					"when": "view == dota2JSApiExplorer",
-					"group": "navigation@6"
-				},
-				{
-					"command": "dota2tools.dota2jsapi.collapse",
-					"when": "view == dota2JSApiExplorer",
-					"group": "navigation@7"
-				},
-				{
-					"command": "dota2tools.dota2cssapi.filter",
-					"when": "view == dota2CssApiExplorer",
-					"group": "navigation@6"
-				},
-				{
-					"command": "dota2tools.dota2cssapi.clearfilter",
-					"when": "view == dota2CssApiExplorer",
-					"group": "navigation@6"
-				},
-				{
-					"command": "dota2tools.dota2panel.event",
-					"when": "view == dota2PanelExplorer",
-					"group": "navigation@7"
-				}
-			],
-			"view/item/context": [
-				{
-					"command": "dota2tools.dota2api.edit",
-					"when": "view == dota2apiExplorer && viewItem == NodeItem",
-					"group": "inline"
-				},
-				{
-					"command": "dota2tools.dota2api.copy",
-					"when": "view == dota2apiExplorer && viewItem == NodeItem",
-					"group": "inline"
-				},
-				{
-					"command": "dota2tools.dota2api.list",
-					"when": "view == dota2apiExplorer && viewItem == Class",
-					"group": "inline"
-				},
-				{
-					"command": "dota2tools.dota2jsapi.list",
-					"when": "view == dota2JSApiExplorer && viewItem == Class",
-					"group": "inline"
-				},
-				{
-					"command": "dota2tools.dota2jsapi.copy",
-					"when": "view == dota2JSApiExplorer && viewItem == NodeItem",
-					"group": "inline"
-				},
-				{
-					"command": "dota2tools.css_api_browser.copy",
-					"when": "view == dota2CssApiExplorer && viewItem == Class",
-					"group": "inline"
-				},
-				{
-					"command": "dota2tools.css_property.edit",
-					"when": "view == dota2CssApiExplorer && viewItem == Class",
-					"group": "inline"
 				}
 			]
 		},
@@ -498,10 +231,6 @@
 							"items_game": true,
 							"vsnd_picker": true,
 							"addon_info": true,
-							"lua_api_tree": true,
-							"js_api_tree": true,
-							"css_api_tree": true,
-							"panel_tree": true,
 							"lua_completion": true,
 							"js_completion": true,
 							"css_completion": true,
@@ -528,26 +257,6 @@
 								"type": "boolean",
 								"default": true,
 								"description": "%addonInfoInit%"
-							},
-							"lua_api_tree": {
-								"type": "boolean",
-								"default": true,
-								"description": "%module.lua_api_tree%"
-							},
-							"js_api_tree": {
-								"type": "boolean",
-								"default": true,
-								"description": "%module.js_api_tree%"
-							},
-							"css_api_tree": {
-								"type": "boolean",
-								"default": true,
-								"description": "%module.css_api_tree%"
-							},
-							"panel_tree": {
-								"type": "boolean",
-								"default": true,
-								"description": "%module.panel_tree%"
 							},
 							"lua_completion": {
 								"type": "boolean",
@@ -582,27 +291,9 @@
 						"scope": "resource",
 						"type": "object",
 						"default": {
-							"ability_icon": true,
-							"items_game": true,
-							"vsnd_picker": true,
 							"kv_editor": true
 						},
 						"properties": {
-							"ability_icon": {
-								"type": "boolean",
-								"default": true,
-								"description": "%display.ability_icon%"
-							},
-							"items_game": {
-								"type": "boolean",
-								"default": true,
-								"description": "%display.items_game%"
-							},
-							"vsnd_picker": {
-								"type": "boolean",
-								"default": true,
-								"description": "%display.vsnd_picker%"
-							},
 							"kv_editor": {
 								"type": "boolean",
 								"default": true,
@@ -811,6 +502,9 @@
 		"@types/mkdirp": "^1.0.2",
 		"@types/mocha": "^9.1.1",
 		"@types/node": "14.x",
+		"@types/react": "^18.3.31",
+		"@types/react-dom": "^18.3.7",
+		"@types/react-virtualized": "^9.22.3",
 		"@types/vscode": "^1.66.0",
 		"@typescript-eslint/eslint-plugin": "^5.23.0",
 		"@typescript-eslint/parser": "^5.23.0",
@@ -818,6 +512,9 @@
 		"eslint": "^8.15.0",
 		"glob": "^8.0.1",
 		"mocha": "^9.2.2",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"react-virtualized": "^9.22.6",
 		"ts-loader": "^9.2.8",
 		"typescript": "^4.6.4",
 		"webpack": "^5.70.0",

@@ -6,11 +6,11 @@ import { readKeyValue2, writeKeyValue } from '../utils/kvUtils';
 import { localize } from '../utils/localize';
 
 /**
- * 复制某个英雄所有饰品捆绑包信息到剪切板
+ * Copy all wearable bundle info for a hero to the clipboard
  * @export
  */
 export function copyWearable(context: vscode.ExtensionContext) {
-	// 从本地化键构建装备栏位名称
+	// Build the equipment slot name from the localization key
 	function getSlotName(slotKey: string): string {
 		const localizedName = localize(slotKey.toLowerCase());
 		return localizedName !== slotKey.toLowerCase() ? localizedName : slotKey;

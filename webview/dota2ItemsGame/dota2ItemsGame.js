@@ -1,14 +1,14 @@
 const vscode = acquireVsCodeApi();
 
-// 导航历史栈
+// Navigation history stack
 const navigationHistory = [];
-// 当前视图模式: "list" 或 "grid"
-let viewMode = "list";
-// 当前界面语言 (由插件设置)
+// Current view mode: "list" or "grid" (default: grid / blocks)
+let viewMode = "grid";
+// Current UI language (set by the extension)
 let uiLang = "en";
-// 上次接收的列表数据 (用于切换视图时重新渲染)
+// Last received list data (used to re-render when switching views)
 let lastListData = null;
-// KV 选择模式
+// KV selection mode
 let selectedItems = []; // [{id, name}]
 
 const i18n = {
@@ -28,23 +28,52 @@ const i18n = {
 		hintRightClick: "Tip: Right-click items in grid/list view to select them and generate an AttachWearables KV block"
 	},
 	"zh-cn": {
-		placeholder: "输入编号/物品名/英雄名/模型/粒子/图标路径",
-		clearTitle: "清除搜索结果",
-		backTitle: "返回",
-		listTitle: "列表视图",
-		gridTitle: "网格视图",
-		noIcon: "无图标",
-		selectedCount: (n) => `已选择 ${n} 个物品`,
-		copyKv: "复制KV代码块",
-		cancelSelection: "取消",
-		kvCopied: "KV代码块已复制到剪贴板！",
-		bundleCopyKv: "复制为KV",
-		bundleCopied: "已复制！",
-		hintRightClick: "提示：在网格/列表视图中右键点击物品可选中它们，生成 AttachWearables KV 代码块"
+		placeholder: "Enter ID / item name / hero name / model / particle / icon path",
+		clearTitle: "Clear search results",
+		backTitle: "Back",
+		listTitle: "List view",
+		gridTitle: "Grid view",
+		noIcon: "No icon",
+		selectedCount: (n) => `${n} item(s) selected`,
+		copyKv: "Copy KV Block",
+		cancelSelection: "Cancel",
+		kvCopied: "KV block copied to clipboard!",
+		bundleCopyKv: "Copy as KV",
+		bundleCopied: "Copied!",
+		hintRightClick: "Tip: Right-click items in grid/list view to select them and generate an AttachWearables KV block"
 	}
 };
 
 function t() { return i18n[uiLang] || i18n["en"]; }
+
+// ===================== Copy helpers (models / particles / paths) =====================
+
+function escAttr(s) {
+	return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+/** Heuristic: does this value look like a resource path (model / particle / etc.)? */
+function looksLikePath(v) {
+	if (typeof v !== 'string') return false;
+	return /[\\/]/.test(v) || /\.(vmdl|vpcf|vmat|vtex|vsndevts|vsnd)\b/i.test(v);
+}
+
+/** Small inline copy button; the value is carried in a data attribute (no escaping headaches). */
+function copyBtnHtml(value) {
+	return ` <button class="copy-btn" data-copy="${escAttr(value)}" title="Copy"><span class="codicon codicon-copy"></span></button>`;
+}
+
+// One delegated handler for every copy button (present and future), so it keeps working after re-renders.
+document.addEventListener('click', (e) => {
+	const btn = e.target && e.target.closest ? e.target.closest('.copy-btn') : null;
+	if (!btn) return;
+	e.stopPropagation(); // don't trigger row navigation
+	const val = btn.getAttribute('data-copy') || '';
+	navigator.clipboard.writeText(val).then(() => {
+		btn.classList.add('copied');
+		setTimeout(() => btn.classList.remove('copied'), 1000);
+	});
+});
 
 function applyLanguage(lang) {
 	uiLang = lang;
@@ -79,7 +108,7 @@ function onInput() {
 	}
 }
 
-/** 导航到指定物品ID并将当前状态压入历史栈 */
+/** Navigate to the given item ID and push the current state onto the history stack */
 function navigateToItem(itemId) {
 	const currentContent = document.getElementById("markdown-body").innerHTML;
 	const currentSearch = document.getElementById("filter").value;
@@ -99,7 +128,7 @@ function navigateToItem(itemId) {
 	});
 }
 
-/** 返回上一个视图 */
+/** Go back to the previous view */
 function onBack() {
 	if (navigationHistory.length > 0) {
 		const prev = navigationHistory.pop();
@@ -136,7 +165,7 @@ function reattachNavigationHandlers() {
 	});
 }
 
-/** 设置视图模式并在需要时重新渲染 */
+/** Set the view mode and re-render if needed */
 function setViewMode(mode, skipRerender) {
 	viewMode = mode;
 	const listBtn = document.getElementById("view-list-btn");
@@ -148,9 +177,9 @@ function setViewMode(mode, skipRerender) {
 	}
 }
 
-// ===================== KV 块选择 =====================
+// ===================== KV block selection =====================
 
-/** 右键点击列表/网格项以切换选择 */
+/** Right-click a list/grid item to toggle selection */
 function onRowContextMenu(e) {
 	e.preventDefault();
 	const row = e.currentTarget;
@@ -169,7 +198,7 @@ function onRowContextMenu(e) {
 	updateSelectionBar();
 }
 
-/** 为所有带 data-item-id 的元素附加右键处理 */
+/** Attach right-click handlers to all elements with data-item-id */
 function reattachContextMenuHandlers() {
 	document.querySelectorAll("[data-item-id]").forEach(el => {
 		el.oncontextmenu = onRowContextMenu;
@@ -181,7 +210,7 @@ function reattachContextMenuHandlers() {
 	});
 }
 
-/** 显示/更新/隐藏浮动选择栏 */
+/** Show/update/hide the floating selection bar */
 function updateSelectionBar() {
 	let bar = document.getElementById("kv-selection-bar");
 	if (selectedItems.length === 0) {
@@ -212,7 +241,7 @@ function updateSelectionBar() {
 	preview.textContent = buildKvBlock();
 }
 
-/** 构建选中项的KV文本块 */
+/** Build the KV text block of the selected items */
 function buildKvBlock() {
 	const lines = [];
 	lines.push('"AttachWearables"');
@@ -225,7 +254,7 @@ function buildKvBlock() {
 	return lines.join('\n');
 }
 
-/** 复制KV块到剪贴板 */
+/** Copy the KV block to the clipboard */
 function copyKvBlock() {
 	const text = buildKvBlock();
 	navigator.clipboard.writeText(text).then(() => {
@@ -238,17 +267,17 @@ function copyKvBlock() {
 	});
 }
 
-/** 取消所有选择 */
+/** Cancel all selections */
 function cancelSelection() {
 	selectedItems = [];
 	document.querySelectorAll(".selected-row").forEach(el => el.classList.remove("selected-row"));
 	updateSelectionBar();
 }
 
-// 存储上次渲染的物品数据用于套装复制
+// Store the last rendered item data for bundle copying
 let lastItemData = null;
 
-/** 复制套装物品为KV块 */
+/** Copy bundle items as a KV block */
 function copyBundleKv(bundleType) {
 	if (!lastItemData || !lastItemData[bundleType]) return;
 	const bundle = lastItemData[bundleType];
@@ -278,7 +307,7 @@ function copyBundleKv(bundleType) {
 	});
 }
 
-// ===================== 渲染函数 =====================
+// ===================== Render functions =====================
 
 function render(itemData) {
 	lastListData = null;
@@ -297,9 +326,10 @@ function render(itemData) {
 		if (key === "visuals" || key === "price_info" || key === "bundle" || key === "bundle_contain" || key === "econImg") {
 			continue;
 		}
+		const showCopy = value && (key === "model_player" || looksLikePath(value));
 		content += `<vscode-data-grid-row>\n`;
 		content += `  <vscode-data-grid-cell cell-type="columnheader" grid-column="1">${key}</vscode-data-grid-cell>\n`;
-		content += `  <vscode-data-grid-cell grid-column="2">${value || ""}</vscode-data-grid-cell>\n`;
+		content += `  <vscode-data-grid-cell grid-column="2">${value || ""}${showCopy ? copyBtnHtml(value) : ""}</vscode-data-grid-cell>\n`;
 		content += `</vscode-data-grid-row>\n`;
 	}
 	content += `</vscode-data-grid>\n`;
@@ -363,18 +393,49 @@ function render(itemData) {
 			});
 			const columns = Array.from(allKeys);
 
-			content += `<vscode-data-grid aria-label="Asset Modifiers">\n`;
+			// Size each column to its longest VALUE (not its header), so a long header like
+			// "apply_when_equipped_in_ability_effects_slot" stays as narrow as its values
+			// (e.g. "0"/"1") — the header is ellipsised with a tooltip (see .visuals-grid CSS).
+			// A column with any path value (models / particles) gets a wide flexible width.
+			const colInfo = columns.map(col => {
+				let maxLen = 0;
+				let isPath = false;
+				rows.forEach(row => {
+					const v = row[col];
+					if (v !== undefined && v !== null) {
+						const s = String(v);
+						if (s.length > maxLen) { maxLen = s.length; }
+						if (looksLikePath(s)) { isPath = true; }
+					}
+				});
+				return { col, maxLen, isPath };
+			});
+			// First column holds the _key (e.g. "asset_modifier_Repeat1"); size it to fit so it
+			// does not wrap one character per line.
+			let keyMax = 1;
+			rows.forEach(row => { const k = String(row._key || "").length; if (k > keyMax) { keyMax = k; } });
+			const widths = [`${Math.min(Math.max(keyMax, 4), 26) + 1}ch`].concat(colInfo.map(ci => {
+				if (ci.isPath) { return "minmax(140px, 2fr)"; }
+				const w = Math.min(Math.max(ci.maxLen, 2), 18);
+				return `${w + 1}ch`;
+			}));
+
+			content += `<vscode-data-grid class="visuals-grid" aria-label="Asset Modifiers" grid-template-columns="${widths.join(' ')}">\n`;
 			content += `<vscode-data-grid-row row-type="header">\n`;
 			content += `  <vscode-data-grid-cell cell-type="columnheader" grid-column="1">#</vscode-data-grid-cell>\n`;
-			columns.forEach((col, idx) => {
-				content += `  <vscode-data-grid-cell cell-type="columnheader" grid-column="${idx + 2}">${col}</vscode-data-grid-cell>\n`;
+			colInfo.forEach((ci, idx) => {
+				content += `  <vscode-data-grid-cell cell-type="columnheader" grid-column="${idx + 2}" title="${escAttr(ci.col)}">${ci.col}</vscode-data-grid-cell>\n`;
 			});
 			content += `</vscode-data-grid-row>\n`;
 			rows.forEach(row => {
 				content += `<vscode-data-grid-row>\n`;
 				content += `  <vscode-data-grid-cell grid-column="1">${row._key || ""}</vscode-data-grid-cell>\n`;
-				columns.forEach((col, idx) => {
-					content += `  <vscode-data-grid-cell grid-column="${idx + 2}">${row[col] !== undefined ? row[col] : ""}</vscode-data-grid-cell>\n`;
+				colInfo.forEach((ci, idx) => {
+					const raw = row[ci.col];
+					const val = raw !== undefined && raw !== null ? String(raw) : "";
+					// Copy button only on actual asset paths (.vpcf/.vmdl/…), not on values like "ALL"/"gun".
+					const copy = looksLikePath(val) ? copyBtnHtml(val) : "";
+					content += `  <vscode-data-grid-cell grid-column="${idx + 2}">${val}${copy}</vscode-data-grid-cell>\n`;
 				});
 				content += `</vscode-data-grid-row>\n`;
 			});
@@ -459,7 +520,7 @@ function renderList(itemList) {
 	updateBackButton();
 }
 
-/** 将搜索结果渲染为图标卡片网格 */
+/** Render the search results as a grid of icon cards */
 function renderGrid(itemList) {
 	let content = `<div class="grid-container">\n`;
 	const tr = t();

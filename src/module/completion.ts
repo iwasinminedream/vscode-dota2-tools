@@ -3,7 +3,7 @@ import { CssCompletionItemProvider } from '../Completions/cssCompletionItemProvi
 import { JsCompletionItemProvider } from '../Completions/jsCompletionItemProvider';
 import { LuaCompletionItemProvider } from '../Completions/luaCompletionItemProvider';
 import { getDotaApiNoteClass } from './apiNote';
-/** 代码补全模块 */
+/** Code completion module */
 
 let luaCompletionItemProvider: LuaCompletionItemProvider;
 let cssCompletionItemProvider: CssCompletionItemProvider;

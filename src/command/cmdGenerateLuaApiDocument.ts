@@ -7,7 +7,7 @@ import { getPathConfiguration } from '../utils/getPathConfiguration';
 import { localize } from '../utils/localize';
 
 /**
- * 用来生成Emmylua插件跳转使用的文件
+ * Generates the file used by the Emmylua plugin for navigation
  * @export
  */
 export function generateLuaApiDocument(context: vscode.ExtensionContext) {

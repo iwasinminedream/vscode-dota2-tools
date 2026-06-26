@@ -7,7 +7,7 @@ import { getGameDir } from '../module/addonInfo';
 import { localize } from '../utils/localize';
 
 /**
- * 导出所有饰品的肖像配置信息
+ * Export the portrait configuration info of all wearables
  * @export
  */
 export function exportWearablePortraits(context: vscode.ExtensionContext) {
