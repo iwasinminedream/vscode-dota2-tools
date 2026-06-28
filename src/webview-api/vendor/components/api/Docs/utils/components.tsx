@@ -49,19 +49,3 @@ export const SearchOnGitHub: React.FC<{ name: string; className?: string; search
     </a>
   );
 };
-
-export const SearchOnGoogle: React.FC<{ name: string; searchPath?: string }> = ({
-  name,
-  searchPath = "vscripts",
-}) => {
-  const query = encodeURIComponent(`site:github.com inurl:${searchPath} "${name}"`);
-  const href = `https://www.google.com/search?q=${query}`;
-  return (
-    <a href={href} target="_blank" rel="noreferrer noopener" title="Search on Google" style={searchWrapperStyle}>
-      <svg width={16} height={16} viewBox="0 0 16 16" style={{ margin: 2 }}>
-        <circle cx="7" cy="7" r="5" fill="none" stroke="#4285F4" strokeWidth="2" />
-        <line x1="11" y1="11" x2="14" y2="14" stroke="#4285F4" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    </a>
-  );
-};

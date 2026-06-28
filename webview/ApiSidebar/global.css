@@ -170,9 +170,16 @@ pre code {
   .group-members {
     padding: 8px 4px 8px 8px !important;
   }
-  .api-group-header {
-    flex-direction: column;
-  }
+}
+
+/* Keep the signature + badges (s/c/github/google/#) on one row even in the narrow
+   VS Code sidebar: the badges sit to the right of the signature, never stacked below.
+   The signature wraps within its flex:1 column; the badges keep their natural width. */
+.api-group-header {
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 /* Navbar link hover */

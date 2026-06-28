@@ -157,18 +157,8 @@ export async function dota2IconPanel(context: vscode.ExtensionContext) {
 
 	// Page content
 	panel.webview.html = await getWebviewContent(panel.webview, context.extensionUri, "dota2Icon", html => {
-		let replaceText = "";
-		// Hero icons
-		const attributeList = ["DOTA_ATTRIBUTE_STRENGTH", "DOTA_ATTRIBUTE_AGILITY", "DOTA_ATTRIBUTE_INTELLECT", "DOTA_ATTRIBUTE_ALL"];
-		for (const attributeType of attributeList) {
-			replaceText = "";
-			for (const heroName in npcHeroes[attributeType]) {
-				replaceText += `\t\t\t\t\t\t<img class="hero-icon" src="../../${npcHeroes[attributeType][heroName]}" onclick="heroFilter(this,'${heroName}')">\n`;
-			}
-			html = html.replace("<div>__replace__</div>", replaceText);
-		}
 		// Ability icons
-		replaceText = "";
+		let replaceText = "";
 		for (const iconName in spellicons) {
 			const iconPath = spellicons[iconName];
 			replaceText += `\t\t<img id="${iconName}" data-abilityName="${abilityCN["DOTA_Tooltip_ability_" + iconName]}" class="icon texture-icon" src="../../${iconPath}" onclick="copyIconName('${iconName}')" oncontextmenu="openFolder('spellicons/${iconName}')">\n`;
@@ -266,18 +256,8 @@ export async function ensureIconData(context: vscode.ExtensionContext) {
 /** Build the HTML pre-processing function for the dota2Icon webview (same as the panel version, only the webview is parameterized) */
 export function buildIconsPreProcess(webview: vscode.Webview): (html: string) => string {
 	return (html) => {
-		let replaceText = "";
-		// Hero icons
-		const attributeList = ["DOTA_ATTRIBUTE_STRENGTH", "DOTA_ATTRIBUTE_AGILITY", "DOTA_ATTRIBUTE_INTELLECT", "DOTA_ATTRIBUTE_ALL"];
-		for (const attributeType of attributeList) {
-			replaceText = "";
-			for (const heroName in npcHeroes[attributeType]) {
-				replaceText += `\t\t\t\t\t\t<img class="hero-icon" src="../../${npcHeroes[attributeType][heroName]}" onclick="heroFilter(this,'${heroName}')">\n`;
-			}
-			html = html.replace("<div>__replace__</div>", replaceText);
-		}
 		// Ability icons
-		replaceText = "";
+		let replaceText = "";
 		for (const iconName in spellicons) {
 			const iconPath = spellicons[iconName];
 			replaceText += `\t\t<img id="${iconName}" data-abilityName="${abilityCN["DOTA_Tooltip_ability_" + iconName]}" class="icon texture-icon" src="../../${iconPath}" onclick="copyIconName('${iconName}')" oncontextmenu="openFolder('spellicons/${iconName}')">\n`;

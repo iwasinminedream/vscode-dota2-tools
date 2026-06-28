@@ -2,7 +2,7 @@ import * as api from "./api";
 import React from "react";
 import { Field } from "./Field";
 import { FunctionDeclaration } from "./FunctionDeclaration";
-import { ElementLink, KindIcon, useLinkedElement } from "./utils/components";
+import { KindIcon, useLinkedElement } from "./utils/components";
 import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, CommonGroupMembers, ElementBadges, OptionalDescription } from "./utils/styles";
 import { Types } from "./types";
 import { AvailabilityBadge } from "./AvailabilityBadge";
@@ -30,7 +30,6 @@ export const ClassDeclaration: React.FC<{
       <ElementBadges>
         <ReferencesLink name={declaration.name} />
         <AvailabilityBadge available={declaration.clientName != null ? "both" : "server"} />
-        <ElementLink scope={declaration.name} hash={declaration.name} />
       </ElementBadges>
     </CommonGroupHeader>
     <OptionalDescription description={declaration.description} />

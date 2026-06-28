@@ -1,7 +1,7 @@
 import * as api from "./api";
 import React from "react";
 import { ColoredSyntax } from "../ColoredSyntax";
-import { ElementLink, KindIcon, useLinkedElement } from "./utils/components";
+import { KindIcon, useLinkedElement } from "./utils/components";
 import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, CommonGroupMembers, ElementBadges, OptionalDescription } from "./utils/styles";
 import { ReferencesLink } from "./ReferencesLink";
 
@@ -47,7 +47,6 @@ export const Enum: React.FC<{
       </CommonGroupSignature>
       <ElementBadges>
         <ReferencesLink name={element.name} />
-        <ElementLink scope={element.name} hash={element.name} />
       </ElementBadges>
     </CommonGroupHeader>
     <OptionalDescription description={element.description} />

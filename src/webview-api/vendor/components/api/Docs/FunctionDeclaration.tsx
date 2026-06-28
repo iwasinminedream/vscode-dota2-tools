@@ -2,7 +2,7 @@ import * as api from "./api";
 import React, { useMemo, useContext } from "react";
 import { getReferencesForFunction } from "./utils/filtering";
 import { ObjectType } from "./ObjectType";
-import { ElementLink, KindIcon, SearchOnGitHub, SearchOnGoogle, useLinkedElement } from "./utils/components";
+import { KindIcon, SearchOnGitHub, useLinkedElement } from "./utils/components";
 import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, ElementBadges, OptionalDescription } from "./utils/styles";
 import { FunctionParameters, Types } from "./types";
 import { AvailabilityBadge } from "./AvailabilityBadge";
@@ -60,9 +60,7 @@ export const FunctionDeclaration: React.FC<{
         </CommonGroupSignature>
         <ElementBadges>
           {declaration.available && <AvailabilityBadge available={declaration.available} />}
-          <SearchOnGitHub name={declaration.name} className={isPanorama ? context : undefined} searchPath={searchPath} />
-          <SearchOnGoogle name={declaration.name} searchPath={searchPath} />
-          {context && <ElementLink scope={context} hash={declaration.name} />}
+          <SearchOnGitHub name={declaration.name} searchPath={searchPath} />
         </ElementBadges>
       </CommonGroupHeader>
       {objectReferences.length > 0 && (

@@ -51,7 +51,7 @@ const DECL_SCOPES: Record<DeclScopeKey, DeclarationsContextType> = {
 // Each result is rendered with its own page's card; keep enough info to do that.
 type Entry =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | { source: SourceKey; name: string; kind: "decl"; scopeKey: DeclScopeKey; decl: any; context?: string }
+  | { source: SourceKey; name: string; kind: "decl"; scopeKey: DeclScopeKey; decl: any; context?: string; searchNames?: string[] }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | { source: SourceKey; name: string; kind: "ability"; ability: any }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,17 +73,13 @@ function pushDeclScope(out: Entry[], scopeKey: DeclScopeKey, source: SourceKey) 
         }
       }
     } else if (d.kind === "enum") {
-      // Enum header on its own…
-      out.push({ source, name: d.name, kind: "decl", scopeKey, decl: { ...d, members: [] } });
-      // …plus every member (e.g. MODIFIER_PROPERTY_*) as its own result, rendered as the
-      // enum card filtered to just that member — like searching it on the Lua API page.
-      if (Array.isArray(d.members)) {
-        for (const m of d.members) {
-          if (m?.name) {
-            out.push({ source, name: m.name, kind: "decl", scopeKey, decl: { ...d, members: [m] }, context: d.name });
-          }
-        }
-      }
+      // One block per enum (all members), like the site's Lua API page — not a card per member.
+      // Still findable by a member name via `searchNames`, so typing e.g. DOTA_ABILITY_BEHAVIOR_HIDDEN
+      // surfaces the whole DOTA_ABILITY_BEHAVIOR block.
+      const memberNames = Array.isArray(d.members)
+        ? d.members.map((m: any) => m?.name).filter((n: any): n is string => !!n)
+        : [];
+      out.push({ source, name: d.name, kind: "decl", scopeKey, decl: d, searchNames: [d.name, ...memberNames] });
     } else {
       out.push({
         source,
@@ -141,7 +137,14 @@ function fuzzyFilter(pool: Entry[], q: string): Entry[] {
   if (!query) return pool;
   const scored: { entry: Entry; score: number }[] = [];
   for (const entry of pool) {
-    const score = fuzzyMatch(entry.name, query);
+    // Enums carry `searchNames` (the enum name + every member name) so a member query still
+    // matches the one enum block; take the best (lowest) score across them.
+    const names = "searchNames" in entry && entry.searchNames ? entry.searchNames : [entry.name];
+    let score = Infinity;
+    for (const n of names) {
+      const s = fuzzyMatch(n, query);
+      if (s < score) score = s;
+    }
     if (isFinite(score)) scored.push({ entry, score });
   }
   scored.sort((a, b) => a.score - b.score || a.entry.name.localeCompare(b.entry.name));
@@ -193,6 +196,20 @@ export function SearchPage() {
   // Default to Lua only; the user can pick "All" or another source from the chips.
   const [selected, setSelected] = useState<SourceKey | null>("lua");
 
+  // Clicking a type / element link in a declaration card searches for it (dispatched by the
+  // index.tsx link interceptor). Keep the current source chip selected — most type references
+  // point within the same source, and the user asked not to be bounced to "All".
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const term = (e as CustomEvent<{ term?: string }>).detail?.term;
+      if (typeof term === "string" && term) {
+        setSearch(term);
+      }
+    };
+    window.addEventListener("dota:navigate", handler);
+    return () => window.removeEventListener("dota:navigate", handler);
+  }, []);
+
   const allResults = useMemo(() => {
     const q = search.trim();
     if (selected) return q ? fuzzyFilter(BY_SOURCE[selected], q) : BY_SOURCE[selected];
@@ -224,12 +241,7 @@ export function SearchPage() {
         .search-source-chip:hover { filter: brightness(1.08); }
       `}</style>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <SearchInput value={search} onChange={setSearch} />
-        </div>
-        <ThemeToggle />
-      </div>
+      <SearchInput value={search} onChange={setSearch} />
 
       <div
         className="search-chip-row"
@@ -362,7 +374,7 @@ function SourceChip({
 // ─── Light/dark toggle (the website keeps this in the NavBar; here it lives in the
 //     search row). Flips the data-theme attribute the vendored global.css keys off. ──
 
-function ThemeToggle() {
+export function ThemeToggle() {
   const [dark, setDark] = useState(
     () => typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark",
   );

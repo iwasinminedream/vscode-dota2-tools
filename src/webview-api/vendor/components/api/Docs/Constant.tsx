@@ -1,7 +1,7 @@
 import * as api from "./api";
 import React from "react";
-import { ElementLink, KindIcon, useLinkedElement } from "./utils/components";
-import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, ElementBadges, OptionalDescription } from "./utils/styles";
+import { KindIcon, useLinkedElement } from "./utils/components";
+import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, OptionalDescription } from "./utils/styles";
 
 export function Constant({
   className,
@@ -20,9 +20,6 @@ export function Constant({
           <KindIcon kind="constant" size="medium" />
           {element.name}:&nbsp;{element.value}
         </CommonGroupSignature>
-        <ElementBadges>
-          <ElementLink scope="constants" hash={element.name} />
-        </ElementBadges>
       </CommonGroupHeader>
       <OptionalDescription description={element.description} />
     </CommonGroupWrapper>

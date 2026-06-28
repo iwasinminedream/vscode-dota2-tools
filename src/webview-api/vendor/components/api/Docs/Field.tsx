@@ -1,8 +1,8 @@
 import * as api from "./api";
 import apiTypes from "@moddota/dota-data/files/vscripts/api-types";
 import React from "react";
-import { ElementLink, KindIcon, useLinkedElement } from "./utils/components";
-import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, ElementBadges } from "./utils/styles";
+import { KindIcon, useLinkedElement } from "./utils/components";
+import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature } from "./utils/styles";
 import { Types } from "./types";
 
 export const Field: React.FC<{
@@ -19,7 +19,6 @@ export const Field: React.FC<{
           {element.name}
           {element.types.includes("nil") && "?"}: <Types types={element.types.filter((x) => x !== "nil")} />
         </CommonGroupSignature>
-        <ElementBadges>{context && <ElementLink scope={context} hash={element.name} />}</ElementBadges>
       </CommonGroupHeader>
     </CommonGroupWrapper>
   );

@@ -104,14 +104,17 @@ const FunctionType: React.FC<{ type: api.FunctionType }> = ({ type: { args, retu
 
 export function FunctionParameters({ args }: { args: api.FunctionParameter[] }) {
   return (
-    <>
+    // The card wrapper sets word-break:break-all so long identifiers don't overflow, but for a
+    // many-argument signature that shreds names mid-word. Reset it here so the line wraps at the
+    // ", " between arguments instead; each "name: type" stays intact thanks to the &nbsp;.
+    <span style={{ wordBreak: "normal", overflowWrap: "break-word" }}>
       (
       {intersperse(
         args.map((arg) => <FunctionParameter key={arg.name} {...arg} />),
         ", ",
       )}
       )
-    </>
+    </span>
   );
 }
 

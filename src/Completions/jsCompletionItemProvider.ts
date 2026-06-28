@@ -68,7 +68,6 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 				break;
 			}
 
-			const isDollarClass = shortName === '$';
 			const classPriority = classSortPrefix(shortName);
 
 			// Class name completion (e.g. $, Game, GameEvents, Particles)
@@ -99,7 +98,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 						let dotItem = new vscode.CompletionItem(funName, vscode.CompletionItemKind.Method);
 						dotItem.detail = `${DOTA_LABEL} — ${funInfo.Description || ''}`;
 						dotItem.documentation = this.getDocumentation(funInfo, shortName);
-						dotItem.insertText = this.buildMethodSnippet(funInfo, isDollarClass);
+						dotItem.insertText = this.buildMethodSnippet(funInfo);
 						dotItem.sortText = `0_${funName}`;
 						methodItems.push(dotItem);
 					}
@@ -114,7 +113,7 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 						);
 						globalItem.detail = `${DOTA_LABEL}`;
 						globalItem.documentation = this.getDocumentation(funInfo, shortName);
-						globalItem.insertText = this.buildFullSnippet(funInfo, shortName, isDollarClass);
+						globalItem.insertText = this.buildFullSnippet(funInfo);
 						globalItem.filterText = funName;
 						globalItem.sortText = `!1_${classPriority}_${funName}`;
 						this.globalSnippets.push(globalItem);
@@ -149,78 +148,81 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 		return new vscode.MarkdownString(detail);
 	}
 
-	/** Parse the parameter portion of the Signature and return the list of parameter names */
+	/** Parse the parameter portion of the Signature into clean parameter names.
+	 *  Signatures look like "Game.GetGameTime( number a, string b )" — params are "type name"
+	 *  pairs; we keep just the name and tidy the dump's "_arg_1" placeholders to "arg1". */
 	private parseParams(signature: string): string[] {
 		const parenStart = signature.indexOf('(');
 		if (parenStart < 0) { return []; }
 		const parenEnd = signature.lastIndexOf(')');
+		if (parenEnd <= parenStart) { return []; }
 		const paramsStr = signature.substring(parenStart + 1, parenEnd).trim();
-		if (!paramsStr) { return []; }
+		if (!paramsStr || paramsStr === '...') { return []; }
 		return paramsStr.split(',').map(p => {
-			const parts = p.trim().split(/\s+/);
-			return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+			const parts = p.trim().split(/\s+/).filter(Boolean);
+			const name = (parts.length > 1 ? parts[parts.length - 1] : parts[0]) || '';
+			return name.replace(/^_arg_/, 'arg');
 		}).filter(p => p.length > 0);
 	}
 
-	/** dot context: insert only the method name + parameter tab stops (e.g. Time() or Msg(${1:...})) */
-	private buildMethodSnippet(funInfo: JsFunction, isDollarClass: boolean = false): vscode.SnippetString {
-		if (!funInfo.Signature) { return new vscode.SnippetString(''); }
-		const sig = funInfo.Signature;
-		// $ class signature format: "Msg( js_raw_args ... )" (no $. prefix) -> used directly as methodPart
-		// Normal class format: "Game.Time()" (has a Class. prefix) -> take the part after the dot
-		let methodPart: string;
-		if (isDollarClass) {
-			methodPart = sig;
-		} else {
-			const dotIdx = sig.indexOf('.');
-			methodPart = dotIdx >= 0 ? sig.substring(dotIdx + 1) : sig;
-		}
-		const parenStart = methodPart.indexOf('(');
-		if (parenStart < 0) { return new vscode.SnippetString(methodPart); }
-		const methodName = methodPart.substring(0, parenStart).trim();
-		const params = this.parseParams(sig);
-		if (params.length === 0) {
-			return new vscode.SnippetString(methodName + '()');
-		}
-		let text = methodName + '(';
-		params.forEach((name, i) => {
-			if (i > 0) { text += ', '; }
-			text += '${' + (i + 1) + ':' + name + '}';
-		});
-		text += ')';
-		return new vscode.SnippetString(text);
+	/** Build the "(${1:p1}, ${2:p2})" tab-stop list (or "()" when there are no params). */
+	private buildParamList(params: string[]): string {
+		if (params.length === 0) { return '()'; }
+		return '(' + params.map((name, i) => '${' + (i + 1) + ':' + name + '}').join(', ') + ')';
 	}
 
-	/** global context: insert Class.Method(params) (e.g. Game.Time(), $.Localize()) */
-	private buildFullSnippet(funInfo: JsFunction, shortName: string, isDollarClass: boolean = false): vscode.SnippetString {
+	/** dot context: insert just the method call (the part after the class prefix), e.g. after
+	 *  "Game." -> "GetGameTime()", after "$." -> "Msg(${1:arg1})". Every signature includes the
+	 *  "Class." prefix (incl. "$.Msg(...)"), so we strip up to the last dot before the paren. */
+	private buildMethodSnippet(funInfo: JsFunction): vscode.SnippetString {
 		if (!funInfo.Signature) { return new vscode.SnippetString(''); }
 		const sig = funInfo.Signature;
 		const parenStart = sig.indexOf('(');
-		if (parenStart < 0) {
-			return new vscode.SnippetString(isDollarClass ? '$.' + sig : sig);
+		const callPart = parenStart >= 0 ? sig.substring(0, parenStart) : sig;
+		const dotIdx = callPart.lastIndexOf('.');
+		const methodName = (dotIdx >= 0 ? callPart.substring(dotIdx + 1) : callPart).trim();
+		if (parenStart < 0) { return new vscode.SnippetString(methodName); }
+		return new vscode.SnippetString(methodName + this.buildParamList(this.parseParams(sig)));
+	}
+
+	/** global context: insert the full call straight from the signature prefix, e.g.
+	 *  "Game.GetGameTime()" or "$.Msg(${1:arg1})". */
+	private buildFullSnippet(funInfo: JsFunction): vscode.SnippetString {
+		if (!funInfo.Signature) { return new vscode.SnippetString(''); }
+		const sig = funInfo.Signature;
+		const parenStart = sig.indexOf('(');
+		if (parenStart < 0) { return new vscode.SnippetString(sig.trim()); }
+		const callName = sig.substring(0, parenStart).trim(); // "Game.GetGameTime" or "$.Msg"
+		return new vscode.SnippetString(callName + this.buildParamList(this.parseParams(sig)));
+	}
+
+	/** Heuristic: is the cursor inside a string literal or a line comment on this line?
+	 *  Prevents Dota completions from popping up inside "..."/'...'/`...` or after //. */
+	private inStringOrComment(line: string): boolean {
+		let quote: string | null = null;
+		for (let i = 0; i < line.length; i++) {
+			const ch = line[i];
+			if (quote) {
+				if (ch === '\\') { i++; continue; }
+				if (ch === quote) { quote = null; }
+			} else if (ch === '"' || ch === "'" || ch === '`') {
+				quote = ch;
+			} else if (ch === '/' && line[i + 1] === '/') {
+				return true;
+			}
 		}
-		// For the $ class: the signature is "Msg(...)" -> build "$.Msg(...)"
-		// For normal classes: the signature already is "Game.Time(...)"
-		const callName = isDollarClass
-			? '$.' + sig.substring(0, parenStart).trim()
-			: sig.substring(0, parenStart).trim();
-		const params = this.parseParams(sig);
-		if (params.length === 0) {
-			return new vscode.SnippetString(callName + '()');
-		}
-		let text = callName + '(';
-		params.forEach((name, i) => {
-			if (i > 0) { text += ', '; }
-			text += '${' + (i + 1) + ':' + name + '}';
-		});
-		text += ')';
-		return new vscode.SnippetString(text);
+		return quote !== null;
 	}
 
 	provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
 		const lineText = document.lineAt(position.line).text.substring(0, position.character);
-		// Match "ClassName." or "$." ($ is not \w, so it needs special handling)
-		const dotMatch = lineText.match(/([\w$]+)\.\s*$/);
+		// Don't offer Dota completions inside strings or comments.
+		if (this.inStringOrComment(lineText)) { return; }
+		// Match "ClassName." OR "ClassName.partialMethod" ($ is not \w, so handle it explicitly).
+		// Capturing the partial after the dot is what fixes "$.M" + Tab producing "$.$.Msg(...)":
+		// without it the line didn't end in "." so we fell through to the global (prefixed)
+		// snippets, which were then inserted on top of the "$." the user had already typed.
+		const dotMatch = lineText.match(/([\w$]+)\.\s*(\w*)$/);
 
 		if (dotMatch) {
 			const typedPrefix = dotMatch[1];
@@ -229,22 +231,26 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 			if (normalizedName) {
 				const methods = this.classMethodMap.get(normalizedName);
 				if (methods) {
-					// Если пользователь написал класс не в том регистре (game вместо Game),
-					// нужно заменить введённый текст на правильный
-					if (typedPrefix !== normalizedName) {
-						const startPos = new vscode.Position(position.line, position.character - typedPrefix.length - 1);
-						return methods.map(item => {
-							const fixed = new vscode.CompletionItem(item.label, item.kind);
-							fixed.detail = item.detail;
-							fixed.documentation = item.documentation;
-							fixed.sortText = item.sortText;
-							// Заменяем "game." на "Game.Method()"
-							fixed.insertText = this.prependClassSnippet(normalizedName, item.insertText as vscode.SnippetString);
-							fixed.range = new vscode.Range(startPos, position);
-							return fixed;
-						});
-					}
-					return methods;
+					// Replace the whole "Class.partial" span and always emit "CorrectClass.method(...)".
+					// One code path fixes both wrong-case prefixes (game -> Game) and the prefix
+					// duplication when a partial method name is already typed after the dot.
+					const replaceRange = new vscode.Range(
+						new vscode.Position(position.line, position.character - dotMatch[0].length),
+						position,
+					);
+					return methods.map(item => {
+						const label = item.label as string;
+						const fixed = new vscode.CompletionItem(item.label, item.kind);
+						fixed.detail = item.detail;
+						fixed.documentation = item.documentation;
+						fixed.sortText = item.sortText;
+						fixed.insertText = this.prependClassSnippet(normalizedName, item.insertText as vscode.SnippetString);
+						fixed.range = replaceRange;
+						// Filter against "typedPrefix.method" so the typed "Class.partial" still matches
+						// even though the replace range now covers the class prefix as well.
+						fixed.filterText = `${typedPrefix}.${label}`;
+						return fixed;
+					});
 				}
 			}
 			// Не Dota 2 класс -> не мешаем

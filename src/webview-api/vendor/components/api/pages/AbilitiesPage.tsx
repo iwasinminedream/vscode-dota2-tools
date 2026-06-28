@@ -150,7 +150,7 @@ function KVValueRenderer({ value, depth = 0 }: { value: KVValue; depth?: number 
 
 // --- Copy Button ---
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, label, title }: { text: string; label?: string; title?: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
@@ -166,23 +166,29 @@ function CopyButton({ text }: { text: string }) {
         e.stopPropagation();
         handleCopy();
       }}
-      title={copied ? "Copied!" : "Copy KV to clipboard"}
+      title={title ?? (copied ? "Copied!" : "Copy KV to clipboard")}
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 20,
+        gap: 4,
+        width: label ? "auto" : 20,
         height: 20,
+        padding: label ? "0 7px" : 0,
         background: copied ? "rgba(80, 200, 120, 0.2)" : "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.1)",
         borderRadius: 3,
         cursor: "pointer",
         color: copied ? "#50c878" : "var(--color-text-faded)",
+        fontSize: 11,
+        fontFamily: "monospace",
         transition: "all 0.15s ease",
         flexShrink: 0,
       }}
     >
-      {copied ? (
+      {label ? (
+        copied ? "✓ copied" : label
+      ) : copied ? (
         <svg width={10} height={10} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="3 8 7 12 13 4" />
         </svg>
@@ -294,7 +300,8 @@ export function AbilityItem({ ability }: { ability: AbilityEntry }) {
           {ability.name}
         </code>
 
-        <CopyButton text={copyText} />
+        <CopyButton text={ability.name} label="name" title="Copy ability name" />
+        <CopyButton text={copyText} title="Copy KV to clipboard" />
       </div>
 
       {/* Expanded content */}

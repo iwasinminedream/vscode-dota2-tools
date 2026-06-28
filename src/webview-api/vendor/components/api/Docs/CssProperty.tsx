@@ -1,7 +1,7 @@
 import * as api from "./api";
 import React from "react";
-import { ElementLink, KindIcon, useLinkedElement } from "./utils/components";
-import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, ElementBadges, OptionalDescription } from "./utils/styles";
+import { KindIcon, useLinkedElement } from "./utils/components";
+import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature, OptionalDescription } from "./utils/styles";
 
 export const CssProperty: React.FC<{
   className?: string;
@@ -17,9 +17,6 @@ export const CssProperty: React.FC<{
           <KindIcon kind="function" size="big" />
           {element.name}
         </CommonGroupSignature>
-        <ElementBadges>
-          <ElementLink scope="properties" hash={element.name} />
-        </ElementBadges>
       </CommonGroupHeader>
       <OptionalDescription description={element.description} />
       {element.examples.length > 0 && (
