@@ -21,6 +21,13 @@ export const ClassDeclaration: React.FC<{
         <KindIcon kind="class" size="big" />
         <span style={{ fontSize: 24, fontWeight: 600 }}>{declaration.name}</span>
         &nbsp;
+        {declaration.instance && declaration.instance !== declaration.name && (
+          <span style={{ fontSize: 14, fontWeight: "normal", color: "var(--color-text-dim)" }}>
+            instance{" "}
+            <span style={{ fontFamily: "monospace", color: "var(--color-text)" }}>{declaration.instance}</span>
+            &nbsp;
+          </span>
+        )}
         {declaration.extend && (
           <span style={{ fontSize: 14, fontWeight: "normal", color: "var(--color-text-dim)" }}>
             extends <Types types={[declaration.extend]} />

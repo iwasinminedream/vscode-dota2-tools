@@ -2,7 +2,7 @@
 	"name": "dota2tools",
 	"displayName": "%ext.displayName%",
 	"description": "",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"publisher": "iwasinminedream",
 	"engines": {
 		"vscode": "^1.66.0"
@@ -174,6 +174,10 @@
 				"title": "%dota2tools.CopyDotaResourcePath%"
 			},
 			{
+				"command": "dota2tools.recompile_resource",
+				"title": "%dota2tools.recompile_resource%"
+			},
+			{
 				"command": "dota2tools.kvEditor.openFile",
 				"title": "%dota2tools.kvEditor.openFile%",
 				"category": "Dota2 Tools"
@@ -205,6 +209,11 @@
 					"when": "resource =~ /panorama/ && resourceExtname =~ /(\\.png)|(\\.jpg)/",
 					"command": "dota2tools.CopyDotaResourcePath",
 					"group": "6_copypath"
+				},
+				{
+					"when": "!explorerResourceIsFolder && resource =~ /content/",
+					"command": "dota2tools.recompile_resource",
+					"group": "2_workspace"
 				}
 			],
 			"editor/title/context": [

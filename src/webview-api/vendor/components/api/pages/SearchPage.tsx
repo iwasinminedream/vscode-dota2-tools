@@ -62,24 +62,18 @@ function pushDeclScope(out: Entry[], scopeKey: DeclScopeKey, source: SourceKey) 
   for (const d of DECL_SCOPES[scopeKey].declarations) {
     if (!d?.name) continue;
     if (d.kind === "class") {
-      // Class header on its own (members emptied so the card stays compact)…
-      out.push({ source, name: d.name, kind: "decl", scopeKey, decl: { ...d, members: [] } });
-      // …plus every method as its own searchable result, rendered like on the page.
-      if (Array.isArray(d.members)) {
-        for (const m of d.members) {
-          if (m?.kind === "function" && m.name) {
-            out.push({ source, name: m.name, kind: "decl", scopeKey, decl: m, context: d.name });
-          }
-        }
-      }
+      // One entry per class; members are matched dynamically at query time (matchEntry),
+      // so hits inside a class group under its header like on the site. `searchNames`
+      // includes the global instance (GameRules → CDOTAGameRules) and the client-side
+      // name so instance queries find the class too.
+      const classNames = [d.name];
+      if (d.instance && d.instance !== d.name) classNames.push(d.instance);
+      if (d.clientName && d.clientName !== d.name) classNames.push(d.clientName);
+      out.push({ source, name: d.name, kind: "decl", scopeKey, decl: d, searchNames: classNames });
     } else if (d.kind === "enum") {
-      // One block per enum (all members), like the site's Lua API page — not a card per member.
-      // Still findable by a member name via `searchNames`, so typing e.g. DOTA_ABILITY_BEHAVIOR_HIDDEN
-      // surfaces the whole DOTA_ABILITY_BEHAVIOR block.
-      const memberNames = Array.isArray(d.members)
-        ? d.members.map((m: any) => m?.name).filter((n: any): n is string => !!n)
-        : [];
-      out.push({ source, name: d.name, kind: "decl", scopeKey, decl: d, searchNames: [d.name, ...memberNames] });
+      // One block per enum, like the site's Lua API page — member matching also happens
+      // at query time, so DOTA_ABILITY_BEHAVIOR_HIDDEN shows the block filtered to it.
+      out.push({ source, name: d.name, kind: "decl", scopeKey, decl: d });
     } else {
       out.push({
         source,
@@ -130,32 +124,131 @@ const INTERLEAVED: Entry[] = (() => {
   return out;
 })();
 
-function fuzzyFilter(pool: Entry[], q: string): Entry[] {
+interface DisplayEntry {
+  entry: Entry;
+  /** Class/enum members that matched the query — the card renders filtered to them, like the site. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  members?: any[];
+}
+
+// Match one entry against the query. Class and enum members are searched too, so a hit
+// inside a class groups under its header (the site's search behaviour: CDOTA_BaseNPC card
+// with only the matching methods). Class methods additionally match through qualified
+// names (CDOTAGameRules.IsGamePaused / GameRules.IsGamePaused) so "gamerules pause"-style
+// queries work; when the query is really just the class name (every member "matches"
+// through the prefix alone) it degrades to a plain name match instead.
+function matchEntry(entry: Entry, query: string): { score: number; members?: any[] } | undefined {
+  const names = "searchNames" in entry && entry.searchNames ? entry.searchNames : [entry.name];
+  let nameScore = Infinity;
+  for (const n of names) {
+    const s = fuzzyMatch(n, query);
+    if (s < nameScore) nameScore = s;
+  }
+
+  const decl = entry.kind === "decl" ? entry.decl : undefined;
+  if (decl && (decl.kind === "class" || decl.kind === "enum") && Array.isArray(decl.members) && decl.members.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const plain: any[] = [];
+    let bestPlain = Infinity;
+    for (const m of decl.members) {
+      if (!m?.name) continue;
+      const s = fuzzyMatch(m.name, query);
+      if (isFinite(s)) {
+        plain.push(m);
+        if (s < bestPlain) bestPlain = s;
+      }
+    }
+    if (plain.length > 0) {
+      return { score: Math.min(bestPlain, nameScore), members: plain };
+    }
+    if (decl.kind === "class") {
+      const prefixes = [decl.name];
+      if (decl.instance && decl.instance !== decl.name) prefixes.push(decl.instance);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const qualified: any[] = [];
+      let bestQualified = Infinity;
+      for (const m of decl.members) {
+        if (!m?.name) continue;
+        let s = Infinity;
+        for (const p of prefixes) {
+          const qs = fuzzyMatch(`${p}.${m.name}`, query);
+          if (qs < s) s = qs;
+        }
+        if (isFinite(s)) {
+          qualified.push(m);
+          if (s < bestQualified) bestQualified = s;
+        }
+      }
+      if (qualified.length > 0 && qualified.length < decl.members.length) {
+        return { score: Math.min(bestQualified, nameScore), members: qualified };
+      }
+      if (qualified.length > 0 && !isFinite(nameScore)) {
+        return { score: bestQualified, members: decl.members };
+      }
+    }
+  }
+
+  if (!isFinite(nameScore)) return undefined;
+  // A class/enum found by its own name carries the full member list — the sidebar's
+  // equivalent of opening the class page on the site.
+  if (decl && (decl.kind === "class" || decl.kind === "enum") && Array.isArray(decl.members)) {
+    return { score: nameScore, members: decl.members };
+  }
+  return { score: nameScore };
+}
+
+function fuzzyFilter(pool: Entry[], q: string): DisplayEntry[] {
   // Strip whitespace so multi-word queries match (e.g. "add modifier" → "addmodifier"
   // subsequence-matches "AddNewModifier"); API names contain no spaces.
   const query = q.replace(/\s+/g, "");
-  if (!query) return pool;
-  const scored: { entry: Entry; score: number }[] = [];
+  if (!query) return pool.map((entry) => ({ entry }));
+  const scored: { display: DisplayEntry; score: number }[] = [];
   for (const entry of pool) {
-    // Enums carry `searchNames` (the enum name + every member name) so a member query still
-    // matches the one enum block; take the best (lowest) score across them.
-    const names = "searchNames" in entry && entry.searchNames ? entry.searchNames : [entry.name];
-    let score = Infinity;
-    for (const n of names) {
-      const s = fuzzyMatch(n, query);
-      if (s < score) score = s;
-    }
-    if (isFinite(score)) scored.push({ entry, score });
+    const match = matchEntry(entry, query);
+    if (match) scored.push({ display: { entry, members: match.members }, score: match.score });
   }
-  scored.sort((a, b) => a.score - b.score || a.entry.name.localeCompare(b.entry.name));
-  return scored.map((s) => s.entry);
+  scored.sort((a, b) => a.score - b.score || a.display.entry.name.localeCompare(b.display.entry.name));
+  return scored.map((s) => s.display);
 }
 
 // Cap rendered rows so broad/empty queries stay responsive (cards aren't virtualized
-// because abilities expand in place, which a virtualized row would clip).
+// because abilities expand in place, which a virtualized row would clip). Grouped
+// classes render one card per matched member, so query results are also capped by the
+// total member-card count, not just the row count.
 const MAX_RESULTS = 200;
+const MAX_CARDS = 400;
 
-function renderEntry(entry: Entry): React.ReactNode {
+// A class/enum card rendered with exactly the members the query matched — the site's
+// grouped search result (the CDOTA_BaseNPC block for "find mod"); a class-name match
+// carries the full member list, like opening the class page on the site. When browsing
+// without a query (`matched` undefined) a class renders as a compact header, small ones
+// (Panorama interfaces etc.) fully.
+const AUTO_EXPAND_MEMBERS = 8;
+
+function GroupCard({
+  declaration,
+  matched,
+  render,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  declaration: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  matched?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  render: (decl: any) => React.ReactNode;
+}) {
+  const total = Array.isArray(declaration.members) ? declaration.members.length : 0;
+  const shown = useMemo(() => {
+    if (matched !== undefined) {
+      return matched.length === total ? declaration : { ...declaration, members: matched };
+    }
+    return total <= AUTO_EXPAND_MEMBERS ? declaration : { ...declaration, members: [] };
+  }, [declaration, matched, total]);
+  return <>{render(shown)}</>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function renderEntry(entry: Entry, matchedMembers?: any[]): React.ReactNode {
   switch (entry.kind) {
     case "decl": {
       const scope = DECL_SCOPES[entry.scopeKey];
@@ -163,10 +256,14 @@ function renderEntry(entry: Entry): React.ReactNode {
       let inner: React.ReactNode = null;
       switch (d.kind) {
         case "class":
-          inner = <ClassDeclaration declaration={d} />;
+          inner = <GroupCard declaration={d} matched={matchedMembers} render={(decl) => <ClassDeclaration declaration={decl} />} />;
           break;
         case "enum":
-          inner = <Enum element={d} />;
+          inner = matchedMembers ? (
+            <GroupCard declaration={d} matched={matchedMembers} render={(decl) => <Enum element={decl} />} />
+          ) : (
+            <Enum element={d} />
+          );
           break;
         case "constant":
           inner = <Constant element={d} />;
@@ -210,16 +307,25 @@ export function SearchPage() {
     return () => window.removeEventListener("dota:navigate", handler);
   }, []);
 
-  const allResults = useMemo(() => {
+  const allResults = useMemo<DisplayEntry[]>(() => {
     const q = search.trim();
-    if (selected) return q ? fuzzyFilter(BY_SOURCE[selected], q) : BY_SOURCE[selected];
+    if (selected) return q ? fuzzyFilter(BY_SOURCE[selected], q) : BY_SOURCE[selected].map((entry) => ({ entry }));
     // No source picked: fuzzy across everything, or a representative mix when idle.
-    return q ? fuzzyFilter(ENTRIES, q) : INTERLEAVED;
+    return q ? fuzzyFilter(ENTRIES, q) : INTERLEAVED.map((entry) => ({ entry }));
   }, [search, selected]);
 
-  const results = allResults.slice(0, MAX_RESULTS);
+  const results = useMemo(() => {
+    const out: DisplayEntry[] = [];
+    let cards = 0;
+    for (const r of allResults) {
+      if (out.length >= MAX_RESULTS || cards >= MAX_CARDS) break;
+      out.push(r);
+      cards += r.members ? Math.max(1, r.members.length) : 1;
+    }
+    return out;
+  }, [allResults]);
 
-  const renderRow = (entry: Entry) => {
+  const renderRow = ({ entry, members }: DisplayEntry) => {
     const meta = SOURCES[entry.source];
     return (
       <div
@@ -227,7 +333,7 @@ export function SearchPage() {
         style={{ display: "flex", alignItems: "stretch", gap: 8, padding: "3px 6px" }}
       >
         <span style={{ flexShrink: 0, width: 3, borderRadius: 2, background: meta.color }} />
-        <div style={{ flex: 1, minWidth: 0 }}>{renderEntry(entry)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>{renderEntry(entry, members)}</div>
       </div>
     );
   };
@@ -261,7 +367,7 @@ export function SearchPage() {
 
       <div style={{ fontSize: 12, color: "var(--color-text-faded, #999)", padding: "0 8px 4px 8px", flexShrink: 0 }}>
         {allResults.length} result{allResults.length === 1 ? "" : "s"}
-        {allResults.length > MAX_RESULTS && ` — showing first ${MAX_RESULTS}, refine your search`}
+        {results.length < allResults.length && ` — showing first ${results.length}, refine your search`}
       </div>
 
       {results.length > 0 ? (

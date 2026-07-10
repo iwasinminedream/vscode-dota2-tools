@@ -21,6 +21,7 @@ import { openKV } from './command/cmdOpenKV';
 import { parseMapEntities } from './command/cmdParseMapEntities';
 import { pasteCssImageSnippet } from './command/cmdPasteCssImage';
 import { preProcessing } from './command/cmdPreProcessing';
+import { recompileResource } from './command/cmdRecompileResource';
 import { quickStart } from './command/cmdQuickStart';
 import { init } from './init';
 import { statusBarItemInit } from './module/statusBar';
@@ -61,6 +62,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.mklink', () => mklinkForDota2Addon(context)));
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.export_modifier_function', () => exportModifierFunction(context)));
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.CopyDotaResourcePath', (uri) => CopyDotaResourcePath(context, uri)));
+	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.recompile_resource', (uri) => recompileResource(context, uri)));
 	context.subscriptions.push(vscode.commands.registerCommand('dota2tools.paste_css_image_snippet', () => pasteCssImageSnippet()));
 	context.subscriptions.push(lazayboyProvider.register());
 	context.subscriptions.push(BehaviorTreeProvider.register(context));

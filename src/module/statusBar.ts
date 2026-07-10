@@ -37,6 +37,9 @@ export async function statusBarItemInit(context: vscode.ExtensionContext) {
 export function getStatusBarItem() {
 	return statusBarItem;
 }
+export function getOutputChannel() {
+	return output;
+}
 export function showStatusBarMessage(text: string, hideAfterTimeout: number = ENUM_STATUS_BAR_MESSAGE_TIMEOUT) {
 	recordMessage(text);
 	if (hideAfterTimeout === -1) {

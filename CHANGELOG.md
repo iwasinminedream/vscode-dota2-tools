@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2
+- API search: results group under their class header like on the ModDota site — e.g. "find mod" shows a `CDOTA_BaseNPC` block with only the matching methods, then `CEntities` with its own
+- API search: searching a class by name (or by its global instance — `GameRules` finds `CDOTAGameRules`, `CustomNetTables` finds `CCustomNetTableManager`) shows the class with its full member list
+- API search: qualified queries work — `GameRules.GetGameTime` or `gamerules pause` find the method inside the class
+- API search: enum blocks filter to the matching members (e.g. `DOTA_ABILITY_BEHAVIOR_HIDDEN` shows just that member)
+- API: class headers show the global instance name (`CDOTAGameRules` → `instance GameRules`)
+- New: "Recompile Resource" in the explorer context menu for files under `content/` — runs `resourcecompiler.exe -fshallow` (found via the Dota 2 install path setting or derived from the file path; mklink junctions are resolved), output goes to the extension output channel
+
 ## 2.0.1
 - API sidebar: signature badges (s/c, GitHub) now sit to the right of the declaration, not below
 - API sidebar: function signatures with many arguments wrap per-argument instead of breaking mid-token
