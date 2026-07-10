@@ -2,7 +2,7 @@
 	"name": "dota2tools",
 	"displayName": "%ext.displayName%",
 	"description": "",
-	"version": "2.0.2",
+	"version": "2.0.3",
 	"publisher": "iwasinminedream",
 	"engines": {
 		"vscode": "^1.66.0"

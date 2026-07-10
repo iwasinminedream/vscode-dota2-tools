@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.3
+- Recompile Resource: fixed images (png/jpg/tga/psd) failing with "Failed to find compiler" — they now compile through a temporary `<name>_<ext>.vtex` descriptor (RGBA8888, no mips), producing the `<name>_png.vtex_c` panorama expects; a hand-written `.vtex` next to the image is used as-is
+
 ## 2.0.2
 - API search: results group under their class header like on the ModDota site — e.g. "find mod" shows a `CDOTA_BaseNPC` block with only the matching methods, then `CEntities` with its own
 - API search: searching a class by name (or by its global instance — `GameRules` finds `CDOTAGameRules`, `CustomNetTables` finds `CCustomNetTableManager`) shows the class with its full member list
