@@ -102,68 +102,102 @@ function findResourceCompiler(contentFilePath: string): string | undefined {
 	return undefined;
 }
 
-/** Recompile a content resource (explorer context menu on a file under content/) */
-export async function recompileResource(context: vscode.ExtensionContext, uri?: vscode.Uri) {
-	const fsPath = uri?.fsPath ?? vscode.window.activeTextEditor?.document.uri.fsPath;
-	if (fsPath === undefined) {
-		return;
-	}
-	// Resolve mklink junctions so the compiler sees the real path inside the Dota 2 installation
-	let filePath = path.normalize(fsPath);
-	try {
-		filePath = fs.realpathSync.native(filePath);
-	} catch {
-		// keep the workspace path if it cannot be resolved
-	}
-
-	if (!/[\\/]content[\\/]/i.test(filePath)) {
-		vscode.window.showWarningMessage(localize("msg_not_content_file", [filePath]));
-		return;
-	}
-
-	const compiler = findResourceCompiler(filePath);
-	if (compiler === undefined) {
-		vscode.window.showErrorMessage(localize("msg_resourcecompiler_missing"));
-		return;
-	}
-
-	// Images compile through a <name>_<ext>.vtex descriptor; keep a user-authored one, generate a temporary one otherwise
-	let inputPath = filePath;
-	let temporaryVtex: string | undefined;
-	const ext = path.extname(filePath).toLowerCase();
-	if (IMAGE_EXTENSIONS.has(ext)) {
-		const vtexPath = filePath.slice(0, -ext.length) + `_${ext.slice(1)}.vtex`;
-		if (!fs.existsSync(vtexPath)) {
-			const relativeImage = contentRelativePath(filePath);
-			if (relativeImage === undefined) {
-				vscode.window.showWarningMessage(localize("msg_not_content_file", [filePath]));
-				return;
-			}
-			try {
-				fs.writeFileSync(vtexPath, buildVtexDescriptor(relativeImage));
-			} catch (e) {
-				vscode.window.showErrorMessage(localize("msg_compile_failed", [path.basename(filePath)]) + ` (${e})`);
-				return;
-			}
-			temporaryVtex = vtexPath;
+/** Recompile content resources (explorer context menu; multi-select compiles all in one run) */
+export async function recompileResource(context: vscode.ExtensionContext, uri?: vscode.Uri, uris?: vscode.Uri[]) {
+	// The explorer passes (clickedUri, allSelectedUris); fall back to the active editor
+	const selection: vscode.Uri[] = uris !== undefined && uris.length > 0 ? uris : uri !== undefined ? [uri] : [];
+	if (selection.length === 0) {
+		const active = vscode.window.activeTextEditor?.document.uri;
+		if (active === undefined) {
+			return;
 		}
-		inputPath = vtexPath;
+		selection.push(active);
 	}
 
-	changeStatusBarState(StatusBarState.LOADING);
-	const fileName = path.basename(filePath);
-	const messageIndex = showStatusBarMessage(localize("msg_compiling_resource", [fileName]), 120);
-	execFile(compiler, ["-fshallow", "-i", inputPath], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
-		if (temporaryVtex !== undefined) {
+	const inputs: string[] = [];
+	const temporaryVtexes: string[] = [];
+	const fileNames: string[] = [];
+	let compiler: string | undefined;
+	for (const target of selection) {
+		// Resolve mklink junctions so the compiler sees the real path inside the Dota 2 installation
+		let filePath = path.normalize(target.fsPath);
+		try {
+			filePath = fs.realpathSync.native(filePath);
+		} catch {
+			// keep the workspace path if it cannot be resolved
+		}
+		try {
+			if (fs.statSync(filePath).isDirectory()) {
+				continue;
+			}
+		} catch {
+			continue;
+		}
+		if (!/[\\/]content[\\/]/i.test(filePath)) {
+			vscode.window.showWarningMessage(localize("msg_not_content_file", [filePath]));
+			continue;
+		}
+		if (compiler === undefined) {
+			compiler = findResourceCompiler(filePath);
+		}
+
+		// Images compile through a <name>_<ext>.vtex descriptor; keep a user-authored one, generate a temporary one otherwise
+		let inputPath = filePath;
+		const ext = path.extname(filePath).toLowerCase();
+		if (IMAGE_EXTENSIONS.has(ext)) {
+			const vtexPath = filePath.slice(0, -ext.length) + `_${ext.slice(1)}.vtex`;
+			if (!fs.existsSync(vtexPath)) {
+				const relativeImage = contentRelativePath(filePath);
+				if (relativeImage === undefined) {
+					vscode.window.showWarningMessage(localize("msg_not_content_file", [filePath]));
+					continue;
+				}
+				try {
+					fs.writeFileSync(vtexPath, buildVtexDescriptor(relativeImage));
+				} catch (e) {
+					vscode.window.showErrorMessage(localize("msg_compile_failed", [path.basename(filePath)]) + ` (${e})`);
+					continue;
+				}
+				temporaryVtexes.push(vtexPath);
+			}
+			inputPath = vtexPath;
+		}
+		inputs.push(inputPath);
+		fileNames.push(path.basename(filePath));
+	}
+
+	const removeTemporaryVtexes = () => {
+		for (const vtex of temporaryVtexes) {
 			try {
-				fs.unlinkSync(temporaryVtex);
+				fs.unlinkSync(vtex);
 			} catch {
 				// leftover descriptor is harmless
 			}
 		}
+	};
+
+	if (inputs.length === 0) {
+		removeTemporaryVtexes();
+		return;
+	}
+	if (compiler === undefined) {
+		removeTemporaryVtexes();
+		vscode.window.showErrorMessage(localize("msg_resourcecompiler_missing"));
+		return;
+	}
+
+	changeStatusBarState(StatusBarState.LOADING);
+	const label = fileNames.length === 1 ? fileNames[0] : `${fileNames[0]} (+${fileNames.length - 1})`;
+	const messageIndex = showStatusBarMessage(localize("msg_compiling_resource", [label]), 300);
+	const args = ["-fshallow"];
+	for (const input of inputs) {
+		args.push("-i", input);
+	}
+	execFile(compiler, args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+		removeTemporaryVtexes();
 		changeStatusBarState(StatusBarState.ALL_DONE);
 		const output = getOutputChannel();
-		output.appendLine(`> "${compiler}" -fshallow -i "${inputPath}"`);
+		output.appendLine(`> "${compiler}" ${args.map((a) => (a.startsWith("-") ? a : `"${a}"`)).join(" ")}`);
 		if (stdout) {
 			output.append(stdout);
 		}
@@ -171,16 +205,17 @@ export async function recompileResource(context: vscode.ExtensionContext, uri?: 
 			output.append(stderr);
 		}
 		// resourcecompiler can exit with code 0 even when a resource fails, so also scan its output
-		const failed = error !== null || /compile failed/i.test(`${stdout}${stderr}`);
+		const combined = `${stdout}${stderr}`;
+		const failed = error !== null || /compile failed/i.test(combined) || /[1-9]\d* failed/.test(combined);
 		if (failed) {
-			refreshStatusBarMessage(messageIndex, localize("msg_compile_failed", [fileName]));
-			vscode.window.showErrorMessage(localize("msg_compile_failed", [fileName]), localize("dota2tools.showOutput")).then((choice) => {
+			refreshStatusBarMessage(messageIndex, localize("msg_compile_failed", [label]));
+			vscode.window.showErrorMessage(localize("msg_compile_failed", [label]), localize("dota2tools.showOutput")).then((choice) => {
 				if (choice !== undefined) {
 					output.show();
 				}
 			});
 		} else {
-			refreshStatusBarMessage(messageIndex, localize("msg_compile_done", [fileName]));
+			refreshStatusBarMessage(messageIndex, localize("msg_compile_done", [label]));
 		}
 	});
 }
