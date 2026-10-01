@@ -5,6 +5,7 @@ import * as path from 'path';
 import { writeKeyValue } from '../utils/kvUtils';
 import { getGameDir } from '../module/addonInfo';
 import { localize } from '../utils/localize';
+import { addonFilePath } from '../utils/pathUtils';
 
 /**
  * Export the portrait configuration info of all wearables
@@ -26,7 +27,7 @@ export function exportWearablePortraits(context: vscode.ExtensionContext) {
 	const inputBox = vscode.window.createInputBox();
 	inputBox.placeholder = localize('msg_enter_output_path');
 	if (gameDir) {
-		inputBox.value = path.join(gameDir, "scripts/npc/portraits_custom.txt");
+		inputBox.value = addonFilePath(gameDir, "scripts/npc/portraits_custom.txt");
 	}
 	inputBox.show();
 	inputBox.onDidAccept(async (t) => {

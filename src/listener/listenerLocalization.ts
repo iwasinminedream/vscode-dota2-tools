@@ -7,7 +7,7 @@ import { combineLocalization } from "../command/cmdCombineLocalization";
 import { getGameDir, isValidFolder } from "../module/addonInfo";
 import { localize } from "../utils/localize";
 import { showStatusBarMessage } from "../module/statusBar";
-import { getPathInfo } from "../utils/pathUtils";
+import { getPathInfo, localizationLanguageOf } from "../utils/pathUtils";
 import { getPathConfiguration } from "../utils/getPathConfiguration";
 
 let eventID: number;
@@ -44,7 +44,7 @@ async function startWatch(context: vscode.ExtensionContext) {
 			if (setting && await getPathInfo(setting) !== false) {
 				fileWatcher = watch(setting, { recursive: true, filter: /\.txt$/ }, function (evt, name) {
 					if (setting) {
-						let language = path.dirname(name).replace(setting, "").split(/[\\/]/)[1];
+						let language = localizationLanguageOf(setting, name);
 						combineLocalization(language);
 					}
 				});

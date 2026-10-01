@@ -54,3 +54,29 @@ export async function dirExists(dir: string) {
 	}
 	return mkdirStatus;
 }
+
+/**
+ * A file inside an addon folder, with native separators on every platform
+ * @param root addon game/content directory
+ * @param relative '/'-separated path inside it, e.g. "scripts/npc/items_game.kv"
+ */
+export function addonFilePath(root: string, relative: string): string {
+	return path.join(root, ...relative.split('/').filter(Boolean));
+}
+
+/**
+ * Language folder of a changed localization file: <localizationDir>/<language>/.../x.txt → <language>.
+ * Files lying directly in <localizationDir> have no language (undefined).
+ */
+export function localizationLanguageOf(localizationDir: string, filePath: string): string | undefined {
+	const relative = path.relative(localizationDir, path.dirname(filePath));
+	if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
+		return undefined;
+	}
+	return relative.split(/[\\/]/)[0];
+}
+
+/** "<root>/game/dota_rogue" → "<root>/design/tools/Decompiler-windows/maps/chapter", keeping the path's separator */
+export function chapterMapsDir(gameDir: string): string {
+	return gameDir.replace(/game([\\/])dota_rogue/, "design$1tools$1Decompiler-windows$1maps$1chapter");
+}

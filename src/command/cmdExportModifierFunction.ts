@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import { getGameDir } from '../module/addonInfo';
 import { getDotaApiNoteClass } from '../module/apiNote';
 import { localize } from '../utils/localize';
+import { addonFilePath } from '../utils/pathUtils';
 
 /**
  * Sound effect selection
@@ -28,7 +28,7 @@ export async function exportModifierFunction(context: vscode.ExtensionContext) {
 	const inputBox = vscode.window.createInputBox();
 	inputBox.placeholder = localize('msg_enter_output_path');
 	if (gameDir) {
-		inputBox.value = path.join(gameDir, "scripts/vscripts/modifiers/eom_modifier/modifierfunction.lua");
+		inputBox.value = addonFilePath(gameDir, "scripts/vscripts/modifiers/eom_modifier/modifierfunction.lua");
 	}
 	inputBox.show();
 	inputBox.onDidAccept(async (t) => {

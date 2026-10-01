@@ -40,13 +40,13 @@ export function parsePanoramaAPI(context: vscode.ExtensionContext) {
 	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/=== (.*) ===/g, (m, $1) => {
 		return '# ' + $1;
 	});
-	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\|-.*\r\n\| (.*)\r\n\| (.*)\r\n\| (.*)/g, (m, $1, $2, $3) => {
+	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\|-[^\r\n]*\r?\n\| ([^\r\n]*)\r?\n\| ([^\r\n]*)\r?\n\| ([^\r\n]*)/g, (m, $1, $2, $3) => {
 		return `${$1}|${$2}|${$3}`;
 	});
-	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\{\| class="standard-table" style="width: 100%;"\r?\n! (.*)\r?\n! (.*)\r?\n! (.*)/g, (m, $1, $2, $3) => {
+	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\{\| class="standard-table" style="width: 100%;"\r?\n! ([^\r\n]*)\r?\n! ([^\r\n]*)\r?\n! ([^\r\n]*)/g, (m, $1, $2, $3) => {
 		return `${$1}|${$2}|${$3}${os.EOL}--|--|--`;
 	});
-	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\|\}\r\n/g, '');
+	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\|\}\r?\n/g, '');
 	fs.writeFileSync(path.join(context.extensionPath, 'resource', 'cl_panorama_script_help_2.md'), cl_panorama_script_help_2);
 	// Below: convert to an object
 	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/<code>(.*)<\/code>/g, (m, $1) => { return $1; });
@@ -126,10 +126,10 @@ export function parseCssDocument(context: vscode.ExtensionContext) {
 	for (const key in CSS) {
 		const element = CSS[key];
 		if (element.description !== undefined) {
-			element.description = element.description.replace('\r\n\r\n\r\n', '\r\n').replace('\r\n\r\n', '\r\n').replace(/^\s+|\s+$/g, '');
+			element.description = element.description.replace(/(\r?\n){3}/, os.EOL).replace(/(\r?\n){2}/, os.EOL).replace(/^\s+|\s+$/g, '');
 		}
 		if (element.example !== undefined) {
-			element.example = element.example.replace('\r\n\r\n\r\n', '\r\n').replace('\r\n\r\n', '\r\n').replace(/^\s+|\s+$/g, '');
+			element.example = element.example.replace(/(\r?\n){3}/, os.EOL).replace(/(\r?\n){2}/, os.EOL).replace(/^\s+|\s+$/g, '');
 		}
 	}
 	fs.writeFileSync(path.join(context.extensionPath, 'resource', 'dump_panorama_css_properties.json'), JSON.stringify(CSS));
@@ -139,8 +139,8 @@ export function parseCssDocument(context: vscode.ExtensionContext) {
 export function parseEventDocument(context: vscode.ExtensionContext) {
 	let dump_panorama_events: string = fs.readFileSync(path.join(context.extensionPath, 'resource', 'dump_panorama_events.txt'), 'utf-8');
 	// Convert to md format
-	dump_panorama_events = dump_panorama_events.replace(/\{\| class="wikitable"\r?\n! (.*)\r?\n! (.*)\r?\n! (.*)/g, (m, $1, $2, $3) => { return `${$1}|${$2}|${$2}${os.EOL}--|--|--`; });
-	dump_panorama_events = dump_panorama_events.replace(/\|-.*\r\n\| (.*)\r\n\| (.*)\r\n\| (.*)/g, (m, $1, $2, $3) => {
+	dump_panorama_events = dump_panorama_events.replace(/\{\| class="wikitable"\r?\n! ([^\r\n]*)\r?\n! ([^\r\n]*)\r?\n! ([^\r\n]*)/g, (m, $1, $2, $3) => { return `${$1}|${$2}|${$2}${os.EOL}--|--|--`; });
+	dump_panorama_events = dump_panorama_events.replace(/\|-[^\r\n]*\r?\n\| ([^\r\n]*)\r?\n\| ([^\r\n]*)\r?\n\| ([^\r\n]*)/g, (m, $1, $2, $3) => {
 		return `${$1}|${$2}|${$3}`;
 	});
 	dump_panorama_events = dump_panorama_events.replace(/\|\}/g, '');

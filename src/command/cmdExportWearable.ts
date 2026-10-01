@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { writeKeyValue } from '../utils/kvUtils';
 import { getGameDir } from '../module/addonInfo';
-import { dirExists } from '../utils/pathUtils';
+import { addonFilePath, dirExists } from '../utils/pathUtils';
 import { localize } from '../utils/localize';
 
 /**
@@ -34,7 +34,7 @@ export function exportWearable(context: vscode.ExtensionContext) {
 			const inputBox = vscode.window.createInputBox();
 			inputBox.placeholder = localize('msg_enter_output_path');
 			if (gameDir) {
-				inputBox.value = path.join(gameDir, "scripts/npc/items_game.kv");
+				inputBox.value = addonFilePath(gameDir, "scripts/npc/items_game.kv");
 			}
 			let result: any = {};
 			for (const index in itemsGame) {
@@ -59,7 +59,7 @@ export function exportWearable(context: vscode.ExtensionContext) {
 			const inputBox = vscode.window.createInputBox();
 			inputBox.placeholder = localize('msg_enter_output_path');
 			if (gameDir) {
-				inputBox.value = path.join(gameDir, "scripts/npc/items_game.kv");
+				inputBox.value = addonFilePath(gameDir, "scripts/npc/items_game.kv");
 			}
 			inputBox.show();
 			inputBox.onDidAccept(async (t) => {

@@ -4,6 +4,7 @@ import { eachLine } from '../utils/eachLine';
 import * as os from 'os';
 import * as fs from 'fs';
 import { writeKeyValue } from '../utils/kvUtils';
+import { chapterMapsDir } from '../utils/pathUtils';
 
 /**
  * Parse entity info from a vmap
@@ -11,8 +12,7 @@ import { writeKeyValue } from '../utils/kvUtils';
  */
 export async function parseMapEntities(context: vscode.ExtensionContext) {
 	const gameDir = getGameDir();
-	// "<root>/game/dota_rogue" → "<root>/design/tools/Decompiler-windows/maps/chapter" (keeps the platform separator)
-	const mapPath: string = gameDir.replace(/game([\\/])dota_rogue/, "design$1tools$1Decompiler-windows$1maps$1chapter");
+	const mapPath: string = chapterMapsDir(gameDir);
 	let jsonObj: any = {};
 	await readFolder(mapPath);
 	async function readFolder(folderName: string) {

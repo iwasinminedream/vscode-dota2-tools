@@ -7,6 +7,9 @@ import * as vscode from 'vscode';
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp'];
 const execFileAsync = promisify(execFile);
 
+/** Runs an external program and returns its stdout (replaceable in tests) */
+export type CommandRunner = (command: string, args: string[]) => Promise<{ stdout: string | Buffer; }>;
+
 function readUInt24LE(buffer: Buffer, offset: number): number {
 	return buffer.readUIntLE(offset, 3);
 }
@@ -91,7 +94,7 @@ function getImageSizeFallback(filePath: string): { width: number; height: number
 	return undefined;
 }
 
-function getImageSize(filePath: string): { width: number; height: number; } | undefined {
+export function getImageSize(filePath: string): { width: number; height: number; } | undefined {
 	try {
 		return getImageSizeFallback(filePath);
 	} catch {
@@ -99,7 +102,8 @@ function getImageSize(filePath: string): { width: number; height: number; } | un
 	}
 }
 
-async function readClipboardTextOrFileList(): Promise<string> {
+/** Clipboard text, or the path of a file copied in the system file manager (Explorer / Finder / Linux file managers) */
+export async function readClipboardTextOrFileList(run: CommandRunner = execFileAsync): Promise<string> {
 	const text = await vscode.env.clipboard.readText();
 
 	if (process.platform === 'darwin') {
@@ -108,7 +112,7 @@ async function readClipboardTextOrFileList(): Promise<string> {
 			return text;
 		}
 		try {
-			const { stdout } = await execFileAsync('osascript', ['-e', 'POSIX path of (the clipboard as «class furl»)']);
+			const { stdout } = await run('osascript', ['-e', 'POSIX path of (the clipboard as «class furl»)']);
 			const filePath = typeof stdout === 'string' ? stdout.trim() : '';
 			return filePath || text;
 		} catch {
@@ -128,7 +132,7 @@ async function readClipboardTextOrFileList(): Promise<string> {
 		];
 		for (const [command, args] of commands) {
 			try {
-				const { stdout } = await execFileAsync(command, args);
+				const { stdout } = await run(command, args);
 				if (typeof stdout === 'string' && stdout.trim()) {
 					return stdout;
 				}
@@ -144,7 +148,7 @@ async function readClipboardTextOrFileList(): Promise<string> {
 	}
 
 	try {
-		const { stdout } = await execFileAsync('powershell.exe', [
+		const { stdout } = await run('powershell.exe', [
 			'-NoProfile',
 			'-Command',
 			'Get-Clipboard -Format FileDropList | ForEach-Object { $_.FullName }'
@@ -155,7 +159,7 @@ async function readClipboardTextOrFileList(): Promise<string> {
 	}
 }
 
-function extractFilePathFromClipboard(raw: string): string | undefined {
+export function extractFilePathFromClipboard(raw: string): string | undefined {
 	if (!raw) {
 		return undefined;
 	}

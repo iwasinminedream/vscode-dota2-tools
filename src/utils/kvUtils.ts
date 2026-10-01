@@ -9,7 +9,7 @@ export function readKeyValue2(kvdata: string, bRemoveComment: boolean = true, bO
 		kvdata = removeComment(kvdata);
 	}
 	// kvdata = kvdata.replace(/\t/g,'').replace(' ','').replace(/\r\n/g,'');
-	kvdata = kvdata.replace(/\t/g, '').replace(/\r\n/g, '');
+	kvdata = kvdata.replace(/\t/g, '').replace(/\r?\n/g, '');
 	let kvObj: any = {};
 	let overrideIndex: number = 1;
 	for (let i = 0; i < kvdata.length; i++) {
@@ -338,11 +338,15 @@ export function readKeyValue3(kvdata: string): Table {
 		}
 	}
 }
+/** "<dir>/<name>" → "<dir>/" for '/' and '\' separated paths alike (#base paths are relative to it) */
+function kvFolderOf(fullPath: string): string {
+	const fileName = fullPath.split(/[\\/]/).pop() || '';
+	return fullPath.slice(0, fullPath.length - fileName.length);
+}
 // Read kv2 format into object (#base)
 export async function readKeyValueWithBase(fullPath: string) {
-	// Get the name
-	let fileName: string = fullPath.split('/').pop() || '';
-	let path = fullPath.split(fileName)[0];
+	// Folder of the file, with its trailing separator (either '/' or '\')
+	let path = kvFolderOf(fullPath);
 
 	let kvdata = readKeyValue2(fs.readFileSync(fullPath, 'utf-8'));
 	let kvtable = kvdata[Object.keys(kvdata)[0]];
@@ -373,9 +377,8 @@ export async function readKeyValueWithBase(fullPath: string) {
 // Read kv2 format into object (#base), including path info
 export async function readKeyValueWithBaseIncludePath(fullPath: string) {
 	let result: any = {};
-	// Get the name
-	let fileName: string = fullPath.split('/').pop() || '';
-	let path = fullPath.split(fileName)[0];
+	// Folder of the file, with its trailing separator (either '/' or '\')
+	let path = kvFolderOf(fullPath);
 
 	let kvdata = readKeyValue2(fs.readFileSync(fullPath, 'utf-8'));
 	// Index by path
