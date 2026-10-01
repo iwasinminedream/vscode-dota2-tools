@@ -10,6 +10,10 @@
   - Recompile Resource is Windows-only (Workshop Tools): hidden from the explorer menu elsewhere, the command shows a message instead of failing
   - addon auto-discovery (`addoninfo.txt` search), localization merge watcher and export default paths no longer assume `\` separators
 - mklink: fixed swapped game/content handling when only one of the two folders already existed in the Dota 2 install
+- KV parsing: LF files (macOS/Linux checkouts, or LF files on Windows) parse exactly like CRLF ones — line breaks inside quoted values are dropped in both cases
+- KV `#base`: base files are found for `\`-separated paths too (only `/` worked before)
+- API pre-processing: wiki tables are converted for both CRLF and LF dumps, without a stray `\r` in cells
+- Tests: unit tests (mocked `vscode`) and integration tests in a real VS Code (`npm test`); CI runs them on Windows, macOS and Linux
 
 ## 2.0.3
 - Recompile Resource: fixed images (png/jpg/tga/psd) failing with "Failed to find compiler" — they now compile through a temporary `<name>_<ext>.vtex` descriptor (RGBA8888, no mips), producing the `<name>_png.vtex_c` panorama expects; a hand-written `.vtex` next to the image is used as-is
