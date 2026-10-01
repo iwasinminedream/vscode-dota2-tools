@@ -1,6 +1,7 @@
 node_modules/
 dist/
 out/
+.vscode-test/
 *.vsix
 .vpk_extract_tmp/
 lib/vrf/

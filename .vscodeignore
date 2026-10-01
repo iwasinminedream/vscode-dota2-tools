@@ -1,5 +1,7 @@
 .vscode/**
 .vscode-test/**
+.github/**
+.mocharc*
 out/**
 node_modules/**
 src/**

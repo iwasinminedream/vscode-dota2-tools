@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main, mac-support]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (type check + webpack)
+        run: |
+          npm run compile-tests
+          npm run compile
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Cache VS Code for integration tests
+        uses: actions/cache@v4
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Integration tests (VS Code, Linux under xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:integration
+
+      - name: Integration tests (VS Code)
+        if: runner.os != 'Linux'
+        run: npm run test:integration
+
+      - name: Package VSIX
+        shell: bash
+        # resource/*.json contain "aghs_2…" item names that the secret scanner takes for GitHub tokens
+        run: npx --yes @vscode/vsce@3 package --allow-package-secrets github --allow-star-activation -o dota2tools-ci.vsix
