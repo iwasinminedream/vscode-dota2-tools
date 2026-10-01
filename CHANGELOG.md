@@ -12,6 +12,7 @@
 - mklink: fixed swapped game/content handling when only one of the two folders already existed in the Dota 2 install
 - KV parsing: LF files (macOS/Linux checkouts, or LF files on Windows) parse exactly like CRLF ones — line breaks inside quoted values are dropped in both cases
 - KV `#base`: base files are found for `\`-separated paths too (only `/` worked before)
+- Activation no longer fails with "Cannot read properties of undefined (reading 'search')" when the Lua API dumps (`resource/dota_*script_help2.lua`) have CRLF line endings — as after a fresh git checkout on Windows with `core.autocrlf`
 - API pre-processing: wiki tables are converted for both CRLF and LF dumps, without a stray `\r` in cells
 - Tests: unit tests (mocked `vscode`) and integration tests in a real VS Code (`npm test`); CI runs them on Windows, macOS and Linux
 

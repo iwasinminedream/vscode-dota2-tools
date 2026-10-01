@@ -9,7 +9,9 @@ import { getResourcePath } from './releaseData';
 
 export function apiParse(context: vscode.ExtensionContext, apiNote: Table) {
 	let praseFile = function (sDotaScriptHelp: string): any[] {
-		const rows = sDotaScriptHelp.split('\n');
+		// CRLF and LF: a Windows git checkout (core.autocrlf) turns the dumps into CRLF, and readEnum
+		// ends an enum block at an empty line — '\r' would run it into the next block
+		const rows = sDotaScriptHelp.split(/\r?\n/);
 		let classList: { [key: string]: LuaFunction[]; } = {};
 		let enumList: { [key: string]: LuaEnum[]; } = {};
 		for (let i = 0; i < rows.length; i++) {

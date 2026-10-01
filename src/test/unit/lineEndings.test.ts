@@ -2,9 +2,11 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseEventDocument, parsePanelList } from '../../module/preProcessing';
+import { apiParse } from '../../utils/apiParse';
 import { eachLine } from '../../utils/eachLine';
 import { getBaseInfo, readKeyValue2, readKeyValueWithBase, removeComment } from '../../utils/kvUtils';
-import { crlf, lf, makeTempDir, removeDir, withEol, writeFile } from '../helpers';
+import { resetReleasePathCache } from '../../utils/releaseData';
+import { crlf, lf, makeTempDir, removeDir, withEol, withHome, writeFile } from '../helpers';
 
 /** The same text in both line-ending flavours: CRLF (Windows checkout) and LF (macOS/Linux checkout) */
 const flavours = (text: string) => [['CRLF', crlf(text)], ['LF', lf(text)]] as const;
@@ -84,6 +86,45 @@ suite('line endings: CRLF and LF parse the same', () => {
 			const panels = JSON.parse(fs.readFileSync(path.join(root, 'resource', 'PanelList.json'), 'utf-8'));
 			assert.deepStrictEqual(panels, { Button: { start: 0, end: 2 }, Label: { start: 3, end: 6 } });
 		});
+	}
+
+	const LUA_API_DUMP = [
+		'---[[ AddFOWViewer  Add temporary vision for a given team. ]]',
+		'-- @return ViewerID',
+		'-- @param teamId DOTATeam_t',
+		'function AddFOWViewer( teamId ) end',
+		'',
+		'--- Enum Constants',
+		'DOTA_ITEM_INVENTORY_SIZE = 9',
+		'DOTA_ITEM_MAX = 25',
+		'',
+		'--- Enum modifierfunction',
+		'MODIFIER_PROPERTY_HEALTH_BONUS = 0 -- GetModifierHealthBonus',
+		'',
+		'---[[ AngleDiff  Returns the number of degrees difference between two yaw angles. ]]',
+		'-- @return float',
+		'-- @param arg1 float',
+		'function AngleDiff( arg1 ) end',
+		'',
+	].join('\n');
+	for (const [name, text] of flavours(LUA_API_DUMP)) {
+		test(`apiParse (${name}): Lua API dump with enum blocks (activation crashed on CRLF dumps)`, () =>
+			// an empty HOME: getResourcePath must not pick up an installed release from ~/.vscode/extensions
+			withHome(root, () => {
+				resetReleasePathCache();
+				try {
+					writeFile(root, 'resource/dota_script_help2.lua', text);
+					writeFile(root, 'resource/dota_cl_script_help2.lua', text);
+					const [classList, enumList] = apiParse({ extensionPath: root } as any, {});
+					assert.deepStrictEqual(Object.keys(enumList).sort(), ['Constants', 'modifierfunction']);
+					assert.deepStrictEqual(enumList.Constants.map((e: any) => [e.name, e.value]), [['DOTA_ITEM_INVENTORY_SIZE', '9'], ['DOTA_ITEM_MAX', '25']]);
+					assert.strictEqual(enumList.modifierfunction[0].function, 'GetModifierHealthBonus');
+					const functions = JSON.stringify(classList);
+					assert.ok(functions.includes('AddFOWViewer') && functions.includes('AngleDiff'), functions);
+				} finally {
+					resetReleasePathCache();
+				}
+			}));
 	}
 
 	const EVENTS = '{| class="wikitable"\n! Event\n! Signature\n! Description\n|-\n| AddStyle\n| AddStyle( panel, class )\n| Add a class\n|}\n';
