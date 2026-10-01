@@ -26,6 +26,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # webpack.config.js aliases @moddota/dota-data to the sibling checkout ../../dota/dota-data
+      # (files/ is committed there, lib/ is built from src/)
+      - name: Fetch and build @moddota/dota-data
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/iwasinminedream/dota-data.git ../../dota/dota-data
+          cd ../../dota/dota-data
+          npm ci --ignore-scripts
+          npx tsc -p src
+
       - name: Build (type check + webpack)
         run: |
           npm run compile-tests
