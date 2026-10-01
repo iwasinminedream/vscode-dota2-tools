@@ -52,10 +52,12 @@ jobs:
 
       - name: Integration tests (VS Code, Linux under xvfb)
         if: runner.os == 'Linux'
+        timeout-minutes: 10
         run: xvfb-run -a npm run test:integration
 
       - name: Integration tests (VS Code)
         if: runner.os != 'Linux'
+        timeout-minutes: 10
         run: npm run test:integration
 
       - name: Package VSIX

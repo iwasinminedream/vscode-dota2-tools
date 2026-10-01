@@ -1,11 +1,22 @@
 import * as assert from 'assert';
-import { execFileSync } from 'child_process';
+import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { promisify } from 'util';
 import * as vscode from 'vscode';
 import { FIXTURE_ADDON } from '../fixtureWorkspace';
+import { log } from './index';
 
 const EXTENSION_ID = 'iwasinminedream.dota2tools';
+const execFileAsync = promisify(execFile);
+
+/** Reject if `promise` does not settle in time (keeps a stuck VS Code API call from hanging the run) */
+function withTimeout<T>(promise: Thenable<T>, ms: number, what: string): Promise<T> {
+	return new Promise<T>((resolve, reject) => {
+		const timer = setTimeout(() => reject(new Error(`${what} did not finish in ${ms / 1000}s`)), ms);
+		promise.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+	});
+}
 
 const workspaceDir = () => vscode.workspace.workspaceFolders![0].uri.fsPath;
 const addonFile = (side: 'game' | 'content', relative: string) => path.join(workspaceDir(), side, FIXTURE_ADDON, ...relative.split('/'));
@@ -35,7 +46,7 @@ async function pasteIntoLess(prepareClipboard: () => Thenable<void> | void): Pro
 	const savedClipboard = await vscode.env.clipboard.readText();
 	try {
 		await prepareClipboard();
-		await vscode.commands.executeCommand('dota2tools.paste_css_image_snippet');
+		await withTimeout(vscode.commands.executeCommand('dota2tools.paste_css_image_snippet'), 20000, 'paste_css_image_snippet');
 		await waitFor(() => (doc.getText() !== before ? true : undefined), 'the paste to change test.less', 10000);
 		return doc.getText().slice(before.length);
 	} finally {
@@ -51,14 +62,17 @@ function assertImageSnippet(inserted: string) {
 }
 
 suite('dota2tools in VS Code', function () {
-	this.timeout(120000);
+	this.timeout(60000);
 	let extension: vscode.Extension<unknown>;
 
 	suiteSetup(async () => {
+		log(`workspace: ${vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '(none)'}`);
 		const found = vscode.extensions.getExtension(EXTENSION_ID);
 		assert.ok(found, `${EXTENSION_ID} is not loaded`);
 		extension = found;
-		await extension.activate();
+		log('activating the extension…');
+		await withTimeout(extension.activate(), 45000, 'extension activation');
+		log('extension active');
 	});
 
 	test('the extension activates', () => {
@@ -82,7 +96,7 @@ suite('dota2tools in VS Code', function () {
 	test('the KV editor opens a CRLF KV file', async () => {
 		const file = addonFile('game', 'scripts/npc/npc_abilities_custom.txt');
 		assert.ok(fs.readFileSync(file, 'utf8').includes('\r\n'), 'fixture is expected to use CRLF');
-		await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(file), 'dota2tools.kv');
+		await withTimeout(vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(file), 'dota2tools.kv'), 30000, 'vscode.openWith dota2tools.kv');
 		await waitFor(() => {
 			const tab = (vscode.window as any).tabGroups?.activeTabGroup?.activeTab;
 			return tab?.input?.viewType === 'dota2tools.kv' ? true : undefined;
@@ -101,8 +115,10 @@ suite('dota2tools in VS Code', function () {
 		}
 		const png = addonFile('content', 'panorama/images/custom_game/icon.png');
 		try {
-			execFileSync('osascript', ['-e', `set the clipboard to (POSIX file "${png}")`]);
-		} catch {
+			// async with a timeout: a synchronous call would freeze the whole extension host if osascript waits
+			await execFileAsync('osascript', ['-e', `set the clipboard to (POSIX file "${png}")`], { timeout: 10000 });
+		} catch (e) {
+			log(`osascript could not set the clipboard (${(e as Error).message}) — skipping`);
 			this.skip(); // no pasteboard access in this session
 		}
 		assertImageSnippet(await pasteIntoLess(() => undefined));
@@ -114,7 +130,7 @@ suite('dota2tools in VS Code', function () {
 			? path.join(workspaceDir(), 'notes.txt')
 			: addonFile('content', 'materials/test.vmat');
 		const uri = vscode.Uri.file(target);
-		await vscode.commands.executeCommand('dota2tools.recompile_resource', uri, [uri]);
+		await withTimeout(vscode.commands.executeCommand('dota2tools.recompile_resource', uri, [uri]), 20000, 'recompile_resource');
 	});
 
 	// Last: it moves the fixture's game/content folders. revealInOS opens Explorer/Finder windows,
@@ -124,7 +140,7 @@ suite('dota2tools in VS Code', function () {
 			this.skip();
 		}
 		const dota = process.env.DOTA2TOOLS_TEST_DOTA!;
-		await vscode.commands.executeCommand('dota2tools.mklink');
+		await withTimeout(vscode.commands.executeCommand('dota2tools.mklink'), 30000, 'mklink');
 		for (const [side, marker] of [['game', 'addoninfo.txt'], ['content', 'materials/test.vmat']] as const) {
 			const link = path.join(workspaceDir(), side, FIXTURE_ADDON);
 			const target = path.join(dota, side, 'dota_addons', FIXTURE_ADDON);
