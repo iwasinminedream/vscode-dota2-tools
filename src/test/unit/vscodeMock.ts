@@ -191,3 +191,4 @@ export enum TreeItemCollapsibleState { None = 0, Collapsed = 1, Expanded = 2 }
 export enum ViewColumn { Active = -1, Beside = -2, One = 1, Two = 2 }
 export enum ConfigurationTarget { Global = 1, Workspace = 2, WorkspaceFolder = 3 }
 export enum ProgressLocation { SourceControl = 1, Window = 10, Notification = 15 }
+export enum ExtensionMode { Production = 1, Development = 2, Test = 3 }

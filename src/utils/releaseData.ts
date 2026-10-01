@@ -46,9 +46,13 @@ function findLatestReleasePath(devPath: string): string | null {
 
 /**
  * Returns the base path to use for reading data/resource files.
- * Prefers the latest installed release over the dev extension path.
+ * Prefers the latest installed release over the dev extension path,
+ * except under extension tests, which must exercise their own checkout.
  */
 export function getReleasePath(context: vscode.ExtensionContext): string {
+    if (context.extensionMode === vscode.ExtensionMode.Test) {
+        return context.extensionPath;
+    }
     if (_cachedReleasePath === undefined) {
         _cachedReleasePath = findLatestReleasePath(context.extensionPath);
     }

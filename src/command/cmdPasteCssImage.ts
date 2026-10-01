@@ -10,6 +10,13 @@ const execFileAsync = promisify(execFile);
 /** Runs an external program and returns its stdout (replaceable in tests) */
 export type CommandRunner = (command: string, args: string[]) => Promise<{ stdout: string | Buffer; }>;
 
+/**
+ * Clipboard helpers (osascript, wl-paste, xclip, PowerShell) are killed after a few seconds:
+ * a tool waiting for a permission prompt or a clipboard owner must not block the paste forever.
+ */
+const CLIPBOARD_TOOL_TIMEOUT_MS = 5000;
+const runClipboardTool: CommandRunner = (command, args) => execFileAsync(command, args, { timeout: CLIPBOARD_TOOL_TIMEOUT_MS });
+
 function readUInt24LE(buffer: Buffer, offset: number): number {
 	return buffer.readUIntLE(offset, 3);
 }
@@ -103,7 +110,7 @@ export function getImageSize(filePath: string): { width: number; height: number;
 }
 
 /** Clipboard text, or the path of a file copied in the system file manager (Explorer / Finder / Linux file managers) */
-export async function readClipboardTextOrFileList(run: CommandRunner = execFileAsync): Promise<string> {
+export async function readClipboardTextOrFileList(run: CommandRunner = runClipboardTool): Promise<string> {
 	const text = await vscode.env.clipboard.readText();
 
 	if (process.platform === 'darwin') {
