@@ -2,7 +2,7 @@
 	"name": "dota2tools",
 	"displayName": "%ext.displayName%",
 	"description": "",
-	"version": "2.0.3",
+	"version": "2.0.4",
 	"publisher": "iwasinminedream",
 	"engines": {
 		"vscode": "^1.66.0"
@@ -211,7 +211,7 @@
 					"group": "6_copypath"
 				},
 				{
-					"when": "!explorerResourceIsFolder && resource =~ /content/",
+					"when": "isWindows && !explorerResourceIsFolder && resource =~ /content/",
 					"command": "dota2tools.recompile_resource",
 					"group": "2_workspace"
 				}

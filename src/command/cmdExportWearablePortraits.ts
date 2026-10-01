@@ -26,7 +26,7 @@ export function exportWearablePortraits(context: vscode.ExtensionContext) {
 	const inputBox = vscode.window.createInputBox();
 	inputBox.placeholder = localize('msg_enter_output_path');
 	if (gameDir) {
-		inputBox.value = path.join(gameDir, "\\scripts\\npc\\portraits_custom.txt");
+		inputBox.value = path.join(gameDir, "scripts/npc/portraits_custom.txt");
 	}
 	inputBox.show();
 	inputBox.onDidAccept(async (t) => {

@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 export async function findFile(currentPath: string, fileName: string, fordersLimit?: number, interest?: string[], exclude?: string[], stopAfterFind?: boolean): Promise<string[] | false> {
@@ -43,7 +44,7 @@ export async function findFile(currentPath: string, fileName: string, fordersLim
 			}
 		}
 		if (Number(isDirectory) === vscode.FileType.Directory || Number(isDirectory) === vscode.FileType.SymbolicLink + vscode.FileType.Directory) {
-			let bFind: string[] | false = await findFile(currentPath + '\\' + folderName, fileName, fordersLimit, interest, exclude, stopAfterFind);
+			let bFind: string[] | false = await findFile(path.join(currentPath, folderName), fileName, fordersLimit, interest, exclude, stopAfterFind);
 			if (bFind !== false) {
 				pathList = pathList.concat(bFind);
 			}

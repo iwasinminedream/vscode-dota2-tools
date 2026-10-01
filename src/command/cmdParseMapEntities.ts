@@ -11,7 +11,8 @@ import { writeKeyValue } from '../utils/kvUtils';
  */
 export async function parseMapEntities(context: vscode.ExtensionContext) {
 	const gameDir = getGameDir();
-	const mapPath: string = gameDir.replace("game\\dota_rogue", "design\\tools\\Decompiler-windows\\maps\\chapter");
+	// "<root>/game/dota_rogue" → "<root>/design/tools/Decompiler-windows/maps/chapter" (keeps the platform separator)
+	const mapPath: string = gameDir.replace(/game([\\/])dota_rogue/, "design$1tools$1Decompiler-windows$1maps$1chapter");
 	let jsonObj: any = {};
 	await readFolder(mapPath);
 	async function readFolder(folderName: string) {
@@ -32,7 +33,7 @@ export async function parseMapEntities(context: vscode.ExtensionContext) {
 		}
 	}
 	function parseVents(text: string) {
-		let row = text.split(os.EOL);
+		let row = text.split(/\r?\n/);
 		let exitData: any = {};
 		eachLine(row, (line: number, lineText: string) => {
 			if (lineText.indexOf("info_exit_") !== -1) {

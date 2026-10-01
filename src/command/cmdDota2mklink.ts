@@ -1,4 +1,3 @@
-import { exec } from "child_process";
 import { chmodSync, symlinkSync } from "fs";
 import { moveSync, pathExistsSync } from "fs-extra";
 import { ExtensionContext, workspace } from "vscode";
@@ -7,11 +6,11 @@ import { getContentDir, getGameDir } from "../module/addonInfo";
 import { changeStatusBarState, showStatusBarMessage, StatusBarState } from "../module/statusBar";
 import { getRootPath } from "../utils/getRootPath";
 import { localize } from '../utils/localize';
+import { getDota2InstallPath, revealInOS } from '../utils/platformUtils';
 import path = require("path");
 
 export async function mklinkForDota2Addon(context: ExtensionContext) {
-	// const sDotaDir = await GetSteamAPPIntallDirByID("570");
-	const sDotaDir = workspace.getConfiguration().get<string>("dota2-tools.dota2_install_path");
+	const sDotaDir = getDota2InstallPath();
 	if (sDotaDir) {
 		if (!pathExistsSync(sDotaDir)) {
 			showStatusBarMessage(localize('msg_config_dota2_dir'));
@@ -22,8 +21,7 @@ export async function mklinkForDota2Addon(context: ExtensionContext) {
 		const contentDir = getContentDir();
 		const gameDir = getGameDir();
 		const rootPath = getRootPath() as string;
-		const a = contentDir.split("\\");
-		const sGameName = a[a.length - 1];
+		const sGameName = path.basename(contentDir);
 		const sDotaContentAddon = path.join(sDotaDir, "content", "dota_addons");
 		const sDotaGameAddon = path.join(sDotaDir, "game", "dota_addons");
 		const sDotaContentDir = path.join(sDotaContentAddon, sGameName);
@@ -50,23 +48,31 @@ export async function mklinkForDota2Addon(context: ExtensionContext) {
 
 		StopAllListener();
 
-		if (bContentNotExist) {
-			chmodSync(sDotaGameAddon, "0777");
+		// Windows: junction (no admin rights needed); macOS/Linux: ordinary directory symlink
+		const isWindows = process.platform === "win32";
+		const linkType = isWindows ? "junction" : "dir";
+
+		if (bGameNotExist) {
+			if (isWindows) {
+				chmodSync(sDotaGameAddon, "0777");
+			}
 			moveSync(gameDir, sDotaGameDir);
-			symlinkSync(sDotaGameDir, gameDir, "junction");
-		}
-
-		if (bGameNotExist) {
-			chmodSync(sDotaContentAddon, "0755");
-			moveSync(contentDir, sDotaContentDir);
-			symlinkSync(sDotaContentDir, contentDir, "junction");
+			symlinkSync(sDotaGameDir, gameDir, linkType);
 		}
 
 		if (bContentNotExist) {
-			exec(`explorer.exe /select,"${sDotaContentDir}"`);
+			if (isWindows) {
+				chmodSync(sDotaContentAddon, "0755");
+			}
+			moveSync(contentDir, sDotaContentDir);
+			symlinkSync(sDotaContentDir, contentDir, linkType);
+		}
+
+		if (bContentNotExist) {
+			revealInOS(sDotaContentDir);
 		}
 		if (bGameNotExist) {
-			exec(`explorer.exe /select,"${sDotaGameDir}"`);
+			revealInOS(sDotaGameDir);
 		}
 
 		TryStartWatch();

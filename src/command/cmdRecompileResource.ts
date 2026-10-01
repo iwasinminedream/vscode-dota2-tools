@@ -104,6 +104,11 @@ function findResourceCompiler(contentFilePath: string): string | undefined {
 
 /** Recompile content resources (explorer context menu; multi-select compiles all in one run) */
 export async function recompileResource(context: vscode.ExtensionContext, uri?: vscode.Uri, uris?: vscode.Uri[]) {
+	// resourcecompiler.exe ships only with the Windows Workshop Tools
+	if (process.platform !== "win32") {
+		vscode.window.showWarningMessage(localize("msg_resourcecompiler_windows_only"));
+		return;
+	}
 	// The explorer passes (clickedUri, allSelectedUris); fall back to the active editor
 	const selection: vscode.Uri[] = uris !== undefined && uris.length > 0 ? uris : uri !== undefined ? [uri] : [];
 	if (selection.length === 0) {

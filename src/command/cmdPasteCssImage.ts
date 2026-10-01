@@ -101,7 +101,41 @@ function getImageSize(filePath: string): { width: number; height: number; } | un
 
 async function readClipboardTextOrFileList(): Promise<string> {
 	const text = await vscode.env.clipboard.readText();
+
+	if (process.platform === 'darwin') {
+		// Finder puts only the file name into the text clipboard; the full path is in «class furl»
+		if (extractFilePathFromClipboard(text) !== undefined) {
+			return text;
+		}
+		try {
+			const { stdout } = await execFileAsync('osascript', ['-e', 'POSIX path of (the clipboard as «class furl»)']);
+			const filePath = typeof stdout === 'string' ? stdout.trim() : '';
+			return filePath || text;
+		} catch {
+			return text;
+		}
+	}
+
 	if (text.trim().length > 0) {
+		return text;
+	}
+
+	if (process.platform === 'linux') {
+		// File managers expose copied files as text/uri-list (Wayland: wl-paste, X11: xclip)
+		const commands: [string, string[]][] = [
+			['wl-paste', ['--no-newline', '--type', 'text/uri-list']],
+			['xclip', ['-selection', 'clipboard', '-t', 'text/uri-list', '-o']]
+		];
+		for (const [command, args] of commands) {
+			try {
+				const { stdout } = await execFileAsync(command, args);
+				if (typeof stdout === 'string' && stdout.trim()) {
+					return stdout;
+				}
+			} catch {
+				// tool missing or nothing of that type in the clipboard
+			}
+		}
 		return text;
 	}
 

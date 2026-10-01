@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { CustomReadonlyEditorProvider, CustomDocument, Uri, WebviewPanel, window } from 'vscode';
+import { CustomReadonlyEditorProvider, CustomDocument, env, Uri, WebviewPanel, window } from 'vscode';
 
 export class lazayboyProvider implements CustomReadonlyEditorProvider {
 	private static readonly viewType = "dota2tools.Lazyboy";
@@ -12,9 +12,14 @@ export class lazayboyProvider implements CustomReadonlyEditorProvider {
 	}
 	async resolveCustomEditor(document: NoUseDocument, webviewPanel: WebviewPanel) {
 		// Close the panel directly
-		exec(`"${document.uri.fsPath}"`, (error, stdout, stderr) => {
-			webviewPanel.dispose();
-		});
+		if (process.platform === 'win32') {
+			exec(`"${document.uri.fsPath}"`, (error, stdout, stderr) => {
+				webviewPanel.dispose();
+			});
+		} else {
+			// macOS/Linux: open with the default application (open / xdg-open)
+			env.openExternal(document.uri).then(() => webviewPanel.dispose(), () => webviewPanel.dispose());
+		}
 		webviewPanel.webview.html = `
 		<html>
 			<body>Opening file with external software</body>

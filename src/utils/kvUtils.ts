@@ -348,7 +348,7 @@ export async function readKeyValueWithBase(fullPath: string) {
 	let kvtable = kvdata[Object.keys(kvdata)[0]];
 	let kvString = fs.readFileSync(fullPath, 'utf-8');
 	kvString = removeComment(kvString);
-	const rows: string[] = kvString.split(os.EOL);
+	const rows: string[] = kvString.split(/\r?\n/);
 	for (let i = 0; i < rows.length; i++) {
 		const lineText: string = rows[i];
 		if (lineText.search(/#base ".*"/) !== -1) {
@@ -383,7 +383,7 @@ export async function readKeyValueWithBaseIncludePath(fullPath: string) {
 	// let kvtable = kvdata[Object.keys(kvdata)[0]];
 	let kvString = fs.readFileSync(fullPath, 'utf-8');
 	kvString = removeComment(kvString);
-	const rows: string[] = kvString.split(os.EOL);
+	const rows: string[] = kvString.split(/\r?\n/);
 	for (let i = 0; i < rows.length; i++) {
 		const lineText: string = rows[i];
 		if (lineText.search(/#base ".*"/) !== -1) {
@@ -551,7 +551,7 @@ export async function getBaseInfo(fullPath: string) {
 	let kvString = fs.readFileSync(fullPath, 'utf-8');
 	let result: string[] = [];
 	kvString = removeComment(kvString);
-	const rows: string[] = kvString.split(os.EOL);
+	const rows: string[] = kvString.split(/\r?\n/);
 	for (let i = 0; i < rows.length; i++) {
 		const lineText: string = rows[i];
 		if (lineText.search(/#base\s+"([^"]+)"/) !== -1) {

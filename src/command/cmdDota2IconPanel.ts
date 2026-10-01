@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Uri } from "vscode";
 import * as path from 'path';
-import { exec } from 'child_process';
 import { getUri } from '../utils/getUri';
+import { revealInOS } from '../utils/platformUtils';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2 } from '../utils/kvUtils';
 import { readFile } from '../utils/readFile';
@@ -222,7 +222,7 @@ export async function dota2IconPanel(context: vscode.ExtensionContext) {
 				return;
 			case "copy_ability_file":	// Copy file
 				let fullpath = path.join(context.extensionPath, 'images', text);
-				exec(`explorer.exe /select,"${fullpath}_png.png"`);
+				revealInOS(`${fullpath}_png.png`);
 				return;
 		}
 	}, null, context.subscriptions);
@@ -322,7 +322,7 @@ export function attachIcons(webview: vscode.Webview, context: vscode.ExtensionCo
 				}
 				case "copy_ability_file": {
 					let fullpath = path.join(context.extensionPath, 'images', text);
-					exec(`explorer.exe /select,"${fullpath}_png.png"`);
+					revealInOS(`${fullpath}_png.png`);
 					return;
 				}
 			}

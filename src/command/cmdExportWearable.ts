@@ -34,7 +34,7 @@ export function exportWearable(context: vscode.ExtensionContext) {
 			const inputBox = vscode.window.createInputBox();
 			inputBox.placeholder = localize('msg_enter_output_path');
 			if (gameDir) {
-				inputBox.value = path.join(gameDir, "\\scripts\\npc\\items_game.kv");
+				inputBox.value = path.join(gameDir, "scripts/npc/items_game.kv");
 			}
 			let result: any = {};
 			for (const index in itemsGame) {
@@ -59,7 +59,7 @@ export function exportWearable(context: vscode.ExtensionContext) {
 			const inputBox = vscode.window.createInputBox();
 			inputBox.placeholder = localize('msg_enter_output_path');
 			if (gameDir) {
-				inputBox.value = path.join(gameDir, "\\scripts\\npc\\items_game.kv");
+				inputBox.value = path.join(gameDir, "scripts/npc/items_game.kv");
 			}
 			inputBox.show();
 			inputBox.onDidAccept(async (t) => {

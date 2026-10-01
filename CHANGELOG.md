@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.4
+- macOS / Linux support:
+  - "Show in folder" actions (icon panel, mklink) use the system file manager (Explorer / Finder / ...) instead of `explorer.exe`
+  - Dota 2 install path: on macOS/Linux a Windows path in `dota2-tools.dota2_install_path` (the default or one synced from Windows) is ignored; the Steam root and `libraryfolders.vdf` libraries are searched (`~/Library/Application Support/Steam` on macOS, `~/.steam/steam` / `~/.local/share/Steam` on Linux)
+  - mklink: creates a directory symlink on macOS/Linux (junction on Windows as before)
+  - Lazyboy editor opens the file with the default application (`open` / `xdg-open`)
+  - LESS image paste: on macOS the copied Finder file is read via `osascript`; on Linux via `wl-paste` / `xclip`
+  - Recompile Resource is Windows-only (Workshop Tools): hidden from the explorer menu elsewhere, the command shows a message instead of failing
+  - addon auto-discovery (`addoninfo.txt` search), localization merge watcher and export default paths no longer assume `\` separators
+- mklink: fixed swapped game/content handling when only one of the two folders already existed in the Dota 2 install
+
 ## 2.0.3
 - Recompile Resource: fixed images (png/jpg/tga/psd) failing with "Failed to find compiler" — they now compile through a temporary `<name>_<ext>.vtex` descriptor (RGBA8888, no mips), producing the `<name>_png.vtex_c` panorama expects; a hand-written `.vtex` next to the image is used as-is
 - Recompile Resource: multi-select works — all selected files compile in a single resourcecompiler run

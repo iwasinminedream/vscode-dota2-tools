@@ -17,7 +17,7 @@ export function exportWearableWithHero(context: vscode.ExtensionContext) {
 	const inputBox = vscode.window.createInputBox();
 	inputBox.placeholder = localize('msg_enter_output_path');
 	if (gameDir) {
-		inputBox.value = path.join(gameDir, "\\scripts\\npc\\items_game");
+		inputBox.value = path.join(gameDir, "scripts/npc/items_game");
 	}
 	let result:any = {}
 	for (const index in itemsGame) {
@@ -40,7 +40,7 @@ export function exportWearableWithHero(context: vscode.ExtensionContext) {
 	inputBox.onDidAccept(async (t) => {
 		for (const heroName in result) {
 			const heroItems = result[heroName];
-			fs.writeFileSync(inputBox.value+"\\"+heroName+".kv", writeKeyValue({ Items: heroItems }));
+			fs.writeFileSync(path.join(inputBox.value, heroName + ".kv"), writeKeyValue({ Items: heroItems }));
 		}
 		inputBox.dispose();
 	});

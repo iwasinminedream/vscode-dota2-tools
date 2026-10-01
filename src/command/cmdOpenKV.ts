@@ -17,7 +17,7 @@ export async function openKV(context: vscode.ExtensionContext) {
 		// If it's a modifier, search for the ability name (must be in the same file)
 		if (scriptFiles[word] === undefined) {
 			let kvString = fs.readFileSync(fileName, 'utf-8');
-			const rows: string[] = kvString.split(os.EOL);
+			const rows: string[] = kvString.split(/\r?\n/);
 			let configConditions: string[] | undefined = vscode.workspace.getConfiguration().get("dota2-tools.ability class constructor");
 			let tsConfig = vscode.workspace.getConfiguration().get("dota2-tools.A6.Kv to lua generate typescript") as boolean;
 			for (let i = 0; i < rows.length; i++) {
@@ -59,7 +59,7 @@ export async function openKV(context: vscode.ExtensionContext) {
 		if (scriptFiles[word] !== undefined) {
 			let kvString = fs.readFileSync(gameDir + '/scripts/npc/npc_abilities_custom.txt', 'utf-8');
 			kvString = removeComment(kvString);
-			let rows: string[] = kvString.split(os.EOL);
+			let rows: string[] = kvString.split(/\r?\n/);
 			for (let i = 0; i < rows.length; i++) {
 				const lineText: string = rows[i];
 				if (lineText.search(/#base ".*"/) !== -1) {
@@ -92,7 +92,7 @@ export async function openKV(context: vscode.ExtensionContext) {
 			}
 			kvString = fs.readFileSync(gameDir + '/scripts/npc/npc_items_custom.txt', 'utf-8');
 			kvString = removeComment(kvString);
-			rows = kvString.split(os.EOL);
+			rows = kvString.split(/\r?\n/);
 			for (let i = 0; i < rows.length; i++) {
 				const lineText: string = rows[i];
 				if (lineText.search(/#base ".*"/) !== -1) {
@@ -127,7 +127,7 @@ export async function openKV(context: vscode.ExtensionContext) {
 	}
 	function getKVInfo(fullPath: string, word: string): number | boolean {
 		let kvString = fs.readFileSync(fullPath, 'utf-8');
-		const rows: string[] = kvString.split(os.EOL);
+		const rows: string[] = kvString.split(/\r?\n/);
 		for (let i = 0; i < rows.length; i++) {
 			const lineText: string = rows[i];
 			if (lineText.search(word) !== -1) {

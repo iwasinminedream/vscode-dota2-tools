@@ -44,7 +44,7 @@ async function startWatch(context: vscode.ExtensionContext) {
 			if (setting && await getPathInfo(setting) !== false) {
 				fileWatcher = watch(setting, { recursive: true, filter: /\.txt$/ }, function (evt, name) {
 					if (setting) {
-						let language = path.dirname(name).replace(setting, "").split("\\")[1];
+						let language = path.dirname(name).replace(setting, "").split(/[\\/]/)[1];
 						combineLocalization(language);
 					}
 				});

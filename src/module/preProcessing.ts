@@ -43,7 +43,7 @@ export function parsePanoramaAPI(context: vscode.ExtensionContext) {
 	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\|-.*\r\n\| (.*)\r\n\| (.*)\r\n\| (.*)/g, (m, $1, $2, $3) => {
 		return `${$1}|${$2}|${$3}`;
 	});
-	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\{\| class="standard-table" style="width: 100%;"\r\n! (.*)\r\n! (.*)\r\n! (.*)/g, (m, $1, $2, $3) => {
+	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\{\| class="standard-table" style="width: 100%;"\r?\n! (.*)\r?\n! (.*)\r?\n! (.*)/g, (m, $1, $2, $3) => {
 		return `${$1}|${$2}|${$3}${os.EOL}--|--|--`;
 	});
 	cl_panorama_script_help_2 = cl_panorama_script_help_2.replace(/\|\}\r\n/g, '');
@@ -53,7 +53,7 @@ export function parsePanoramaAPI(context: vscode.ExtensionContext) {
 	interface ApiInfo {
 		[key: string]: string;
 	}
-	let row = cl_panorama_script_help_2.split(os.EOL);
+	let row = cl_panorama_script_help_2.split(/\r?\n/);
 	let api: { [key: string]: { [key: string]: ApiInfo; }; } = {};
 	eachLine(row, (line: number, lineText: string) => {
 		if (lineText.search(/# .*/) !== -1) {
@@ -90,7 +90,7 @@ export function parseCssDocument(context: vscode.ExtensionContext) {
 	// Below: convert to an object
 	// dump_panorama_css_properties = dump_panorama_css_properties.replace(/&lt;/g, '<');
 	// dump_panorama_css_properties = dump_panorama_css_properties.replace(/&gt;/g, '>');
-	let row = dump_panorama_css_properties.split(os.EOL);
+	let row = dump_panorama_css_properties.split(/\r?\n/);
 	interface CSSInfo {
 		description?: string;
 		example?: string;
@@ -139,7 +139,7 @@ export function parseCssDocument(context: vscode.ExtensionContext) {
 export function parseEventDocument(context: vscode.ExtensionContext) {
 	let dump_panorama_events: string = fs.readFileSync(path.join(context.extensionPath, 'resource', 'dump_panorama_events.txt'), 'utf-8');
 	// Convert to md format
-	dump_panorama_events = dump_panorama_events.replace(/\{\| class="wikitable"\r\n! (.*)\r\n! (.*)\r\n! (.*)/g, (m, $1, $2, $3) => { return `${$1}|${$2}|${$2}${os.EOL}--|--|--`; });
+	dump_panorama_events = dump_panorama_events.replace(/\{\| class="wikitable"\r?\n! (.*)\r?\n! (.*)\r?\n! (.*)/g, (m, $1, $2, $3) => { return `${$1}|${$2}|${$2}${os.EOL}--|--|--`; });
 	dump_panorama_events = dump_panorama_events.replace(/\|-.*\r\n\| (.*)\r\n\| (.*)\r\n\| (.*)/g, (m, $1, $2, $3) => {
 		return `${$1}|${$2}|${$3}`;
 	});
@@ -151,7 +151,7 @@ export function parseEventDocument(context: vscode.ExtensionContext) {
 export function parsePanelList(context: vscode.ExtensionContext) {
 	let PanelList: string = fs.readFileSync(path.join(context.extensionPath, 'resource', 'PanelList.md'), 'utf-8');
 	let Panel: any = {};
-	let row = PanelList.split(os.EOL);
+	let row = PanelList.split(/\r?\n/);
 	eachLine(row, (line, lineText) => {
 		if (lineText.search(/^# .*/) !== -1) {
 			Panel[lineText.split('# ')[1]] = {
@@ -270,7 +270,7 @@ export async function parseLuaAPIChangelog(context: vscode.ExtensionContext) {
 		}
 		if (Number(is_directory) === vscode.FileType.File) {
 			const dota_script_help2 = fs.readFileSync(path.join(serverChangelogPath, name), 'utf-8');
-			const rows = dota_script_help2.split(os.EOL);
+			const rows = dota_script_help2.split(/\r?\n/);
 			// Read the server API
 			let class_list: { [k: string]: any; } = {};
 			let enum_list: { [k: string]: any; } = {};
@@ -313,7 +313,7 @@ export async function parseLuaAPIChangelog(context: vscode.ExtensionContext) {
 		}
 		if (Number(is_directory) === vscode.FileType.File) {
 			const dota_script_help2 = fs.readFileSync(path.join(clientChangelogPath, name), 'utf-8');
-			const rows = dota_script_help2.split(os.EOL);
+			const rows = dota_script_help2.split(/\r?\n/);
 			// Read the client API
 			let class_list: { [k: string]: any; } = {};
 			let enum_list: { [k: string]: any; } = {};
