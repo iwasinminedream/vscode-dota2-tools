@@ -54,6 +54,8 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
 	}
 
 	refreshDocument() {
+		// apiNoteInit replaces the notes object when the modules are initialized again
+		this.dotaApiNote = getDotaApiNoteClass();
 		this.snippets = [];
 		this.snippetsNoParams = [];
 

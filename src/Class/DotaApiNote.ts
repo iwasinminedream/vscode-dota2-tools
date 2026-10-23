@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import { apiParse } from '../utils/apiParse';
+import { getResourcePath } from '../utils/releaseData';
 
 export class DotaApiNote {
 	api_note: Table;
@@ -14,7 +14,15 @@ export class DotaApiNote {
 	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
 		this.api_note = JSON.parse(fs.readFileSync(context.extensionPath + '/resource/api_note.json', 'utf-8'));
-		this.css_note = JSON.parse(fs.readFileSync(path.join(context.extensionPath, 'resource', 'dump_panorama_css_properties.json'), 'utf-8'));
+		this.css_note = {};
+		this.classList = {};
+		this.enumList = {};
+		this.reload();
+	}
+
+	/** (Re)read the API generated from the dumps; the notes stay as they are */
+	reload() {
+		this.css_note = JSON.parse(fs.readFileSync(getResourcePath(this.context, 'resource', 'dump_panorama_css_properties.json'), 'utf-8'));
 		[this.classList, this.enumList] = apiParse(this.context, this.api_note);
 	}
 

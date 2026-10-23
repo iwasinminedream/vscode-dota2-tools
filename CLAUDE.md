@@ -233,6 +233,12 @@ const objWithBases = readKeyValueWithBase(kvPath, baseDir);
 - Data from static JSONs in `resource/` (e.g., `dota_script_help2.json`, `cl_panorama_script_help_2.json`)
 - Each tree provider expects localized labels via `localize(<moduleName>)`
 
+**API data from the dumps** (`module/dotaData.ts` + `utils/dotaDataStore.ts`):
+- Once an hour looks up the newest commit under `files/` of GitHub `iwasinminedream/dota-data` (the dump automation commits there on every Dota update), downloads the files the extension uses into `globalStorage/dota-data/<sha12>-g<N>/` and generates the `resource/` API files from them with `scripts/lib/dota-data-generators.js` (the same code as `npm run sync-data`)
+- `getResourcePath()` (`utils/releaseData.ts`) prefers that generation's `resource/` — read the API files through it, not `context.extensionPath`
+- On a switch fires `EventType.EVENT_ON_DOTA_DATA_UPDATED`: `apiNote` reloads the completions, the sidebar re-renders the API tab. The webview gets the generation's `dota-data.js` (`window.__DOTA_DATA__`) through `src/webview-api/vendor/data/dota-data.ts` — import dota-data files from there, not from `@moddota/dota-data/files/...`
+- Bump `GENERATOR_VERSION` when what a generation contains changes
+
 **Custom editors**:
 - `kvEditorProvider.ts` + `module/kvEditor.ts`: Full-featured KV table editor for `.kv`/`.txt` files (priority: option)
   - Column dropdown options in `resource/kv_editor_field_options.json` (supports `multiple: true/false`, custom `separator`)

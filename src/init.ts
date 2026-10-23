@@ -12,11 +12,14 @@ import { cssCompletionInit, jsCompletionInit, luaCompletionInit } from './module
 import { kvEditorInit } from './module/kvEditor';
 import { getStatusBarItem, refreshStatusBarMessage, showStatusBarMessage } from './module/statusBar';
 import { dotaSidebarInit } from './module/dotaSidebar';
+import { dotaDataInit } from './module/dotaData';
 import { localize } from './utils/localize';
 
 /** Module list */
 const moduleList = {
 	"addonInfoInit": addonInfoInit,
+	// before every module that reads the API data, so they start with the downloaded dumps
+	"dotaDataInit": dotaDataInit,
 	"dotaSidebarInit": dotaSidebarInit,
 	"dota2IconPanelInit": dota2IconPanelInit,
 	"dota2ItemsGameInit": dota2ItemsGameInit,
@@ -46,6 +49,7 @@ const skipModuleList: { [key: string]: keyof ModuleListConfig; } = {
 	"cssCompletionInit": "css_completion",
 	"kv2luaInit": "kv_lua_associated",
 	"kvEditorInit": "dota2kv",
+	"dotaDataInit": "dota_data_update",
 };
 
 let eventID: number;

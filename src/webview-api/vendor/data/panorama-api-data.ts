@@ -1,5 +1,4 @@
-import panoramaApi from "@moddota/dota-data/files/panorama/api";
-import panoramaEnums from "@moddota/dota-data/files/panorama/enums";
+import { panoramaApi, panoramaEnums } from "./dota-data";
 import type { DeclarationsContextType } from "../components/api/Docs/DeclarationsContext";
 
 const getPanoramaApiOrder = (name: string) => (name === "$" ? -1 : name.startsWith("C") ? 0 : 1);

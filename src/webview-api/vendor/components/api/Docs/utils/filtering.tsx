@@ -1,5 +1,6 @@
-import apiTypes from "@moddota/dota-data/files/vscripts/api-types";
+import type apiTypes from "@moddota/dota-data/files/vscripts/api-types";
 import { getFuncDeepTypes } from "@moddota/dota-data/lib/helpers/vscripts";
+import { vscriptsApiTypes } from "../../../../data/dota-data";
 import { isNotNil } from "../../../../utils/types";
 import * as api from "../api";
 
@@ -80,7 +81,7 @@ export function getReferencesForFunction(func: api.FunctionDeclaration) {
   const allReferences = new Set<apiTypes.Object>();
 
   function addReference(name: string) {
-    const reference = apiTypes.find((t) => t.name === name);
+    const reference = vscriptsApiTypes.find((t) => t.name === name);
     if (!reference || reference.kind !== "object") return;
     allReferences.add(reference);
     for (const extendedType of reference.extend ?? []) {

@@ -4,6 +4,8 @@ import { attachItemsGame } from '../command/cmdDota2ItemsGame';
 import { attachIcons, buildIconsPreProcess, ensureIconData } from '../command/cmdDota2IconPanel';
 import { attachMusic } from '../command/cmdVsndPicker';
 import { attachPanels } from '../command/cmdPanelBrowser';
+import { EventManager, EventType } from '../Class/event';
+import { getDotaDataWebviewScript } from '../module/dotaData';
 
 const ACTIVE_TAB_KEY = 'dota2tools.sidebar.activeTab';
 
@@ -33,6 +35,13 @@ export class DotaSidebarViewProvider implements vscode.WebviewViewProvider {
 
 	constructor(private readonly context: vscode.ExtensionContext) {
 		this._activeTab = context.globalState.get<SidebarTab>(ACTIVE_TAB_KEY, 'api');
+		// New dumps downloaded (module/dotaData.ts): the API tab loads them with its next HTML
+		EventManager.listenToEvent(EventType.EVENT_ON_DOTA_DATA_UPDATED, () => {
+			this.htmlCache.delete('api');
+			if (this.view && this._activeTab === 'api') {
+				void this.renderActiveTab();
+			}
+		});
 	}
 
 	private get activeTab(): SidebarTab {
@@ -54,9 +63,11 @@ export class DotaSidebarViewProvider implements vscode.WebviewViewProvider {
 
 		webviewView.webview.options = {
 			enableScripts: true,
-			// Extension directory (icons/bundled files) + workspace directories (custom ability/item icons live under the addon's game/content)
+			// Extension directory (icons/bundled files) + global storage (API data downloaded from dota-data)
+			// + workspace directories (custom ability/item icons live under the addon's game/content)
 			localResourceRoots: [
 				this.context.extensionUri,
+				this.context.globalStorageUri,
 				...(vscode.workspace.workspaceFolders?.map((f) => f.uri) ?? []),
 			],
 		};
@@ -133,11 +144,14 @@ export class DotaSidebarViewProvider implements vscode.WebviewViewProvider {
 		switch (tab) {
 			case 'api': {
 				const assetBase = webview.asWebviewUri(this.context.extensionUri).toString().replace(/\/?$/, '/');
+				// The data of the newest dumps, when downloaded; without it the bundle's own data is shown
+				const dataScript = getDotaDataWebviewScript();
+				const dataTag = dataScript ? `<script src="${webview.asWebviewUri(vscode.Uri.file(dataScript))}"></script>` : '';
 				html = await getWebviewContent(
 					webview,
 					this.context.extensionUri,
 					'ApiSidebar',
-					(h) => h.replace('{{ASSET_BASE}}', assetBase),
+					(h) => h.replace('{{ASSET_BASE}}', assetBase).replace('{{DOTA_DATA_SCRIPT}}', dataTag),
 					{ activeTab: 'api' },
 				);
 				break;

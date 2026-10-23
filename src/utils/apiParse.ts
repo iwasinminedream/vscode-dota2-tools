@@ -125,6 +125,10 @@ export function apiParse(context: vscode.ExtensionContext, apiNote: Table) {
 		// Supplement client api
 		for (const class_name in class_list_cl) {
 			const fun_list = class_list_cl[class_name];
+			// a class only the client has (a newer dump can bring one) gets its own list
+			if (class_list[class_name.replace('C_', 'C')] === undefined) {
+				class_list[class_name.replace('C_', 'C')] = [];
+			}
 			for (let i = 0; i < fun_list.length; i++) {
 				const fun_info = fun_list[i];
 				let bHasServer = false;

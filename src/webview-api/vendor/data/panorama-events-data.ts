@@ -1,4 +1,4 @@
-import panoramaEvents from "@moddota/dota-data/files/panorama/events";
+import { panoramaEvents } from "./dota-data";
 import type { DeclarationsContextType } from "../components/api/Docs/DeclarationsContext";
 
 export const panoramaEventsScope: DeclarationsContextType = {

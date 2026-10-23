@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import { DotaApiNote } from '../Class/DotaApiNote';
+import { getResourcePath } from '../utils/releaseData';
 
 interface JsFunction {
 	Function?: string;
@@ -37,14 +37,23 @@ export class JsCompletionItemProvider implements vscode.CompletionItemProvider {
 	/** Lowercase short class name -> correct-case mapping (game -> Game, gameevents -> GameEvents) */
 	classNameNormalize: Map<string, string>;
 
-	constructor(context: vscode.ExtensionContext, public dotaApiNote: DotaApiNote) {
+	constructor(private context: vscode.ExtensionContext, public dotaApiNote: DotaApiNote) {
 		this.selector = [
 			{ scheme: 'file', language: 'javascript' },
 			{ scheme: 'file', language: 'typescript' },
 			{ scheme: 'untitled', language: 'javascript' },
 			{ scheme: 'untitled', language: 'typescript' },
 		];
-		this.document = JSON.parse(fs.readFileSync(path.join(context.extensionPath, 'resource', 'cl_panorama_script_help_2.json'), 'utf-8'));
+		this.document = {};
+		this.globalSnippets = [];
+		this.classMethodMap = new Map();
+		this.classNameNormalize = new Map();
+		this.refreshDocument();
+	}
+
+	/** (Re)build the completions from cl_panorama_script_help_2.json (generated from the dumps) */
+	refreshDocument() {
+		this.document = JSON.parse(fs.readFileSync(getResourcePath(this.context, 'resource', 'cl_panorama_script_help_2.json'), 'utf-8'));
 		this.globalSnippets = [];
 		this.classMethodMap = new Map();
 		this.classNameNormalize = new Map();

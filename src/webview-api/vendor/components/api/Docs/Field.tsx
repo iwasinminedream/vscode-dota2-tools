@@ -1,5 +1,5 @@
 import * as api from "./api";
-import apiTypes from "@moddota/dota-data/files/vscripts/api-types";
+import type apiTypes from "@moddota/dota-data/files/vscripts/api-types";
 import React from "react";
 import { KindIcon, useLinkedElement } from "./utils/components";
 import { CommonGroupWrapper, CommonGroupHeader, CommonGroupSignature } from "./utils/styles";

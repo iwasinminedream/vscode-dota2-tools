@@ -1,4 +1,4 @@
-import apiTypes from "@moddota/dota-data/files/vscripts/api-types";
+import type apiTypes from "@moddota/dota-data/files/vscripts/api-types";
 import React from "react";
 import { Field } from "./Field";
 import { KindIcon } from "./utils/components";

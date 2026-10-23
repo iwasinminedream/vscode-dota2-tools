@@ -1,4 +1,4 @@
-import panoramaCss from "@moddota/dota-data/files/panorama/css";
+import { panoramaCss } from "./dota-data";
 import type { DeclarationsContextType } from "../components/api/Docs/DeclarationsContext";
 
 export const panoramaCssScope: DeclarationsContextType = {

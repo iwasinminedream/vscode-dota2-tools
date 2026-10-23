@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import convarsData from "@moddota/dota-data/files/convars.json";
+import { convars as convarsData } from "../../../data/dota-data";
 import { ScrollableList, LazyList } from "../Lists";
 import { SearchBox, getSearchFromUrl, subscribeToSearchChange } from "../Search";
 import { NavBar } from "../layout/NavBar";

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import modifiersData from "@moddota/dota-data/files/vscripts/modifier_list.json";
+import { modifierList as modifiersData } from "../../../data/dota-data";
 import { ScrollableList, LazyList } from "../Lists";
 import { SearchBox, getSearchFromUrl, subscribeToSearchChange } from "../Search";
 import { NavBar } from "../layout/NavBar";

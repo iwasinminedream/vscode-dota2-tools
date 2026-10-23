@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { DotaApiNote } from '../Class/DotaApiNote';
+import { getDotaApiNoteClass } from '../module/apiNote';
 
 interface CssProperty {
 	description: string;
@@ -21,7 +22,10 @@ export class CssCompletionItemProvider implements vscode.CompletionItemProvider 
 		this.refreshDocument();
 	}
 	refreshDocument() {
+		// apiNoteInit replaces the notes object when the modules are initialized again
+		this.dotaApiNote = getDotaApiNoteClass();
 		this.document = this.dotaApiNote.getCssApiNote();
+		this.snippets = [];
 		for (const cssName in this.document) {
 			let item = new vscode.CompletionItem(cssName, vscode.CompletionItemKind.Property);
 			// item.detail = funInfo.description;

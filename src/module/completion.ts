@@ -3,6 +3,7 @@ import { CssCompletionItemProvider } from '../Completions/cssCompletionItemProvi
 import { JsCompletionItemProvider } from '../Completions/jsCompletionItemProvider';
 import { LuaCompletionItemProvider } from '../Completions/luaCompletionItemProvider';
 import { getDotaApiNoteClass } from './apiNote';
+import { readWithBundledFallback } from './dotaData';
 /** Code completion module */
 
 let luaCompletionItemProvider: LuaCompletionItemProvider;
@@ -19,7 +20,7 @@ export async function luaCompletionInit(context: vscode.ExtensionContext) {
 export async function jsCompletionInit(context: vscode.ExtensionContext) {
 	if (jsCompletionItemProvider === undefined) {
 		let dotaApiNote = getDotaApiNoteClass();
-		jsCompletionItemProvider = new JsCompletionItemProvider(context, dotaApiNote);
+		jsCompletionItemProvider = readWithBundledFallback(() => new JsCompletionItemProvider(context, dotaApiNote));
 		context.subscriptions.push(vscode.languages.registerCompletionItemProvider(jsCompletionItemProvider.selector, jsCompletionItemProvider, ...jsCompletionItemProvider.triggerCharacters));
 	}
 }
@@ -36,4 +37,7 @@ export function getLuaCompletion() {
 }
 export function getCssCompletion() {
 	return cssCompletionItemProvider;
+}
+export function getJsCompletion() {
+	return jsCompletionItemProvider;
 }

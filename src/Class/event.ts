@@ -2,6 +2,8 @@
 export enum EventType {
 	EVENT_ON_DID_CHANGE_WORKSPACE_FOLDERS,
 	EVENT_ON_DID_CHANGE_CONFIGURATION,
+	/** The API data switched to another dota-data generation (module/dotaData.ts); the event carries no value */
+	EVENT_ON_DOTA_DATA_UPDATED,
 }
 
 export class EventManager {

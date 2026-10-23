@@ -186,6 +186,11 @@
 				"command": "dota2tools.paste_css_image_snippet",
 				"title": "%dota2tools.paste_css_image_snippet%",
 				"category": "Dota2 Tools"
+			},
+			{
+				"command": "dota2tools.update_dota_data",
+				"title": "%dota2tools.update_dota_data%",
+				"category": "Dota2 Tools"
 			}
 		],
 		"keybindings": [
@@ -244,7 +249,8 @@
 							"js_completion": true,
 							"css_completion": true,
 							"kv_lua_associated": true,
-							"dota2kv": false
+							"dota2kv": false,
+							"dota_data_update": true
 						},
 						"properties": {
 							"ability_icon": {
@@ -291,6 +297,11 @@
 								"type": "boolean",
 								"default": false,
 								"description": "%module.dota2kv%"
+							},
+							"dota_data_update": {
+								"type": "boolean",
+								"default": true,
+								"description": "%dotaDataInit%"
 							}
 						},
 						"additionalProperties": false,

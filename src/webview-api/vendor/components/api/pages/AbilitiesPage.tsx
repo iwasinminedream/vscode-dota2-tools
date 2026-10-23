@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo, useState, useEffect } from "react";
-import abilitiesData from "@moddota/dota-data/files/abilities.json";
-import heroMapData from "@moddota/dota-data/files/ability-hero-map.json";
-import modifiersData from "@moddota/dota-data/files/vscripts/modifier_list.json";
+import { abilities as abilitiesData, abilityHeroMap as heroMapData, modifierList as modifiersData } from "../../../data/dota-data";
 import { ScrollableList } from "../Lists";
 import { SearchBox, getSearchFromUrl, subscribeToSearchChange, notifySearchChange } from "../Search";
 import { fuzzyMatch } from "../../../utils/fuzzySearch";

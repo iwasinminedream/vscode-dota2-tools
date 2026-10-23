@@ -1,4 +1,4 @@
-import vscriptsEvents from "@moddota/dota-data/files/events";
+import { vscriptsEvents } from "./dota-data";
 import type { DeclarationsContextType } from "../components/api/Docs/DeclarationsContext";
 
 const starredEventNames = [

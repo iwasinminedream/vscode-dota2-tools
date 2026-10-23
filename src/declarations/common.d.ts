@@ -57,6 +57,7 @@ declare interface ModuleListConfig {
 	css_completion: boolean;
 	kv_lua_associated: boolean;
 	dota2kv: boolean;
+	dota_data_update: boolean;
 }
 
 

@@ -59,12 +59,29 @@ export function getReleasePath(context: vscode.ExtensionContext): string {
     return _cachedReleasePath ?? context.extensionPath;
 }
 
+let _dotaDataRoot: string | undefined = undefined;
+
 /**
- * Resolves a resource file path, preferring the installed release copy.
+ * Folder of the dota-data generation downloaded by module/dotaData.ts (its resource/ holds the API
+ * files generated from the newest dumps), or undefined to use only the bundled copies.
+ */
+export function setDotaDataRoot(root: string | undefined): void {
+    _dotaDataRoot = root;
+}
+
+/**
+ * Resolves a resource file path, preferring the files generated from the downloaded dota-data,
+ * then the installed release copy.
  * Usage: getResourcePath(context, 'resource', 'dota_script_help2.lua')
  *        getResourcePath(context, 'resource/npc/heroes')
  */
 export function getResourcePath(context: vscode.ExtensionContext, ...segments: string[]): string {
+    if (_dotaDataRoot !== undefined) {
+        const dotaDataFull = path.join(_dotaDataRoot, ...segments);
+        if (fs.existsSync(dotaDataFull)) {
+            return dotaDataFull;
+        }
+    }
     const releasePath = getReleasePath(context);
     if (releasePath !== context.extensionPath) {
         const releaseFull = path.join(releasePath, ...segments);
