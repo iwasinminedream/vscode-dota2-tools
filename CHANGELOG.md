@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.0
 - API data follows the Dota dumps on its own: the extension looks up the newest dump in
   [iwasinminedream/dota-data](https://github.com/iwasinminedream/dota-data) once an hour (one GitHub API request, shared by all windows), downloads it into its global storage when it changed and switches to it without a reload — Lua / Panorama JS / CSS completions and the API sidebar (Lua API, events, Panorama, abilities, modifiers, convars). Until the first download, offline, or with the module off, the data bundled with the extension is used
   - command "Dota2 Tools: Update API data from the dota-data dumps" checks right away
