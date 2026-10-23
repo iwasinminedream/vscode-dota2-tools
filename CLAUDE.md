@@ -239,6 +239,10 @@ const objWithBases = readKeyValueWithBase(kvPath, baseDir);
 - On a switch fires `EventType.EVENT_ON_DOTA_DATA_UPDATED`: `apiNote` reloads the completions, the sidebar re-renders the API tab. The webview gets the generation's `dota-data.js` (`window.__DOTA_DATA__`) through `src/webview-api/vendor/data/dota-data.ts` — import dota-data files from there, not from `@moddota/dota-data/files/...`
 - Bump `GENERATOR_VERSION` when what a generation contains changes
 
+**VPK scripts on Windows/macOS/Linux** (`scripts/extract-images.js`, `scripts/sync-dota-data.js`):
+- `scripts/ensure-vrf.js` downloads the ValveResourceFormat CLI for the platform/CPU into `lib/vrf/` (not packaged in the VSIX)
+- Dota 2 is found with `scripts/lib/dota-install.js` (argument → `DOTA2_DIR` → Steam root + `libraryfolders.vdf`); `utils/platformUtils.ts` uses the same module — keep one Steam search
+
 **Custom editors**:
 - `kvEditorProvider.ts` + `module/kvEditor.ts`: Full-featured KV table editor for `.kv`/`.txt` files (priority: option)
   - Column dropdown options in `resource/kv_editor_field_options.json` (supports `multiple: true/false`, custom `separator`)

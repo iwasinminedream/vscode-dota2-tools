@@ -6,12 +6,14 @@
  * inline hints, completions, and tree views.
  *
  * Also extracts images (spellicons, items, heroes, econ) from Dota 2 VPK
- * files using ValveResourceFormat CLI (Source2Viewer-CLI.exe).
+ * files using ValveResourceFormat CLI (Source2Viewer-CLI), on Windows, macOS and Linux.
  *
  * Usage:
  *   node scripts/sync-dota-data.js [path-to-dota-data]
  *
  * Default dota-data path: ../../dota/dota-data (relative to extension root)
+ * Dota 2: the DOTA2_DIR environment variable, else the Steam libraries (libraryfolders.vdf);
+ * without it the VPK steps are skipped.
  */
 
 const fs = require('fs');
@@ -19,6 +21,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { ensureVrf, VRF_CLI } = require('./ensure-vrf');
 const generators = require('./lib/dota-data-generators');
+const { dotaVpk, findDota2 } = require('./lib/dota-install');
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -35,22 +38,9 @@ const FILES_DIR = path.join(dotaDataPath, 'files');
 
 // VRF_CLI is imported from ensure-vrf.js
 
-// Dota 2 VPK path — auto-detect common locations
-const DOTA2_COMMON_PATHS = [
-    'C:/Program Files (x86)/Steam/steamapps/common/dota 2 beta',
-    'D:/SteamLibrary/steamapps/common/dota 2 beta',
-    'E:/SteamLibrary/steamapps/common/dota 2 beta',
-];
-
-function findDota2Dir() {
-    for (const p of DOTA2_COMMON_PATHS) {
-        if (fs.existsSync(path.join(p, 'game', 'dota', 'pak01_dir.vpk'))) return p;
-    }
-    return null;
-}
-
-const DOTA2_DIR = findDota2Dir();
-const DOTA_VPK = DOTA2_DIR ? path.join(DOTA2_DIR, 'game', 'dota', 'pak01_dir.vpk') : null;
+// Dota 2 VPK path — DOTA2_DIR or the Steam libraries
+const DOTA2_DIR = findDota2() || null;
+const DOTA_VPK = DOTA2_DIR ? dotaVpk(DOTA2_DIR) : null;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -123,7 +113,7 @@ function extractVpkTextFiles() {
     console.log('\n[6b] Extracting npc files and items_game.txt from VPK ...');
 
     if (!DOTA_VPK) {
-        console.warn('  ⚠ Dota 2 installation not found. Skipping VPK text extraction.');
+        console.warn('  ⚠ Dota 2 installation not found (set DOTA2_DIR). Skipping VPK text extraction.');
         return;
     }
 
@@ -257,7 +247,7 @@ async function extractVpkImages() {
     console.log('\n[7/7] Extracting images from Dota 2 VPK ...');
 
     if (!DOTA_VPK) {
-        console.warn('  ⚠ Dota 2 installation not found. Skipping image extraction.');
+        console.warn('  ⚠ Dota 2 installation not found (set DOTA2_DIR). Skipping image extraction.');
         return;
     }
 
@@ -466,8 +456,10 @@ async function main() {
     console.log(`dota-data path: ${dotaDataPath}`);
     console.log(`resource dir:   ${RESOURCE_DIR}`);
 
-    // Ensure VRF CLI is available (downloads if needed)
-    await ensureVrf();
+    // Ensure VRF CLI is available for the VPK steps (downloads if needed)
+    if (DOTA_VPK) {
+        await ensureVrf();
+    }
 
     // Validate dota-data exists
     if (!fs.existsSync(FILES_DIR)) {

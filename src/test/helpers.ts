@@ -105,3 +105,44 @@ export function makePng(width: number, height: number): Buffer {
 		pngChunk('IEND', Buffer.alloc(0)),
 	]);
 }
+
+/** A zip archive of uncompressed entries; `mode` (e.g. 0o755) is stored as Unix permissions, like the release zips */
+export function makeZip(entries: { name: string; data: Buffer | string; mode?: number; }[]): Buffer {
+	const local: Buffer[] = [];
+	const central: Buffer[] = [];
+	let offset = 0;
+	for (const entry of entries) {
+		const data = Buffer.from(entry.data);
+		const name = Buffer.from(entry.name, 'utf8');
+		const crc = crc32(data);
+		const header = Buffer.alloc(30);
+		header.writeUInt32LE(0x04034b50, 0);
+		header.writeUInt16LE(10, 4); // version needed
+		header.writeUInt32LE(crc, 14);
+		header.writeUInt32LE(data.length, 18);
+		header.writeUInt32LE(data.length, 22);
+		header.writeUInt16LE(name.length, 26);
+		local.push(header, name, data);
+
+		const record = Buffer.alloc(46);
+		record.writeUInt32LE(0x02014b50, 0);
+		record.writeUInt16LE((3 << 8) | 20, 4); // made by Unix
+		record.writeUInt16LE(10, 6);
+		record.writeUInt32LE(crc, 16);
+		record.writeUInt32LE(data.length, 20);
+		record.writeUInt32LE(data.length, 24);
+		record.writeUInt16LE(name.length, 28);
+		record.writeUInt32LE((((entry.mode ?? 0o644) | 0o100000) << 16) >>> 0, 38);
+		record.writeUInt32LE(offset, 42);
+		central.push(record, name);
+		offset += header.length + name.length + data.length;
+	}
+	const centralSize = central.reduce((size, part) => size + part.length, 0);
+	const end = Buffer.alloc(22);
+	end.writeUInt32LE(0x06054b50, 0);
+	end.writeUInt16LE(entries.length, 8);
+	end.writeUInt16LE(entries.length, 10);
+	end.writeUInt32LE(centralSize, 12);
+	end.writeUInt32LE(offset, 16);
+	return Buffer.concat([...local, ...central, end]);
+}

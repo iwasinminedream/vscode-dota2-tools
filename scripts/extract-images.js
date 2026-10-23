@@ -2,42 +2,31 @@
  * extract-images.js
  *
  * Extracts ability, item, hero, and cosmetic icons from Dota 2 VPK files
- * using ValveResourceFormat CLI (Source2Viewer-CLI.exe).
+ * using ValveResourceFormat CLI (Source2Viewer-CLI), on Windows, macOS and Linux.
  * Only extracts new images that don't already exist.
  *
  * Usage:
  *   node scripts/extract-images.js [dota2-path]
  *
- * If dota2-path is not provided, common Steam library paths are checked.
- * Source2Viewer-CLI.exe is expected in the extension's lib/vrf/ directory.
+ * Without dota2-path: the DOTA2_DIR environment variable, then the Steam libraries
+ * (libraryfolders.vdf) are checked. The CLI is downloaded into the extension's lib/vrf/ on first use.
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawn } = require('child_process');
 const { ensureVrf, VRF_CLI } = require('./ensure-vrf');
+const { dotaVpk, findDota2 } = require('./lib/dota-install');
 
 const EXTENSION_ROOT = path.resolve(__dirname, '..');
 const IMAGES_DIR = path.join(EXTENSION_ROOT, 'images');
 
-const DOTA2_COMMON_PATHS = [
-    'C:/Program Files (x86)/Steam/steamapps/common/dota 2 beta',
-    'D:/SteamLibrary/steamapps/common/dota 2 beta',
-    'E:/SteamLibrary/steamapps/common/dota 2 beta',
-    'F:/SteamLibrary/steamapps/common/dota 2 beta',
-];
-
 function findDota2Dir(userPath) {
-    if (userPath) {
-        const vpk = path.join(userPath, 'game', 'dota', 'pak01_dir.vpk');
-        if (fs.existsSync(vpk)) return userPath;
-        console.error(`ERROR: VPK not found at ${vpk}`);
+    if (userPath && !fs.existsSync(dotaVpk(userPath))) {
+        console.error(`ERROR: VPK not found at ${dotaVpk(userPath)}`);
         process.exit(1);
     }
-    for (const p of DOTA2_COMMON_PATHS) {
-        if (fs.existsSync(path.join(p, 'game', 'dota', 'pak01_dir.vpk'))) return p;
-    }
-    return null;
+    return findDota2(userPath) || null;
 }
 
 function runVrf(vpk, args) {
@@ -259,16 +248,17 @@ function extractHeroIcons(vpk, tmpDir) {
 async function main() {
     console.log('=== extract-images ===');
 
-    await ensureVrf();
-
     const dota2Dir = findDota2Dir(process.argv[2]);
     if (!dota2Dir) {
         console.error('ERROR: Dota 2 installation not found.');
-        console.error('Provide the path: node scripts/extract-images.js "C:/path/to/dota 2 beta"');
+        console.error('Provide the path: node scripts/extract-images.js "/path/to/dota 2 beta"');
+        console.error('or set the DOTA2_DIR environment variable to it.');
         process.exit(1);
     }
 
-    const vpk = path.join(dota2Dir, 'game', 'dota', 'pak01_dir.vpk');
+    await ensureVrf();
+
+    const vpk = dotaVpk(dota2Dir);
     console.log(`Dota 2:   ${dota2Dir}`);
     console.log(`VRF CLI:  ${VRF_CLI}`);
     console.log(`Images:   ${IMAGES_DIR}`);

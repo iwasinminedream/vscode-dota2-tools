@@ -7,6 +7,11 @@
   - setting `dota2-tools.A1.module_list` → `dota_data_update` (on by default) turns it off
 - CSS completion no longer lists every property twice after the API data is reloaded
 - `npm run sync-data`: the dota-data → resource conversions moved to `scripts/lib/dota-data-generators.js`, shared with the extension (same output)
+- Icon extraction ("Run Extract Script") and `npm run sync-data` work on macOS and Linux too:
+  - the ValveResourceFormat CLI is downloaded for the platform and CPU (Windows / macOS / Linux, x64 / arm64), unpacked with PowerShell, `unzip`, `ditto` or `python3`
+  - Dota 2 is found through Steam on every platform: the Steam root (incl. Steam from Flathub on Linux) and the libraries in `libraryfolders.vdf`, or the `DOTA2_DIR` environment variable; "Run Extract Script" passes the install the extension already knows (setting or Steam search)
+  - the VSIX no longer carries the Windows CLI (`lib/vrf`, ~120 MB unpacked): it is downloaded on first extraction on Windows as well
+- The Steam library search is shared by the extension and the scripts (`scripts/lib/dota-install.js`); Steam from Flathub is found by the extension too
 
 ## 2.0.4
 - macOS / Linux support:

@@ -3,7 +3,8 @@ import * as fs from 'fs';
 import { Uri } from "vscode";
 import * as path from 'path';
 import { getUri } from '../utils/getUri';
-import { revealInOS } from '../utils/platformUtils';
+import { getDota2InstallPath, revealInOS } from '../utils/platformUtils';
+import { dotaVpk } from '../../scripts/lib/dota-install';
 import { getWebviewContent } from '../utils/getWebViewContent';
 import { readKeyValue2 } from '../utils/kvUtils';
 import { readFile } from '../utils/readFile';
@@ -65,7 +66,10 @@ export async function dota2IconPanelInit(context: vscode.ExtensionContext) {
 			if (choice === runExtract) {
 				const terminal = vscode.window.createTerminal('Extract Icons');
 				terminal.show();
-				terminal.sendText(`node "${scriptPath}"`);
+				// The install the extension knows (setting or Steam libraries); otherwise the script searches itself
+				const dota = getDota2InstallPath();
+				const dotaArg = dota && fs.existsSync(dotaVpk(dota)) ? ` "${dota}"` : '';
+				terminal.sendText(`node "${scriptPath}"${dotaArg}`);
 			} else if (choice === openDocs) {
 				vscode.env.openExternal(vscode.Uri.parse('https://github.com/iwasinminedream/vscode-dota2-tools#icon-extraction'));
 			}
